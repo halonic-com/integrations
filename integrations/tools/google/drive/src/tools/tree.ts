@@ -54,7 +54,14 @@ interface FolderToList {
 /** The tree shows less than a search does, so it asks Drive for less. */
 const treeFileFields = "id,name,mimeType,size,modifiedTime";
 
-/** One folder's listing: one page, folders first, then by name. */
+/**
+ * One folder's listing: one page, folders first, then by name.
+ *
+ * Every folder of a level asks for all the items left, not a share of them.
+ * The levels are listed at the same time and added in order, so the first
+ * folders fill the result. Splitting `itemsLeft` would cut them short and
+ * change which items come back.
+ */
 function listing(folder: FolderToList, args: TreeArguments, itemsLeft: number): ListFilesRequest {
   const clauses = [inFolder(folder.id), notTrashed];
   if (args.foldersOnly) clauses.push(hasType(folderType));
@@ -92,9 +99,15 @@ class TreeWalk {
     this.#args = args;
   }
 
-  /** Whether to list another level: something left to list, and no limit reached. */
+  /**
+   * Whether to list another level: something left to list, and no limit
+   * reached. When the entries are already full, the folders left might be
+   * empty, but nobody can tell without listing them, so it says `truncated`.
+   */
   goesOn(level: readonly FolderToList[], depth: number): boolean {
-    return depth <= this.#args.depth && level.length > 0 && !this.#truncated;
+    if (depth > this.#args.depth || level.length === 0) return false;
+    if (this.#entries.length >= this.#args.maxItems) this.#truncated = true;
+    return !this.#truncated;
   }
 
   /** The folders of this level the listing limit still allows, each with its listing. */

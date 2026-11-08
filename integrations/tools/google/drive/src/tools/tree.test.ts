@@ -54,6 +54,23 @@ describe("drive_tree", () => {
     expect(JSON.stringify(result)).not.toContain("scrubbed-secret");
   });
 
+  it("lists no deeper once a level fills maxItems, and says truncated", async () => {
+    // The top folder holds one folder and one file: exactly maxItems.
+    const files = [
+      { id: "folder-designs-06", name: "Designs", mimeType: "application/vnd.google-apps.folder" },
+      { id: "file-plan-01", name: "Plan", mimeType: "application/vnd.google-apps.document" },
+    ];
+    const { connection, urls } = connectToFakeDrive(200, JSON.stringify({ files }));
+    const result = await callTool(connection, "drive_tree", {
+      folderId: "root",
+      depth: 2,
+      maxItems: 2,
+    });
+    // The subfolder isn't listed: that would ask Drive for a page of 0 items.
+    expect(urls).toHaveLength(1);
+    expect(result).toMatchObject({ count: 2, truncated: true });
+  });
+
   it("asks only for folders with foldersOnly", async () => {
     const { connection, replay } = connectToRecording(treeFoldersOnly);
     const result = await callTool(connection, "drive_tree", {
