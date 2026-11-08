@@ -18,8 +18,11 @@ const SECRET_NAME_PARTS = [
   "sessionid",
 ];
 
-/** Names that are a secret only when they are the whole name. */
-const SECRET_NAMES = ["key", "sig", "signature", "auth", "authorization", "pass"];
+/**
+ * Names that are a secret only when they are the whole name. `code_verifier`
+ * is the PKCE secret of an OAuth token request.
+ */
+const SECRET_NAMES = ["key", "sig", "signature", "auth", "authorization", "pass", "codeverifier"];
 
 /**
  * Only in URLs, form data and the JSON body of an OAuth token request: the

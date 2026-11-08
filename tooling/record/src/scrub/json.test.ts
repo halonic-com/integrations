@@ -40,6 +40,7 @@ describe("scrubJson", () => {
     const request = {
       grant_type: "authorization_code",
       code: "fake-authorization-code",
+      code_verifier: "fake-pkce-code-verifier",
       client_id: "1234-fake.apps.googleusercontent.com",
       client_secret: FAKE.googleClientSecret,
       redirect_uri: "http://127.0.0.1:8085/callback",
@@ -47,15 +48,17 @@ describe("scrubJson", () => {
     expect(scrubJson(request, "body", noUserContent, context)).toEqual({
       ...request,
       code: "scrubbed-secret-1",
-      client_secret: "scrubbed-secret-2",
+      code_verifier: "scrubbed-secret-2",
+      client_secret: "scrubbed-secret-3",
     });
-    expect(rulesUsed(context)).toEqual(["secret-field", "secret-field"]);
+    expect(rulesUsed(context)).toEqual(["secret-field", "secret-field", "secret-field"]);
   });
 
   it("replaces every token in an OAuth token answer", () => {
     const answer = {
       access_token: "fake-access-token",
       refresh_token: "fake-refresh-token",
+      id_token: "fake-id-token",
       expires_in: 3599,
       token_type: "Bearer",
     };
@@ -63,6 +66,7 @@ describe("scrubJson", () => {
       ...answer,
       access_token: "scrubbed-secret-1",
       refresh_token: "scrubbed-secret-2",
+      id_token: "scrubbed-secret-3",
     });
   });
 
