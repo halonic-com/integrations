@@ -36,3 +36,10 @@ repo first and is then copied here.
 
 Uses `@typescript/typescript6` for the parser API until TypeScript 7.1
 ships its own (D9); then that dependency goes.
+
+## Not yet handled
+
+- `@halonicjs/integration-kit` from the main repo: it comes from npm with
+  an exact pin, and the `packages` rule gets a `fromMainRepo` list in
+  `policy.json` (Liam's decision on #3). That rule change lands with the
+  first pull request that depends on the kit (I3).

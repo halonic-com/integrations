@@ -32,8 +32,10 @@ integration inside that.
    `allowedIn` lists package names; `*` matches any text.
 2. Add the version once to the `catalog:` in `pnpm-workspace.yaml`.
 3. Use `"some-library": "catalog:"` in the package's `package.json`.
-4. Liam approves it in the pull request; anything outside these
-   categories also needs the user's approval.
+4. Liam reviews it in the pull request, and every library an integration
+   uses also needs the user's approval, because integrations ship in the
+   cloud runtime (plan 7.1 point 2a). Dev tooling needs Liam's approval
+   only.
 
 ## Install hardening
 

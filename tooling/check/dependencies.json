@@ -1,5 +1,5 @@
 {
-  "//": "Every external dependency, why we have it and which packages may use it (plan 7.1). Adding one needs Liam's approval. Integrations may add a library only for talking to the outside world, and only one that brings in nothing else. allowedIn takes package names; * matches any text.",
+  "//": "Every external dependency, why we have it and which packages may use it (plan 7.1). Liam reviews each one in the pull request, and every library an integration uses also needs the user's approval, because integrations ship in the cloud runtime. Dev tooling needs Liam's approval only. Integrations may add a library only for talking to the outside world, and only one that brings in nothing else. allowedIn takes package names; * matches any text.",
   "dependencies": {
     "@biomejs/biome": {
       "category": "dev-tooling",
