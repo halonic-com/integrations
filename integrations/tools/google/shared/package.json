@@ -1,0 +1,26 @@
+{
+  "name": "@halonicjs/integration-tool-google-shared",
+  "private": true,
+  "type": "module",
+  "description": "The Google library for Gmail and Drive: request helper, retries and Google error handling. Not an integration itself.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "ravi"
+  }
+}
