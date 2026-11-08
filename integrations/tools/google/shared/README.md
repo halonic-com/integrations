@@ -11,6 +11,8 @@ library, not an integration: it has no permission sheet, no tools and no
 | `src/error-for-response.ts` | turns a Google error response into a `GoogleError`            |
 | `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text   |
 | `src/http.ts`               | the small part of the kit's HTTP client this library uses     |
+| `src/retry-policy.ts`       | when a request is sent again, and how long to wait first      |
+| `src/urls.ts`               | Google base URLs, URL building and paging                     |
 
 ## Errors
 
