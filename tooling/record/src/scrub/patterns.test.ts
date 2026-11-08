@@ -9,6 +9,8 @@ describe("looksRandom", () => {
     ["hex at the end of a path", "v1/sessions/0123456789abcdef0123456789abcdef"],
     ["lower-case token with digits", "fake9x8c7v6b5n4m3k2j1h0g9f8d"],
     ["lower-case token in dashed groups", "fake9x8c-7v6b5n-4m3k2j-1h0g9f8d"],
+    ["session ID with a long run of letters", "sess-1699999999-qwhzkxmvbtrplnfdgsyc"],
+    ["upload ID with a long run of letters", "upload-48213095-qwhzkxmvbtrplnfdgsycazx"],
   ])("finds a %s", (_label, value) => {
     expect(looksRandom(value)).toBe(true);
   });

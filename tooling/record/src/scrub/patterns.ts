@@ -110,9 +110,13 @@ export function looksRandom(run: string): boolean {
   );
 }
 
-/** True when every part between `-`, `_` and `.` is all letters or all digits. */
+/**
+ * True when every part between `-`, `_` and `.` is a word or a number.
+ * A word is at most 12 letters, so an ID like sess-1699999999-qwhzkxmvbtrplnfdgsyc
+ * with a long random run of letters still counts as a token.
+ */
 function isWordsAndNumbers(value: string): boolean {
-  return value.split(/[-_.]/).every((part) => /^(?:[a-z]+|\d+)$/.test(part));
+  return value.split(/[-_.]/).every((part) => /^(?:[a-z]{1,12}|\d+)$/.test(part));
 }
 
 function isLongHex(value: string): boolean {
