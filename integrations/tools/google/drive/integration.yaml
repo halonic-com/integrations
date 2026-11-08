@@ -138,8 +138,8 @@ recording:
     - request.body.name
   # Exports and downloads: Docs as Markdown, Sheets as CSV, Slides and text
   # files as plain text, Drawings as SVG. Uploads: a file's text in a
-  # multipart body (create) or on its own (update). Text bodies have no
-  # fields, so record them only with made-up files.
+  # multipart body (create and update). Text bodies have no fields, so
+  # record them only with made-up files.
   allowContentTypes:
     - text/markdown
     - text/csv
