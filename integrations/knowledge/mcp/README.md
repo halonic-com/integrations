@@ -51,7 +51,35 @@ The old `packages/knowledge/mcp` took shortcuts this version doesn't:
 - **Our errors.** `KnowledgeMcpError` with a `code`; never the server's
   own text.
 
+## Reading the server's answers
+
+There is no standard for search results over MCP, so the source reads the
+common shapes (`hits.ts`, `document.ts`):
+
+- **Search:** a JSON list of results, a JSON object with the list under
+  `results`, `hits`, `documents` or `items`, or one JSON result per text
+  part. Each result needs a ref (`ref`, `id`, `uri` or `url`); its title is
+  `title` or `name`, its snippet `snippet`, `summary`, `text`, `content` or
+  `description`, and its `score` is kept when it is a number. Hits keep the
+  server's order. Any other answer is plain text and becomes one hit,
+  `<source>:search`, that holds it all.
+- **Get:** a JSON object with `content`, `text` or `body` (and `title` or
+  `name`), or else the whole text. The ref is always the caller's.
+
+## Limits
+
+| What                | Limit                                        |
+| ------------------- | -------------------------------------------- |
+| hits per search     | 5 by default, at most 20, whatever is asked  |
+| snippet             | 500 characters                               |
+| a plain-text answer | 2,000 characters, in its one hit             |
+| title               | 200 characters                               |
+| ref                 | 1,000 characters; longer refs aren't results |
+| document            | 100,000 characters, with a note when cut     |
+
+Text that is cut ends with `…`, never in the middle of a character.
+
 ## Still to come (HAL-346)
 
-The result mapping and its limits, then the knowledge provider with its
-recordings, follow in the next two pull requests.
+The knowledge provider with its recordings follows in the next pull
+request.
