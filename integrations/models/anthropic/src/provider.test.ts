@@ -1,3 +1,4 @@
+import { fakeResponse, replay } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import answerText from "../recordings/answer-text.json" with { type: "json" };
 import keyRefused from "../recordings/key-refused.json" with { type: "json" };
@@ -7,7 +8,6 @@ import { AnthropicError } from "./errors.ts";
 import { anthropic } from "./index.ts";
 import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
 import { createAnthropicProvider } from "./provider.ts";
-import { fakeResponse, replay } from "./test/replay.ts";
 
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {

@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@halonicjs/tooling-config": "workspace:*",
+    "@halonicjs/tooling-record": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

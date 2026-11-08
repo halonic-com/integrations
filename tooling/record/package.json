@@ -4,7 +4,8 @@
   "type": "module",
   "description": "pnpm record: records an integration's HTTP traffic and scrubs keys, tokens and personal data before anything is saved.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./replay": "./src/replay.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",

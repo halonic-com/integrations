@@ -1,3 +1,4 @@
+import { fakeResponse, replay } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import answerJson from "../recordings/answer-json.json" with { type: "json" };
 import answerText from "../recordings/answer-text.json" with { type: "json" };
@@ -8,7 +9,6 @@ import { OpenAiError } from "./errors.ts";
 import { openai } from "./index.ts";
 import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
 import { createOpenAiProvider } from "./provider.ts";
-import { fakeResponse, replay } from "./test/replay.ts";
 
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {
