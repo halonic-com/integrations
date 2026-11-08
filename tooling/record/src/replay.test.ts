@@ -39,6 +39,14 @@ describe("replay", () => {
     recorded.assertAllUsed();
   });
 
+  it("keeps a body that isn't JSON as text, such as a multipart upload", async () => {
+    const recorded = replay(recording);
+    const body = "--b\r\nContent-Type: text/plain\r\n\r\nhi\r\n--b--";
+    const response = await recorded.http.fetch(url, { method: "POST", body, auth: bearer });
+    expect(response.status).toBe(200);
+    expect(recorded.sent.map((request) => request.body)).toEqual([body]);
+  });
+
   it("gives the recorded headers and the body as text", async () => {
     const withHeaders: RecordingFile = {
       ...recording,

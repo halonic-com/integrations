@@ -220,7 +220,8 @@ recording.assertAllUsed();
   when the recording kept it. A stand-in the recording has in a request
   header, such as a session ID, must be sent back.
 - Request bodies are scrubbed, so they aren't compared. Check what the
-  integration sent through `sent`.
+  integration sent through `sent`: a JSON body parsed, any other body, such
+  as a multipart upload, as text.
 - The response has `status`, `headers`, `text()`, `json()` and `body` as a
   byte stream, with an event stream in its wire format.
 - `fakeResponse` answers every call with one status and body, for error
