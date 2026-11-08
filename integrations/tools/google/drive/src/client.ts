@@ -66,4 +66,21 @@ export class DriveClient {
     });
     return await this.#google.getJson(url, driveFileSchema, signal);
   }
+
+  /** One request: a Google Doc, Sheet, Slides or Drawing exported as `format`. */
+  async exportFile(fileId: string, format: string, signal?: AbortSignal): Promise<string> {
+    const url = googleUrl(googleBaseUrls.drive, ["files", fileId, "export"], {
+      mimeType: format,
+    });
+    return await this.#google.getText(url, signal);
+  }
+
+  /** One request: a stored file's contents, read as text. */
+  async downloadFile(fileId: string, signal?: AbortSignal): Promise<string> {
+    const url = googleUrl(googleBaseUrls.drive, ["files", fileId], {
+      alt: "media",
+      supportsAllDrives: true,
+    });
+    return await this.#google.getText(url, signal);
+  }
 }
