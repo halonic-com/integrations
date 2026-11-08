@@ -39,6 +39,34 @@ describe("replay", () => {
     recorded.assertAllUsed();
   });
 
+  it("gives the recorded headers and the body as text", async () => {
+    const withHeaders: RecordingFile = {
+      ...recording,
+      exchanges: [
+        {
+          transport: "http",
+          request: { method: "GET", url, headers: {}, body: { kind: "empty" } },
+          response: {
+            status: 429,
+            headers: { "retry-after": "2" },
+            body: { kind: "json", value: { error: { code: 429 } } },
+          },
+        },
+        {
+          transport: "http",
+          request: { method: "GET", url, headers: {}, body: { kind: "empty" } },
+          response: { status: 204, headers: {}, body: { kind: "empty" } },
+        },
+      ],
+    };
+    const recorded = replay(withHeaders);
+    const limited = await recorded.http.fetch(url);
+    expect(limited.headers.get("Retry-After")).toBe("2");
+    expect(limited.headers.get("content-type")).toBeNull();
+    expect(await limited.text()).toBe('{"error":{"code":429}}');
+    expect(await (await recorded.http.fetch(url)).text()).toBe("");
+  });
+
   it("fails a call to another URL or method", async () => {
     await expect(replay(recording).http.fetch(url)).rejects.toThrow(
       `Expected POST ${url}, got GET ${url}`,
