@@ -13,13 +13,23 @@ secrets:
     hosts: [gmail.googleapis.com]
     as: bearer
 
-# Not settled yet: the Google sign-in will read the scopes each service
-# needs from its sheet; the field name may change. gmail.modify is the only
-# scope that allows gmail_modify_labels (messages.batchModify), and it also
-# covers reading, drafts, sending and the signature (settings.sendAs). It
-# doesn't allow deleting mail for good.
+# Studio builds the Google setup steps from googleScopes, googleApis and
+# googleCheck. gmail.modify is the only scope that allows
+# gmail_modify_labels (messages.batchModify), and it also covers reading,
+# drafts, sending and the signature (settings.sendAs). It doesn't allow
+# deleting mail for good.
 googleScopes:
-  - https://www.googleapis.com/auth/gmail.modify
+  - scope: https://www.googleapis.com/auth/gmail.modify
+    reason: >-
+      Reads, labels, drafts and sends your mail; it can't delete mail for
+      good.
+googleApis:
+  - api: gmail.googleapis.com
+    name: Gmail API
+# Returns only the address and message counts, no mail.
+googleCheck:
+  method: GET
+  url: https://gmail.googleapis.com/gmail/v1/users/me/profile
 
 tokens: [] # Halonic's Google sign-in keeps the refresh token, not Gmail
 
