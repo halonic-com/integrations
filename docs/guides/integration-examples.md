@@ -306,6 +306,7 @@ export const sendTool = {
       "Sends an e-mail from the account. Sending can't be undone; prefer gmail_create_draft when a person should check it first.",
     parameters: z.toJSONSchema(sendArguments, { io: "input" }),
     risk: "send",
+    untrusted: false,
   },
   arguments: sendArguments,
   async run(client, args, signal) {
