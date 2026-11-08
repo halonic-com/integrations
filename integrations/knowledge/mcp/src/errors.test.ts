@@ -19,6 +19,17 @@ describe("withKnowledgeErrors", () => {
     });
   });
 
+  it("tells the user to try again when the server ended the session", async () => {
+    const work = withKnowledgeErrors(async () => {
+      throw new McpError("session-expired", "The MCP server ended the session. Connect again.");
+    });
+    await expect(work).rejects.toMatchObject({
+      name: "KnowledgeMcpError",
+      code: "session-expired",
+      message: "The MCP server ended the session. Try again.",
+    });
+  });
+
   it("lets every other error through unchanged, such as the kit's", async () => {
     class IntegrationRefusedError extends Error {}
     const refused = new IntegrationRefusedError("secret-not-configured");

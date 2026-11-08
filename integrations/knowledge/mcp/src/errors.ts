@@ -28,13 +28,18 @@ export class KnowledgeMcpError extends Error {
 /**
  * Runs `work` and turns the MCP client's errors into ours, with the same
  * code and message: the client's messages are already ours and safe to
- * show. Every other error, such as the kit's `IntegrationRefusedError` or
- * its timeout, passes through unchanged (guide, section 7, rule 7).
+ * show. Only `session-expired` gets its own message: the next search opens
+ * a new session by itself, so the user only has to try again. Every other
+ * error, such as the kit's `IntegrationRefusedError` or its timeout, passes
+ * through unchanged (guide, section 7, rule 7).
  */
 export async function withKnowledgeErrors<Result>(work: () => Promise<Result>): Promise<Result> {
   try {
     return await work();
   } catch (error) {
+    if (error instanceof McpError && error.code === "session-expired") {
+      throw new KnowledgeMcpError(error.code, "The MCP server ended the session. Try again.");
+    }
     if (error instanceof McpError) {
       throw new KnowledgeMcpError(error.code, error.message);
     }
