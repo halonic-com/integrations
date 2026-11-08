@@ -94,6 +94,34 @@ describe("drive_search", () => {
     });
     expect(urls).toHaveLength(0);
   });
+
+  it("refuses a query that would close the bracket around it, before any request", async () => {
+    const { connection, urls } = connectToFakeDrive(200, "{}");
+    const call = connection.callTool("drive_search", {
+      query: "name = 'a') or (trashed = true",
+    });
+    await expect(call).rejects.toMatchObject({
+      code: "bad-arguments",
+      message: "Check these arguments: query.",
+    });
+    expect(urls).toHaveLength(0);
+  });
+
+  it("accepts a bracket inside a quoted string", async () => {
+    const { connection, urls } = connectToFakeDrive(200, "{}");
+    expect(await callTool(connection, "drive_search", { query: "name = 'a)'" })).toEqual({
+      files: [],
+    });
+    const query = new URL(urls[0] ?? "").searchParams;
+    expect(query.get("q")).toBe("trashed = false and (name = 'a)')");
+  });
+
+  it("leaves out the order when the model's own query searches contents", async () => {
+    const { connection, urls } = connectToFakeDrive(200, "{}");
+    await callTool(connection, "drive_search", { query: "fullText contains 'halonic-test'" });
+    const query = new URL(urls[0] ?? "").searchParams;
+    expect(query.get("orderBy")).toBeNull();
+  });
 });
 
 describe("searchQuery", () => {

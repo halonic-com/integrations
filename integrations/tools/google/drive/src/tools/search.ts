@@ -2,7 +2,14 @@ import { z } from "zod";
 import type { DriveClient } from "../client.ts";
 import { type FileDetails, fileDetails } from "../file.ts";
 import type { ToolImplementation } from "../kit.ts";
-import { allOf, inFolder, nameOrContentHas, notTrashed } from "../query.ts";
+import {
+  allOf,
+  bracketsBalance,
+  inFolder,
+  nameOrContentHas,
+  notTrashed,
+  searchesContents,
+} from "../query.ts";
 import { driveIdSchema, pageTokenSchema } from "./arguments.ts";
 
 /** Drive's own limit for one page is 1,000; the old connector allowed 100. */
@@ -15,6 +22,7 @@ const searchArguments = z.strictObject({
     .string()
     .min(1)
     .max(2_000)
+    .refine(bracketsBalance)
     .optional()
     .describe(`Drive query syntax, such as "mimeType = 'application/pdf'".`),
   pageSize: z
@@ -37,7 +45,8 @@ interface SearchResult {
 
 /**
  * The Drive query for the arguments. The model's own `query` is put in
- * brackets, so its `or` can't reach past the trash clause.
+ * brackets, so its `or` can't reach past the trash clause. The arguments
+ * only let through a query whose brackets balance, so it can't close ours.
  */
 export function searchQuery(args: Pick<SearchArguments, "text" | "folderId" | "query">): string {
   const clauses = [notTrashed];
@@ -59,12 +68,14 @@ export const searchTool = {
   arguments: searchArguments,
   // One request.
   async run(client, args, signal): Promise<SearchResult> {
+    const query = searchQuery(args);
     const page = await client.listFiles(
       {
-        query: searchQuery(args),
+        query,
         pageSize: args.pageSize,
-        // Drive refuses an order with a full-text search; it then sorts by relevance.
-        orderBy: args.text === undefined ? "modifiedTime desc" : undefined,
+        // Drive refuses an order with a full-text search, from text or the
+        // model's own query; it then sorts by relevance.
+        orderBy: searchesContents(query) ? undefined : "modifiedTime desc",
         pageToken: args.pageToken,
       },
       signal,
