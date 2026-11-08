@@ -48,6 +48,13 @@ const jsonInstruction = "Reply with a single JSON value and nothing else.";
  * Maps one `ChatRequest` to a Messages API body. `meta` is never sent, and
  * neither are `reasoningEffort` and `extra`, which aren't mapped yet;
  * `ChatParams` lets a provider ignore what it doesn't support.
+ *
+ * `temperature` and `topP` are passed on as given. Most current models
+ * (Opus 4.7 and later, Opus 5 and 5.5, Fable 5 and 5.1, Sonnet 5) refuse
+ * them, and Sonnet 5.5 refuses non-default values, so such a request fails
+ * with `bad-arguments`. We still map them because Haiku 4.5 and the 4.6
+ * models accept them, and the API is the one that knows which model takes
+ * what.
  */
 export function toAnthropicRequest(request: ChatRequest): AnthropicRequest {
   const params = request.params ?? {};

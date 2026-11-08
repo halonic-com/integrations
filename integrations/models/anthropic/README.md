@@ -41,6 +41,12 @@ and writes included) and every output token, and the stop reason as
   none, so a JSON answer is asked for in words. `vision` is `false` until
   `ChatMessage` carries images. `streaming` is `false` until `stream` is
   added.
+- **Sampling:** `temperature` and `topP` are sent as given, but most
+  current Claude models refuse them. Opus 4.7 and later, Opus 5 and 5.5,
+  Fable 5 and 5.1 and Sonnet 5 refuse any value, and Sonnet 5.5 refuses
+  values other than the default. A workflow that sets them for one of these
+  models gets `bad-arguments`. Haiku 4.5, Opus 4.6 and Sonnet 4.6 still
+  accept them.
 - **Spend:** `Usage` has no field for the prompt cache, so cache reads and
   writes count as plain input tokens.
 - **Errors** are `AnthropicError` with a short code (`bad-arguments`,
