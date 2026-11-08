@@ -124,12 +124,14 @@ needs: []
 # Fields that hold the user's own content, for the recorder.
 recording:
   userContent:
-    # files.get, files.create, files.update: one file
+    # files.get, files.create, files.update: one file. `owners[*].*` scrubs
+    # every value of each owner but keeps the field names, so a replay still
+    # shows which field the tools read.
     - response.body.name
-    - response.body.owners
+    - response.body.owners[*].*
     # files.list: a page of files
     - response.body.files[*].name
-    - response.body.files[*].owners
+    - response.body.files[*].owners[*].*
     # files.create (a folder) and files.update (a rename)
     - request.body.name
   # Exports and downloads: Docs as Markdown, Sheets as CSV, Slides and text
