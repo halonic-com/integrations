@@ -2,8 +2,8 @@
 
 Our own repo checks: package manifests, layers, dependencies, names, file
 size, the lockfile, absolute local paths, the Google fields of the
-permission sheets, licences and the personal-terms guard. Imports are read with the TypeScript parser, not regular
-expressions.
+permission sheets, licences and the personal-terms guard. Imports are read
+with the TypeScript parser, not regular expressions.
 
 - **Layer:** tooling
 - **Owner:** ravi

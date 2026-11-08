@@ -252,8 +252,12 @@ Rules for each field:
 - **`googleScopes`**, **`googleApis`** and **`googleCheck`**: only in an
   integration that uses `google-account`. Studio builds the Google setup
   steps from them, so the host keeps no list of Google APIs of its own.
+  Write every top-level key of the sheet plain (`googleCheck:`, not
+  `"googleCheck":`): the check reads only plain keys.
 - **`googleScopes`**: one `{ scope, reason }` per scope. `scope` is the full
-  scope URL; list the fewest that make every tool work. `reason` is one
+  scope URL, `https://www.googleapis.com/auth/<name>`, or one of the bare
+  sign-in scopes `openid`, `email` and `profile`; list the fewest that make
+  every tool work. `reason` is one
   short sentence for the user, saying why the integration needs the scope.
   Why a broader scope is needed when a narrower one exists goes in a
   comment, for the reviewer.
@@ -268,11 +272,14 @@ Rules for each field:
 - **`googleApis`**: one `{ api, name }` per Google API the user switches on
   in the Google Cloud Console. `api` is the service name, such as
   `drive.googleapis.com`; `name` is the name on the Console's API library
-  page, such as `Google Drive API`. Required whenever `googleScopes` is set.
+  page, such as `Google Drive API`. At least one entry is required whenever
+  `googleScopes` is set.
 - **`googleCheck`** (optional): one request the host sends after sign-in to
   see that the API is switched on, such as
   `{ method: GET, url: https://gmail.googleapis.com/gmail/v1/users/me/profile }`.
-  Always `GET`, with no body, to a host in `hosts`. Pick a cheap request
+  Always `GET`, with no body, over https to a host that is in `hosts` and
+  in the `google-account` secret's hosts, because the request carries that
+  token. The url has no port, user name or `#fragment`. Pick a cheap request
   that every account can make and that returns no mail or file content.
 - **`tokens`**: only for values the integration itself writes and reads
   back later. Keys the user enters are `secrets`, not `tokens`.

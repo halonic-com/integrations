@@ -5,6 +5,16 @@ function fieldValue(text: string, name: string): unknown {
   return readSheetFields(text, [name]).get(name)?.value;
 }
 
+/** The line of the SheetSyntaxError that reading field `a` throws, if any. */
+function errorLine(text: string): number | undefined {
+  try {
+    readSheetFields(text, ["a"]);
+  } catch (error) {
+    return error instanceof SheetSyntaxError ? error.line : undefined;
+  }
+  return undefined;
+}
+
 describe("tooling/check: reading sheet fields", () => {
   it("reads only the fields asked for, with their lines", () => {
     const text = "id: x\n\n# hosts\nhosts:\n  - a.example.com\ntools:\n  - name: |\n";
@@ -39,19 +49,19 @@ describe("tooling/check: reading sheet fields", () => {
   });
 
   it("throws with the line for YAML it doesn't cover", () => {
-    const read = (text: string): number | undefined => {
-      try {
-        readSheetFields(text, ["a"]);
-      } catch (error) {
-        return error instanceof SheetSyntaxError ? error.line : undefined;
-      }
-      return undefined;
-    };
-    expect(read("a: [b,\n  c]\n")).toBe(1);
-    expect(read("a:\n  b: 1\n  - c\n")).toBe(3);
-    expect(read('a: "open\n')).toBe(1);
-    expect(read("a:\n    b: 1\n  c: 2\n")).toBe(3);
-    expect(read("a: *alias\n")).toBe(1);
-    expect(read("a:\n  - |\n    text\n")).toBe(2);
+    expect(errorLine("a: [b,\n  c]\n")).toBe(1);
+    expect(errorLine("a:\n  b: 1\n  - c\n")).toBe(3);
+    expect(errorLine('a: "open\n')).toBe(1);
+    expect(errorLine("a:\n    b: 1\n  c: 2\n")).toBe(3);
+    expect(errorLine("a: *alias\n")).toBe(1);
+    expect(errorLine("a:\n  - |\n    text\n")).toBe(2);
+  });
+
+  it("throws for a top-level key that isn't plain, even one it wasn't asked for", () => {
+    expect(errorLine('id: x\n"a": 1\n')).toBe(2);
+    expect(errorLine("id: x\n'a': 1\n")).toBe(2);
+    expect(errorLine("id: x\na : 1\n")).toBe(2);
+    expect(errorLine("id: x\n- a\n")).toBe(2);
+    expect(errorLine('"other": 1\n')).toBe(1);
   });
 });

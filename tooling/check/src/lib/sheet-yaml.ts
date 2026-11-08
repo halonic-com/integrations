@@ -4,9 +4,9 @@
  * The repo has no YAML library (plan 7.1), so this reads the small part of
  * YAML the sheets use: block mappings and lists, one-line `[...]` and
  * `{...}`, plain and quoted scalars, folded `>` text and comments. Only the
- * fields a rule asks for are read, so the rest of the sheet may use more.
- * Anything else in those fields throws a `SheetSyntaxError` instead of
- * being read wrong.
+ * fields a rule asks for are read, so the rest of the sheet may use more,
+ * as long as each top-level key is plain. Anything else in those fields
+ * throws a `SheetSyntaxError` instead of being read wrong.
  */
 
 /** A value read from the sheet. Scalars stay text: the rules compare text. */
@@ -43,7 +43,12 @@ interface Line {
 /** `key: rest` or `key:`; a colon followed by text (as in a URL) is no key. */
 const keyPattern = /^([A-Za-z_][\w-]*):(?:\s+(.*))?$/;
 
-/** Reads the given top-level fields; a field the sheet leaves out is missing from the result. */
+/**
+ * Reads the given top-level fields; a field the sheet leaves out is missing
+ * from the result. Every top-level line must be a plain `key:`. A quoted or
+ * spaced key such as `"googleCheck":` is the same key to a YAML parser, so
+ * skipping it would let a field past the rules unread.
+ */
 export function readSheetFields(
   text: string,
   names: readonly string[],
@@ -51,8 +56,17 @@ export function readSheetFields(
   const fields = new Map<string, SheetField>();
   const lines = contentLines(text);
   for (const [index, line] of lines.entries()) {
-    const key = line.indent === 0 ? keyPattern.exec(line.text) : null;
-    if (key === null || !names.includes(key[1] as string)) {
+    if (line.indent > 0) {
+      continue;
+    }
+    const key = keyPattern.exec(line.text);
+    if (key === null) {
+      throw new SheetSyntaxError(
+        line.number,
+        'Write this top-level line as a plain "key: value", without quotes or spaces before the colon.',
+      );
+    }
+    if (!names.includes(key[1] as string)) {
       continue;
     }
     const end = lines.findIndex((other, at) => at > index && other.indent === 0);

@@ -110,6 +110,37 @@ googleCheck: { method: GET, url: https://mail.googleapis.com/mail/v1/users/me/pr
     expect(messagesFor(sheet(googleSecret, apis))).toEqual([]);
   });
 
+  it("needs at least one googleApis entry with googleScopes", () => {
+    expect(messagesFor(sheet(googleSecret, scopes, "googleApis: []"))).toEqual([
+      "A sheet with googleScopes also lists googleApis: { api, name } for each API the user switches on, such as { api: gmail.googleapis.com, name: Gmail API }.",
+    ]);
+  });
+
+  it("needs a Google scope URL or a bare sign-in scope", () => {
+    const short = scopes.replace("https://www.googleapis.com/auth/mail.readonly", "mail");
+    const elsewhere = scopes.replace("www.googleapis.com", "auth.example.com");
+    const signIn = `googleScopes:
+  - { scope: openid, reason: Tells Halonic which Google account you connected. }
+`;
+    const message =
+      "googleScopes entry 1: scope is a full Google scope URL, such as https://www.googleapis.com/auth/drive, or openid, email or profile.";
+    expect(messagesFor(sheet(googleSecret, short, apis))).toEqual([message]);
+    expect(messagesFor(sheet(googleSecret, elsewhere, apis))).toEqual([message]);
+    expect(messagesFor(sheet(googleSecret, signIn, apis))).toEqual([]);
+  });
+
+  it("can't be skipped with a quoted or spaced top-level key", () => {
+    const quoted = check.replace("googleCheck:", '"googleCheck":').replace("GET", "POST");
+    const spaced = check.replace("googleCheck:", "googleCheck :").replace("GET", "POST");
+    const message =
+      'Write this top-level line as a plain "key: value", without quotes or spaces before the colon. This check reads a small part of YAML.';
+    expect(messagesFor(sheet(googleSecret, scopes, apis, quoted))).toEqual([message]);
+    expect(messagesFor(sheet(googleSecret, scopes, apis, spaced))).toEqual([message]);
+    expect(messagesFor(sheet(scopes.replace("googleScopes:", "'googleScopes':")))).toEqual([
+      message,
+    ]);
+  });
+
   it("allows googleCheck only as a GET", () => {
     const post = check.replace("GET", "POST");
     expect(messagesFor(sheet(googleSecret, scopes, apis, post))).toEqual([
@@ -130,6 +161,7 @@ googleCheck: { method: GET, url: https://mail.googleapis.com/mail/v1/users/me/pr
     const plain = check.replace("https:", "http:");
     expect(messagesFor(sheet(googleSecret, scopes, apis, elsewhere))).toEqual([
       "googleCheck goes to www.googleapis.com, which isn't in the sheet's hosts.",
+      "googleCheck carries the google-account token, so www.googleapis.com must be in that secret's hosts too.",
     ]);
     expect(messagesFor(sheet(googleSecret, scopes, apis, plain))).toEqual([
       "googleCheck url uses https.",
@@ -137,6 +169,25 @@ googleCheck: { method: GET, url: https://mail.googleapis.com/mail/v1/users/me/pr
     expect(
       messagesFor(sheet(googleSecret, scopes, apis, "googleCheck: { method: GET, url: /me }")),
     ).toEqual(["googleCheck needs a full https url."]);
+  });
+
+  it("refuses a port, a user name and a fragment in the googleCheck url", () => {
+    const message = "googleCheck url has no port, user name, password or #fragment.";
+    for (const odd of [
+      "https://mail.googleapis.com:8443/mail/v1/users/me/profile",
+      "https://user@mail.googleapis.com/mail/v1/users/me/profile",
+      "https://mail.googleapis.com/mail/v1/users/me/profile#top",
+    ]) {
+      const oddCheck = `googleCheck: { method: GET, url: "${odd}" }`;
+      expect(messagesFor(sheet(googleSecret, scopes, apis, oddCheck))).toEqual([message]);
+    }
+  });
+
+  it("sends googleCheck only to a host of the google-account secret", () => {
+    const otherSecret = googleSecret.replace("[mail.googleapis.com]", "[upload.googleapis.com]");
+    expect(messagesFor(sheet(otherSecret, scopes, apis, check))).toEqual([
+      "googleCheck carries the google-account token, so mail.googleapis.com must be in that secret's hosts too.",
+    ]);
   });
 
   it("points at the line of YAML it can't read", () => {
