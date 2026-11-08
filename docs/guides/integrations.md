@@ -52,10 +52,11 @@ Its package exports one `Integration` object: its `name`, `version`, the
 | `host.http`     | an HTTP client that only reaches the hosts the permission sheet declares           |
 | `host.tokens`   | a store for the tokens the integration keeps itself, limited to the declared names |
 | `host.settings` | the settings the workspace gives it, such as a base URL. Never a secret value      |
+| `host.wait`     | a pause of at most 30 seconds, which stops when the call's `signal` aborts         |
 
-There is no file system, no process, no raw `fetch` and no secret values.
-An integration reaches the outside world only through `host.http`, and
-Halonic adds the keys for it.
+There is no file system, no process, no raw `fetch`, no timer and no secret
+values. An integration reaches the outside world only through `host.http`,
+and Halonic adds the keys for it.
 
 All state lives in the connection that `connect` returns. The module itself
 holds only constants: in the cloud runtime one module serves many
@@ -286,8 +287,9 @@ Rules for each field:
 1. **All network access goes through `host.http.fetch(url, init)`.** `url`
    is a string; `init` takes the usual `fetch` options (`method`,
    `headers`, `body`, `signal`) plus `auth`. Never call `fetch`,
-   `XMLHttpRequest` or `WebSocket` yourself, and never reach for
-   `globalThis` or `process`.
+   `XMLHttpRequest` or `WebSocket` yourself, never reach for `globalThis` or
+   `process`, and never use a timer (`setTimeout`, `setInterval`,
+   `setImmediate` or `AbortSignal.timeout`): wait with `host.wait` (rule 11).
 2. **Never handle key values. Name the secret and let the kit add it:**
 
    ```ts
@@ -316,7 +318,8 @@ Rules for each field:
    only the fields you read, and let the rest pass (`z.object`, not
    `z.strictObject`), so a new field from the service doesn't break the
    integration.
-6. **Pass `signal` on to every request.** A call the user cancels must stop.
+6. **Pass `signal` on to every request and every `host.wait`.** A call the
+   user cancels must stop, also while it waits.
 7. **Read a setting such as a base URL from `host.settings`,** with the
    service's default when it's absent. The kit still refuses a host the
    sheet doesn't allow, so a setting can't send traffic anywhere else.
@@ -331,6 +334,37 @@ Rules for each field:
     idempotency key). **Never retry a request that sends or deletes
     something:** a timeout doesn't prove it didn't happen. One provider's
     retry rules live once, in its group (`tools/google/shared`).
+11. **Wait only with `host.wait(ms, signal)`,** for a pause the service asks
+    for: SSE `retry:` before a resume, or `retry-after` before a retry
+    (section 7 has the error classes).
+    Always pass the call's `signal`, so cancelling the call also cancels the
+    pause. The host waits at most `maxIntegrationWaitMs` (30 seconds). When
+    the service asks for longer, don't wait: return the error. There is no
+    clock. `retry-after` is either seconds or an HTTP date, and you measure
+    a date against the response's own `date` header:
+
+    ```ts
+    // The pause a response asks for, in ms; undefined when it names none.
+    function retryAfterMs(response: Response): number | undefined {
+      const value = response.headers.get("retry-after")?.trim();
+      if (value === undefined || value === "") return undefined;
+      if (/^\d+$/.test(value)) return Number(value) * 1000;
+      // An HTTP date starts with a day name. Date.parse alone accepts "-5".
+      if (!/^[a-z]{3}/i.test(value)) return undefined;
+      const at = Date.parse(value);
+      const now = Date.parse(response.headers.get("date") ?? "");
+      return Number.isNaN(at) || Number.isNaN(now) ? undefined : Math.max(0, at - now);
+    }
+
+    const ms = retryAfterMs(response) ?? 1000;
+    if (ms > maxIntegrationWaitMs) {
+      throw new AnthropicError("rate-limited", "Anthropic asks to wait longer than 30 s; try again later.");
+    }
+    await host.wait(ms, signal);
+    ```
+
+    In tests the conformance suite doesn't really wait: it records each
+    pause, so a case can say `waits: [2000]`.
 
 > **Not settled yet:** the kit doesn't limit the number of requests per
 > call yet. Until it does, the comment and a reviewer do.
@@ -663,7 +697,8 @@ That is why the sheet must say everything (section 3).
 3. Place a secret anywhere the sheet doesn't say, or in a field the service
    stores or sends back. _(person; kit once it reads `as` from the sheet)_
 4. Use `eval`, `new Function`, an `import()` with a computed name,
-   `node:*` modules, `process`, `globalThis` or the file system. _(check,
+   `node:*` modules, `process`, `globalThis`, a timer instead of
+   `host.wait`, or the file system. _(check,
    for the direct forms; person for the rest)_ Lint is not a boundary. A
    reviewer also looks for the indirect routes: `(() => {}).constructor(…)`,
    `Reflect`, `WebAssembly`, `setTimeout` or `setInterval` with a string,
