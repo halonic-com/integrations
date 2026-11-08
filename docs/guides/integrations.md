@@ -74,10 +74,12 @@ integrations/
 │  ├─ openai/             model-openai
 │  └─ gemini/             model-gemini (API key, not the Google sign-in)
 ├─ tools/                 providers whose services give agents tools
-│  └─ google/
-│     ├─ shared/          a library, not an integration: Google requests and errors
-│     ├─ gmail/           tool-google-gmail
-│     └─ drive/           tool-google-drive
+│  ├─ google/
+│  │  ├─ shared/          a library, not an integration: Google requests and errors
+│  │  ├─ gmail/           tool-google-gmail
+│  │  └─ drive/           tool-google-drive
+│  └─ mcp/
+│     └─ http/            tool-mcp-http: any MCP server's tools
 ├─ knowledge/             knowledge sources
 │  └─ mcp/                knowledge-mcp
 ├─ mcp/                   mcp: our own MCP client
