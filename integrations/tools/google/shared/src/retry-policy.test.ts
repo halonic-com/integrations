@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { isRepeatable, isRetryableStatus, retryDelayMs } from "./retry-policy.ts";
 
-const now = new Date("2026-01-15T12:00:00Z");
+const sentAt = "Thu, 15 Jan 2026 12:00:00 GMT";
+
+/** A response's headers, looked up case-insensitively as `Headers` does. */
+function headers(values: Record<string, string> = {}) {
+  const lowerCase = new Map(
+    Object.entries(values).map(([name, value]) => [name.toLowerCase(), value]),
+  );
+  return { get: (name: string) => lowerCase.get(name.toLowerCase()) ?? null };
+}
+
+/** The headers of a response Google sent at {@link sentAt}, with this `retry-after`. */
+function retryAfter(value: string) {
+  return headers({ date: sentAt, "retry-after": value });
+}
 
 describe("isRepeatable", () => {
   it.each(["GET", "HEAD"])("repeats a %s", (method) => {
@@ -33,31 +46,38 @@ describe("isRetryableStatus", () => {
 
 describe("retryDelayMs", () => {
   it("backs off 1 s, then 2 s, without a retry-after", () => {
-    expect(retryDelayMs(null, 0, now)).toBe(1_000);
-    expect(retryDelayMs(null, 1, now)).toBe(2_000);
+    expect(retryDelayMs(headers({ date: sentAt }), 0)).toBe(1_000);
+    expect(retryDelayMs(headers(), 1)).toBe(2_000);
   });
 
   it("honours retry-after in seconds up to 30 s", () => {
-    expect(retryDelayMs("0", 0, now)).toBe(0);
-    expect(retryDelayMs(" 7 ", 0, now)).toBe(7_000);
-    expect(retryDelayMs("30", 0, now)).toBe(30_000);
+    expect(retryDelayMs(retryAfter("0"), 0)).toBe(0);
+    expect(retryDelayMs(retryAfter(" 7 "), 0)).toBe(7_000);
+    expect(retryDelayMs(retryAfter("30"), 0)).toBe(30_000);
   });
 
   it("gives up when retry-after asks for more than 30 s", () => {
-    expect(retryDelayMs("31", 0, now)).toBeUndefined();
-    expect(retryDelayMs("Thu, 15 Jan 2026 12:05:00 GMT", 0, now)).toBeUndefined();
+    expect(retryDelayMs(retryAfter("31"), 0)).toBeUndefined();
+    expect(retryDelayMs(retryAfter("Thu, 15 Jan 2026 12:05:00 GMT"), 0)).toBeUndefined();
   });
 
-  it("honours retry-after as a date, measured from the clock", () => {
-    expect(retryDelayMs("Thu, 15 Jan 2026 12:00:10 GMT", 0, now)).toBe(10_000);
+  it("honours retry-after as a date, measured from the response's date header", () => {
+    expect(retryDelayMs(retryAfter("Thu, 15 Jan 2026 12:00:10 GMT"), 0)).toBe(10_000);
   });
 
   it("doesn't wait for a date in the past", () => {
-    expect(retryDelayMs("Thu, 15 Jan 2026 11:00:00 GMT", 0, now)).toBe(0);
+    expect(retryDelayMs(retryAfter("Thu, 15 Jan 2026 11:00:00 GMT"), 0)).toBe(0);
+  });
+
+  it("backs off as usual for a retry-after date without a date header to measure it from", () => {
+    const noDate = headers({ "retry-after": "Thu, 15 Jan 2026 12:00:10 GMT" });
+    expect(retryDelayMs(noDate, 0)).toBe(1_000);
+    const badDate = headers({ date: "-5", "retry-after": "Thu, 15 Jan 2026 12:00:10 GMT" });
+    expect(retryDelayMs(badDate, 1)).toBe(2_000);
   });
 
   it("backs off as usual when retry-after can't be read", () => {
-    expect(retryDelayMs("soon", 1, now)).toBe(2_000);
-    expect(retryDelayMs("-5", 0, now)).toBe(1_000);
+    expect(retryDelayMs(retryAfter("soon"), 1)).toBe(2_000);
+    expect(retryDelayMs(retryAfter("-5"), 0)).toBe(1_000);
   });
 });

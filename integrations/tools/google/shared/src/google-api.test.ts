@@ -3,7 +3,7 @@ import { z } from "zod";
 import { GoogleError } from "./errors.ts";
 import { type GoogleApiOptions, googleApi } from "./google-api.ts";
 import type { HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
-import type { RetryClock } from "./retry-policy.ts";
+import { fakeWait } from "./test/fake-wait.ts";
 
 const listUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Atest";
 const sendUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
@@ -41,26 +41,13 @@ class FakeHttp implements HttpClient {
   }
 }
 
-/** A clock that never really waits and keeps every wait it was asked for. */
-class FakeClock implements RetryClock {
-  readonly waits: number[] = [];
-
-  now(): Date {
-    return new Date("2026-01-15T12:00:00Z");
-  }
-
-  async sleep(ms: number): Promise<void> {
-    this.waits.push(ms);
-  }
-}
-
 function setUp(http: FakeHttp, options: Partial<GoogleApiOptions> = {}) {
-  const clock = new FakeClock();
+  const { wait, waits } = fakeWait();
   const google = googleApi(
-    { http },
-    { secret: "google-account", service: "Gmail", clock, ...options },
+    { http, wait },
+    { secret: "google-account", service: "Gmail", ...options },
   );
-  return { google, clock };
+  return { google, waits };
 }
 
 async function codeOf(promise: Promise<unknown>): Promise<string> {
@@ -131,12 +118,8 @@ describe("GoogleApi requests", () => {
     const refused = new Error("host-not-allowed");
     const http: HttpClient = { fetch: async () => Promise.reject(refused) };
     const google = googleApi(
-      { http },
-      {
-        secret: "google-account",
-        service: "Gmail",
-        clock: new FakeClock(),
-      },
+      { http, wait: fakeWait().wait },
+      { secret: "google-account", service: "Gmail" },
     );
     await expect(google.getJson(listUrl, messageSchema)).rejects.toBe(refused);
   });
@@ -145,31 +128,44 @@ describe("GoogleApi requests", () => {
 describe("GoogleApi retries", () => {
   it.each([429, 500, 503])("retries a GET after %i and succeeds", async (status) => {
     const http = new FakeHttp(response(status), response(200, '{"id":"m1"}'));
-    const { google, clock } = setUp(http);
+    const { google, waits } = setUp(http);
     expect(await google.getJson(listUrl, messageSchema)).toEqual({ id: "m1" });
-    expect(clock.waits).toEqual([1_000]);
+    expect(waits).toEqual([1_000]);
   });
 
   it("sends a GET at most three times", async () => {
     const http = new FakeHttp(response(503), response(503), response(503));
-    const { google, clock } = setUp(http);
+    const { google, waits } = setUp(http);
     expect(await codeOf(google.getJson(listUrl, messageSchema))).toBe("unavailable");
     expect(http.requests).toHaveLength(3);
-    expect(clock.waits).toEqual([1_000, 2_000]);
+    expect(waits).toEqual([1_000, 2_000]);
   });
 
   it("waits as long as retry-after asks", async () => {
     const http = new FakeHttp(response(429, "", { "Retry-After": "12" }), response(200, "ok"));
-    const { google, clock } = setUp(http);
+    const { google, waits } = setUp(http);
     await google.getText(listUrl);
-    expect(clock.waits).toEqual([12_000]);
+    expect(waits).toEqual([12_000]);
+  });
+
+  it("measures a retry-after date against the response's date header", async () => {
+    const http = new FakeHttp(
+      response(503, "", {
+        date: "Thu, 15 Jan 2026 12:00:00 GMT",
+        "retry-after": "Thu, 15 Jan 2026 12:00:05 GMT",
+      }),
+      response(200, "ok"),
+    );
+    const { google, waits } = setUp(http);
+    await google.getText(listUrl);
+    expect(waits).toEqual([5_000]);
   });
 
   it("gives up at once when retry-after is longer than 30 s", async () => {
     const http = new FakeHttp(response(429, "", { "retry-after": "120" }));
-    const { google, clock } = setUp(http);
+    const { google, waits } = setUp(http);
     expect(await codeOf(google.getText(listUrl))).toBe("rate-limited");
-    expect(clock.waits).toEqual([]);
+    expect(waits).toEqual([]);
   });
 
   it.each([400, 401, 403, 404, 408])("doesn't retry a %i", async (status) => {
@@ -208,22 +204,26 @@ describe("GoogleApi retries", () => {
     expect(http.requests).toHaveLength(2);
   });
 
-  it("doesn't retry without a clock", async () => {
-    const http = new FakeHttp(response(503));
-    const google = googleApi({ http }, { secret: "google-account", service: "Gmail" });
-    expect(await codeOf(google.getText(listUrl))).toBe("unavailable");
-    expect(http.requests).toHaveLength(1);
+  it("waits with the call's own signal", async () => {
+    const http = new FakeHttp(response(503), response(200, "ok"));
+    const signals: (AbortSignal | undefined)[] = [];
+    const google = googleApi(
+      { http, wait: async (_ms, signal) => void signals.push(signal) },
+      { secret: "google-account", service: "Gmail" },
+    );
+    const signal = new AbortController().signal;
+    await google.getText(listUrl, signal);
+    expect(signals).toEqual([signal]);
   });
 
-  it("stops when the wait is cancelled", async () => {
+  it("stops when the call is cancelled before the wait", async () => {
+    const controller = new AbortController();
     const cancelled = new Error("cancelled");
+    controller.abort(cancelled);
     const http = new FakeHttp(response(503));
-    const clock: RetryClock = {
-      now: () => new Date(0),
-      sleep: async () => Promise.reject(cancelled),
-    };
-    const google = googleApi({ http }, { secret: "google-account", service: "Gmail", clock });
-    await expect(google.getText(listUrl)).rejects.toBe(cancelled);
+    const { google, waits } = setUp(http);
+    await expect(google.getText(listUrl, controller.signal)).rejects.toBe(cancelled);
     expect(http.requests).toHaveLength(1);
+    expect(waits).toEqual([]);
   });
 });

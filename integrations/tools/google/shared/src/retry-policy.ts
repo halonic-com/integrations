@@ -5,23 +5,10 @@
  * repeat.
  */
 
-/** Gives the time and waits. Passed in, so tests and replays control time. */
-export interface RetryClock {
-  /** The current time, for a `retry-after` given as a date. */
-  now(): Date;
-  /**
-   * Waits `ms` milliseconds.
-   *
-   * @throws when `signal` aborts, so a call the user cancels stops waiting
-   */
-  sleep(ms: number, signal?: AbortSignal): Promise<void>;
-}
+import { type HttpResponse, maxIntegrationWaitMs } from "./http.ts";
 
 /** A request is sent at most three times: once, then retried twice. */
 export const maxRetries = 2;
-
-/** The longest `retry-after` we wait for. A longer one ends the call instead. */
-export const maxRetryAfterMs = 30_000;
 
 /** The wait before the first retry when Google gives no `retry-after`; it doubles for the second. */
 const firstBackoffMs = 1_000;
@@ -54,34 +41,47 @@ export function isRetryableStatus(status: number): boolean {
 
 /**
  * How long to wait before retry number `retry` (0 for the first), or
- * `undefined` when Google asks for a longer wait than we allow.
+ * `undefined` when Google asks for a longer wait than the host allows.
  *
- * @param retryAfter - the response's `retry-after` header, if any: seconds,
- *   or an HTTP date (RFC 9110, section 10.2.3)
+ * Reads the response's `retry-after`: seconds, or an HTTP date (RFC 9110,
+ * section 10.2.3). A date is measured against the response's own `date`
+ * header, so it needs no clock and Google's clock is compared with
+ * Google's clock. Without a `retry-after` that can be read, or a date form
+ * without a `date` header, it backs off 1 s, then 2 s.
  */
-export function retryDelayMs(
-  retryAfter: string | null,
-  retry: number,
-  now: Date,
-): number | undefined {
-  const asked = retryAfter === null ? undefined : parseRetryAfterMs(retryAfter, now);
+export function retryDelayMs(headers: HttpResponse["headers"], retry: number): number | undefined {
+  const asked = askedWaitMs(headers);
   if (asked === undefined) {
     return firstBackoffMs * 2 ** retry;
   }
-  return asked <= maxRetryAfterMs ? asked : undefined;
+  return asked <= maxIntegrationWaitMs ? asked : undefined;
 }
 
-/** A `retry-after` in milliseconds, at least 0, or `undefined` when it can't be read. */
-function parseRetryAfterMs(value: string, now: Date): number | undefined {
-  const text = value.trim();
-  if (/^\d+$/.test(text)) {
-    return Number(text) * 1_000;
-  }
-  // Every HTTP date format starts with the day's name. Checking that first
-  // keeps Date.parse from reading text such as "-5" as a year.
-  const date = /^[a-z]{3}/i.test(text) ? Date.parse(text) : Number.NaN;
-  if (Number.isNaN(date)) {
+/** The wait `retry-after` asks for in milliseconds, at least 0, or `undefined` when it can't be read. */
+function askedWaitMs(headers: HttpResponse["headers"]): number | undefined {
+  const retryAfter = headers.get("retry-after")?.trim();
+  if (retryAfter === undefined) {
     return undefined;
   }
-  return Math.max(0, date - now.getTime());
+  if (/^\d+$/.test(retryAfter)) {
+    return Number(retryAfter) * 1_000;
+  }
+  const until = parseHttpDate(retryAfter);
+  const sent = parseHttpDate(headers.get("date") ?? "");
+  if (until === undefined || sent === undefined) {
+    return undefined;
+  }
+  return Math.max(0, until - sent);
+}
+
+/** An HTTP date in milliseconds since 1970, or `undefined` when it isn't one. */
+function parseHttpDate(value: string): number | undefined {
+  const text = value.trim();
+  // Every HTTP date format starts with the day's name. Checking that first
+  // keeps Date.parse from reading text such as "-5" as a year.
+  if (!/^[a-z]{3}/i.test(text)) {
+    return undefined;
+  }
+  const time = Date.parse(text);
+  return Number.isNaN(time) ? undefined : time;
 }

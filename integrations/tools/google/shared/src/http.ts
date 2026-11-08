@@ -1,15 +1,24 @@
 /**
- * The small part of the kit's HTTP client this library uses.
+ * The small part of the kit's integration host this library uses: its HTTP
+ * client and its `wait`.
  *
- * It follows the `HttpClient` port in the main repo
+ * The client follows the `HttpClient` port in the main repo
  * (`packages/core/ports/src/http-client.ts`): the same signature as the Web
  * `fetch`, where an HTTP error status still resolves. On top of the port,
  * the kit's `host.http` takes `auth`, which names a secret for the kit to
- * add, so this library never sees a key or token value.
+ * add, so this library never sees a key or token value. `wait` and
+ * {@link maxIntegrationWaitMs} follow `IntegrationHost` in
+ * `packages/core/ports/src/integration.ts`.
  *
  * Not settled yet: these are local types until the kit is published. Then
- * they become imports from `@halonicjs/integration-kit`.
+ * they become imports from `@halonicjs/integration-kit` and `@halonicjs/ports`.
  */
+
+/**
+ * The longest `host.wait` waits, in milliseconds (30 s). The host enforces
+ * it; the retry policy gives up before asking for longer.
+ */
+export const maxIntegrationWaitMs = 30_000;
 
 /** Where the kit puts a secret. Google only needs a bearer token. */
 export interface SecretPlacement {
@@ -51,8 +60,15 @@ export interface HttpClient {
 
 /**
  * The part of the kit's `IntegrationHost` this library uses, as
- * `Pick<IntegrationHost, "http">`. Tests pass `{ http }`.
+ * `Pick<IntegrationHost, "http" | "wait">`. Tests pass `{ http, wait }`.
  */
-export interface HttpHost {
+export interface GoogleHost {
   readonly http: HttpClient;
+  /**
+   * Waits `ms` milliseconds, at most {@link maxIntegrationWaitMs}. Pass the
+   * call's own `signal`, so cancelling the call also cancels the pause.
+   *
+   * @throws `signal.reason` when `signal` aborts during the wait or is already aborted
+   */
+  wait(ms: number, signal?: AbortSignal): Promise<void>;
 }

@@ -1,13 +1,7 @@
 import type { z } from "zod";
 import { errorForResponse, type FailedRequest, unexpectedResponse } from "./error-for-response.ts";
-import type { HttpClient, HttpHost, HttpRequestInit, HttpResponse } from "./http.ts";
-import {
-  isRepeatable,
-  isRetryableStatus,
-  maxRetries,
-  type RetryClock,
-  retryDelayMs,
-} from "./retry-policy.ts";
+import type { GoogleHost, HttpRequestInit, HttpResponse } from "./http.ts";
+import { isRepeatable, isRetryableStatus, maxRetries, retryDelayMs } from "./retry-policy.ts";
 
 /** How a Google integration sets up its {@link GoogleApi}. */
 export interface GoogleApiOptions {
@@ -15,11 +9,6 @@ export interface GoogleApiOptions {
   readonly secret: string;
   /** The service's name for the user, used in error messages: `Gmail`, `Google Drive`. */
   readonly service: string;
-  /**
-   * Gives the time and waits between retries. Without one, nothing is
-   * retried: a `429` or `5xx` becomes an error straight away.
-   */
-  readonly clock?: RetryClock | undefined;
 }
 
 /** One request to a Google API. */
@@ -48,11 +37,11 @@ export interface GoogleRequest {
  * unchanged and are never retried (guide, section 7, rule 7).
  */
 export class GoogleApi {
-  readonly #http: HttpClient;
+  readonly #host: GoogleHost;
   readonly #options: GoogleApiOptions;
 
-  constructor(host: HttpHost, options: GoogleApiOptions) {
-    this.#http = host.http;
+  constructor(host: GoogleHost, options: GoogleApiOptions) {
+    this.#host = host;
     this.#options = options;
   }
 
@@ -106,25 +95,16 @@ export class GoogleApi {
   async send(request: GoogleRequest): Promise<HttpResponse> {
     const mayRetry = isRepeatable(request.method, request.repeatable ?? false);
     for (let retry = 0; ; retry++) {
-      const response = await this.#http.fetch(request.url, this.#init(request));
+      const response = await this.#host.http.fetch(request.url, this.#init(request));
       if (response.ok) {
         return response;
       }
-      const delay = mayRetry && retry < maxRetries ? this.#retryDelay(response, retry) : undefined;
-      if (delay === undefined || this.#options.clock === undefined) {
+      const delay = mayRetry && retry < maxRetries ? retryDelay(response, retry) : undefined;
+      if (delay === undefined) {
         throw errorForResponse(response.status, await response.text(), this.#failed(request.url));
       }
-      await this.#options.clock.sleep(delay, request.signal);
+      await this.#host.wait(delay, request.signal);
     }
-  }
-
-  /** The wait before the next try, or `undefined` when this response isn't retried. */
-  #retryDelay(response: HttpResponse, retry: number): number | undefined {
-    const clock = this.#options.clock;
-    if (clock === undefined || !isRetryableStatus(response.status)) {
-      return undefined;
-    }
-    return retryDelayMs(response.headers.get("retry-after"), retry, clock.now());
   }
 
   #init(request: GoogleRequest): HttpRequestInit {
@@ -165,12 +145,17 @@ export class GoogleApi {
 
 const acceptJson = { accept: "application/json" } as const;
 
+/** The wait before the next try, or `undefined` when this response isn't retried. */
+function retryDelay(response: HttpResponse, retry: number): number | undefined {
+  return isRetryableStatus(response.status) ? retryDelayMs(response.headers, retry) : undefined;
+}
+
 /**
  * Sets up the request helper for one Google service.
  *
  * @example
  * const google = googleApi(host, { secret: "google-account", service: "Gmail" });
  */
-export function googleApi(host: HttpHost, options: GoogleApiOptions): GoogleApi {
+export function googleApi(host: GoogleHost, options: GoogleApiOptions): GoogleApi {
   return new GoogleApi(host, options);
 }
