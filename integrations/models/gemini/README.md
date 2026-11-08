@@ -38,6 +38,25 @@ again.
 The answer maps back to `ChatResponse` from the first candidate: its text,
 its `functionCall` parts as `toolCalls`, `usage`, and its finish reason.
 
+`stream` sends the same request to
+[`streamGenerateContent`](https://aistudio.google.com/api-reference/generate-content)
+with `alt=sse` and reads the chunks with `EventStream` from
+`integrations/shared`. It yields each piece of answer text as `text`, each
+piece of the thought summary as `reasoning`, and each function call as one
+`tool-call` with its id, name and all its arguments: Gemini sends a call
+whole. It ends with one `done` holding exactly what `chat` returns for the
+same answer: the parts are rebuilt from the chunks and mapped by the same
+code, signatures and made-up call ids included. Text pieces are joined
+into one part as the non-streamed answer has them, but never past a
+thought signature, so each signature stays on the text it came with.
+
+Gemini sends no end event. A stream counts as complete only once the
+candidate's finish reason has come (or Google blocked the prompt): Google
+can send a thought signature after the text, so a stream that closes
+before the finish reason is cut off and is `unexpected-response`. An error
+chunk mid-answer becomes a `GeminiError` by Google's status name, then by
+its HTTP status (`UNAVAILABLE` → `unavailable`).
+
 ### Thought signatures
 
 Gemini 3 and later models sign their reasoning with a `thoughtSignature` on
@@ -61,9 +80,13 @@ never sent to Gemini.
 
 ## Limits
 
-- **Capabilities:** `tools` and `jsonOutput`. `vision` is `false` until
-  `ChatMessage` carries images. `streaming` is `false` until `stream` is
-  added.
+- **Capabilities:** `tools`, `jsonOutput` and `streaming`. `vision` is
+  `false` until `ChatMessage` carries images.
+- **Headers timeout:** the sheet keeps the 10-minute `headersTimeoutMs`,
+  because `chat` gets its headers only when the answer is done. `stream`
+  gets them at once and then has the kit's 60 seconds between two chunks.
+  Google sends nothing while the model thinks, so a long thought without
+  `includeThoughts` may reach that limit; this isn't measured yet.
 - **Sampling:** `temperature`, `topP` and `stop` are sent as given. Newer
   models refuse some of them, and a workflow that sets them for such a
   model gets `bad-arguments`.
@@ -88,4 +111,8 @@ never sent to Gemini.
   signatures are random-looking, so the recorder replaces them with
   `scrubbed-secret-<n>`. The same signature gets the same stand-in, so a
   replay still shows it going back unchanged. Replace them with real
-  recordings once both are available.
+  recordings once both are available. The streamed recordings follow the
+  documented chunk shapes the same way; how Gemini splits a real answer
+  into chunks, and where a streamed signature lands, still needs a real
+  recording. Thought summaries, signatures and function calls in a stream
+  are tested with hand-written chunks in `from-stream.test.ts`.
