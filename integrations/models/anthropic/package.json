@@ -1,0 +1,26 @@
+{
+  "name": "@halonicjs/integration-model-anthropic",
+  "private": true,
+  "type": "module",
+  "description": "Anthropic model provider: Claude models through the Messages API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "owen"
+  }
+}
