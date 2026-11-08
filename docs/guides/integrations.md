@@ -456,11 +456,19 @@ result.
 
    export class AnthropicError extends Error {
      override readonly name = "AnthropicError";
-     constructor(readonly code: AnthropicErrorCode, message: string) {
+     readonly code: AnthropicErrorCode;
+
+     constructor(code: AnthropicErrorCode, message: string) {
        super(message);
+       this.code = code;
      }
    }
    ```
+
+   Declare `code` as a field and assign it in the constructor. The
+   TypeScript preset sets `erasableSyntaxOnly`, which refuses parameter
+   properties such as `constructor(readonly code: …)`, along with `enum`
+   and `namespace`.
 
 2. **Map HTTP status codes in one function** in the client, the same way in
    every integration:
