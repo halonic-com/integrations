@@ -54,6 +54,15 @@ describe("scrubText", () => {
     expect(elapsed).toBeLessThan(1_000);
   });
 
+  it.each([".", "_", "+", "-", "%2C", ""])(
+    "replaces both of two addresses glued together with %j",
+    (separator) => {
+      const scrubbed = scrubText(`${FAKE.email}${separator}x@other.test`, "here", testContext());
+      expect(scrubbed).not.toContain("person.one");
+      expect(scrubbed).not.toContain("x@other.test");
+    },
+  );
+
   it("replaces an e-mail address inside HTML", () => {
     const html = `<p>Write to <a href="mailto:${FAKE.email}">${FAKE.email}</a></p>`;
     expect(scrubText(html, "here", testContext())).toBe(

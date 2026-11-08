@@ -43,12 +43,14 @@ export const AUTH_SCHEME = /^(?:Bearer|Basic|Digest|Token)\s+/i;
 export const CANDIDATE_RUN = /(?<![\w+/-])[\w+/-]{16,}={0,2}(?![\w+/=-])/g;
 
 /**
- * E-mail addresses, including ones in HTML, URLs and mail headers. The
- * lookbehind makes a match start only where a run of address characters
- * starts, so a long run with no `@` in it, such as a base64 message body, is
- * scanned once rather than again from every character.
+ * E-mail addresses, including ones in HTML, URLs and mail headers. The part
+ * before the `@` is capped at 64 characters, the most an address may have.
+ * Without the cap, a long run with no `@` in it, such as a base64 message
+ * body, would be scanned again from every character. The cap keeps that
+ * linear and still lets a match start anywhere, so an address glued onto the
+ * end of another one is found as well.
  */
-export const EMAIL = /(?<![\w.%+-])[\w.%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
+export const EMAIL = /[\w.%+-]{1,64}@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 
 /**
  * Phone numbers written the way people write them: with a country code

@@ -62,8 +62,8 @@ describe("findLeaks", () => {
 
   it("scans a large base64 body quickly", () => {
     // A body of 200,000 base64 characters with no `%` or `@` in it took about
-    // 26 seconds before the encoded-text and address patterns were anchored
-    // to the start of a run.
+    // 26 seconds before the encoded-text pattern was anchored to the start of
+    // a run and the part of an address before the `@` was capped.
     const body = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo".repeat(6_000).slice(0, 200_000);
     const encodedAddress = encodeURIComponent(FAKE.email);
     const started = performance.now();
@@ -71,6 +71,16 @@ describe("findLeaks", () => {
     const elapsed = performance.now() - started;
     expect(found).toEqual(["email"]);
     expect(elapsed).toBeLessThan(1_000);
+  });
+
+  it.each([".", "_", "+", "%2C"])("finds an address glued onto another with %j", (separator) => {
+    expect(kinds(`{"x":"${FAKE.email}${separator}x@other.test"}`)).toContain("email");
+  });
+
+  it("refuses two scrubbed addresses that ended up glued together", () => {
+    // The scrubber replaces glued addresses one by one, so their stand-ins
+    // can run together. That no longer reads as a stand-in, so it is refused.
+    expect(kinds(`{"x":"person1@example.comperson2@example.com"}`)).toEqual(["email"]);
   });
 
   it("accepts the scrubber's own stand-ins", () => {
