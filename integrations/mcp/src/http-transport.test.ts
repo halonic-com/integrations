@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { McpError } from "./errors.ts";
 import { errorForStatus } from "./http-status.ts";
 import {
   maxResumesPerRequest,
@@ -279,6 +280,87 @@ describe("StreamableHttpTransport", () => {
     expect(String(error)).not.toContain("secret detail");
   });
 
+  describe("freeing the connection of an answer it doesn't read", () => {
+    const html = {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    } as const;
+
+    it("cancels the confirmation of a notification", async () => {
+      const { server } = await connect([]);
+      server.assertNoBodyLeftOpen();
+    });
+
+    it.each([
+      [
+        "an error status",
+        [
+          {
+            request: { method: "POST", headers: session, body: callRequest },
+            response: { status: 500, body: { kind: "text", text: "busy" } },
+          },
+        ],
+      ],
+      [
+        "an unknown content type",
+        [
+          {
+            request: { method: "POST", headers: session, body: callRequest },
+            response: { ...html, body: { kind: "text", text: "<html>" } },
+          },
+        ],
+      ],
+      [
+        "a refused resume",
+        [
+          cutCall([{ id: "e1" }], true),
+          {
+            request: { method: "GET" },
+            response: { status: 405, body: { kind: "text", text: "no" } },
+          },
+        ],
+      ],
+      [
+        "a resume answered without a stream",
+        [
+          cutCall([{ id: "e1" }], true),
+          {
+            request: { method: "GET" },
+            response: { ...html, body: { kind: "text", text: "<html>" } },
+          },
+        ],
+      ],
+    ] as const satisfies readonly (readonly [string, readonly FakeExchange[]])[])(
+      "cancels %s",
+      async (_case, exchanges) => {
+        const { server, mcp } = await connect([...exchanges]);
+        await expect(mcp.callTool("echo", {})).rejects.toBeInstanceOf(McpError);
+        server.assertAllUsed();
+        server.assertNoBodyLeftOpen();
+      },
+    );
+
+    it.each([
+      [200, "resolves"],
+      [404, "resolves"],
+      [500, "rejects"],
+    ] as const)("cancels the answer to DELETE (%i)", async (status, outcome) => {
+      const { server, mcp } = await connect([
+        {
+          request: { method: "DELETE", headers: session },
+          response: { status, body: { kind: "text", text: "bye" } },
+        },
+      ]);
+      if (outcome === "resolves") {
+        await expect(mcp.close()).resolves.toBeUndefined();
+      } else {
+        await expect(mcp.close()).rejects.toBeInstanceOf(McpError);
+      }
+      server.assertAllUsed();
+      server.assertNoBodyLeftOpen();
+    });
+  });
+
   it("refuses a session id with characters a header can't carry", async () => {
     const server = new FakeServer([
       {
@@ -293,6 +375,7 @@ describe("StreamableHttpTransport", () => {
       clientInfo,
     });
     await expect(mcp.initialize()).rejects.toMatchObject({ code: "unexpected-response" });
+    server.assertNoBodyLeftOpen();
   });
 
   it("reports an expired session when the server forgets it", async () => {

@@ -73,10 +73,16 @@ export class StreamableHttpTransport implements McpTransport {
       JSON.stringify(message),
       signal,
     );
-    this.#throwUnlessOk(response);
-    this.#rememberSession(response, message);
+    await this.#throwUnlessOk(response);
+    try {
+      this.#rememberSession(response, message);
+    } catch (error) {
+      await discardBody(response);
+      throw error;
+    }
     if (!isRequest(message)) {
       // A notification or a response: the server only confirms it got it (202).
+      await discardBody(response);
       return;
     }
     const contentType = mediaType(response);
@@ -85,6 +91,7 @@ export class StreamableHttpTransport implements McpTransport {
     } else if (contentType === "text/event-stream" && response.body !== null) {
       yield* this.#readAnswerStream(response.body, message.id, signal);
     } else {
+      await discardBody(response);
       throw unexpectedResponse();
     }
   }
@@ -99,6 +106,7 @@ export class StreamableHttpTransport implements McpTransport {
     }
     const response = await this.#fetch("DELETE", {}, undefined, signal);
     this.#sessionId = undefined;
+    await discardBody(response);
     // 404: the session is already gone. 405: the server doesn't let clients
     // end sessions and ends them itself. Both are fine.
     if (!response.ok && response.status !== 404 && response.status !== 405) {
@@ -153,8 +161,9 @@ export class StreamableHttpTransport implements McpTransport {
   /** Asks the server to send the rest of the stream, after the event with this id. */
   async #resume(lastEventId: string, signal: AbortSignalLike | undefined): Promise<ByteStream> {
     const response = await this.#fetch("GET", { "last-event-id": lastEventId }, undefined, signal);
-    this.#throwUnlessOk(response);
+    await this.#throwUnlessOk(response);
     if (mediaType(response) !== "text/event-stream" || response.body === null) {
+      await discardBody(response);
       throw unexpectedResponse();
     }
     return response.body;
@@ -183,8 +192,10 @@ export class StreamableHttpTransport implements McpTransport {
     });
   }
 
-  #throwUnlessOk(response: HttpResponse): void {
+  /** Throws our error for a refused request; the server's text is never read. */
+  async #throwUnlessOk(response: HttpResponse): Promise<void> {
     if (!response.ok) {
+      await discardBody(response);
       throw errorForStatus(response.status, this.#sessionId !== undefined);
     }
   }
@@ -202,6 +213,18 @@ export class StreamableHttpTransport implements McpTransport {
 
 function isRequest(message: OutgoingMessage): message is JsonRpcRequest {
   return "method" in message && "id" in message;
+}
+
+/**
+ * Cancels the body of an answer we don't read, so the kit can close or
+ * reuse its connection instead of leaving it open until the server gives up.
+ * A failure to cancel changes nothing for the caller, so it is ignored.
+ */
+async function discardBody(response: HttpResponse): Promise<void> {
+  await response.body
+    ?.getReader()
+    .cancel()
+    .catch(() => undefined);
 }
 
 /** The content type without parameters such as `charset`. */

@@ -6,6 +6,8 @@ import type { HttpClient, HttpRequestInit, HttpResponse } from "@halonicjs/integ
  * exists, plus two things recordings can't hold: event ids and a dropped
  * connection, which the resume tests need. Like replay, it fails on an
  * unexpected call and `assertAllUsed` fails on an unused exchange.
+ * `assertNoBodyLeftOpen` checks that the client read or cancelled every
+ * answer, so no connection stays open.
  */
 export interface FakeExchange {
   /** What the call must be; only the headers listed are compared. */
@@ -45,6 +47,8 @@ export const endpoint = "https://mcp.example.com/mcp";
 export class FakeServer implements HttpClient {
   readonly calls: { url: string; init: HttpRequestInit | undefined }[] = [];
   readonly #exchanges: FakeExchange[];
+  /** The answers whose body was neither read to the end nor cancelled. */
+  readonly #openBodies = new Set<FakeExchange["response"]>();
 
   constructor(exchanges: readonly FakeExchange[]) {
     this.#exchanges = [...exchanges];
@@ -55,12 +59,19 @@ export class FakeServer implements HttpClient {
     const exchange = this.#exchanges.shift();
     if (exchange === undefined) throw new Error(`Unexpected call: ${init?.method} ${url}`);
     checkRequest(exchange.request, url, init);
-    return toResponse(exchange.response);
+    this.#openBodies.add(exchange.response);
+    return toResponse(exchange.response, () => this.#openBodies.delete(exchange.response));
   }
 
   assertAllUsed(): void {
     if (this.#exchanges.length > 0)
       throw new Error(`${this.#exchanges.length} exchanges were not used.`);
+  }
+
+  assertNoBodyLeftOpen(): void {
+    const statuses = [...this.#openBodies].map((response) => response.status);
+    if (statuses.length > 0)
+      throw new Error(`Answers left open, by status: ${statuses.join(", ")}.`);
   }
 }
 
@@ -90,7 +101,8 @@ function checkRequest(
   }
 }
 
-function toResponse(response: FakeExchange["response"]): HttpResponse {
+/** `onClosed` runs once the body is read to the end, drops or is cancelled. */
+function toResponse(response: FakeExchange["response"], onClosed: () => void): HttpResponse {
   const headers = new Map(
     Object.entries(response.headers ?? {}).map(([name, value]) => [name.toLowerCase(), value]),
   );
@@ -104,7 +116,10 @@ function toResponse(response: FakeExchange["response"]): HttpResponse {
     ok: response.status >= 200 && response.status < 300,
     status: response.status,
     headers: { get: (name) => headers.get(name.toLowerCase()) ?? null },
-    text: async () => text,
+    text: async () => {
+      onClosed();
+      return text;
+    },
     body: {
       getReader: () => ({
         async read() {
@@ -112,10 +127,13 @@ function toResponse(response: FakeExchange["response"]): HttpResponse {
             sent = true;
             return { done: false, value: encoded };
           }
+          onClosed();
           if (drop) throw new Error("connection reset");
           return { done: true };
         },
-        cancel: async () => undefined,
+        cancel: async () => {
+          onClosed();
+        },
         releaseLock: () => undefined,
       }),
     },
