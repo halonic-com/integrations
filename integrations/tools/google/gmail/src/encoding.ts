@@ -1,7 +1,8 @@
 /**
  * Base64 and UTF-8 for mail bodies. Gmail sends every body as base64url
- * (RFC 4648, section 5). The integration preset has no `TextDecoder` or
- * `atob` types (no DOM, no Node), so they are written out here; they are
+ * (RFC 4648, section 5) and takes an outgoing message the same way. The
+ * integration preset has no `TextDecoder`, `TextEncoder`, `atob` or `btoa`
+ * types (no DOM, no Node), so they are written out here; they are
  * candidates for the kit.
  */
 
@@ -93,4 +94,54 @@ function readUtf8Sequence(
 /** A Gmail body (`body.data`) as text. Gmail doesn't convert charsets; bodies are read as UTF-8. */
 export function decodeBody(data: string | undefined): string {
   return data === undefined || data === "" ? "" : decodeUtf8(decodeBase64(data));
+}
+
+/** Encodes text as UTF-8, like `TextEncoder` does: a lone surrogate becomes U+FFFD. */
+export function encodeUtf8(text: string): Uint8Array {
+  const bytes: number[] = [];
+  for (const character of text) {
+    let codePoint = character.codePointAt(0) ?? 0xfffd;
+    if (codePoint >= 0xd800 && codePoint <= 0xdfff) codePoint = 0xfffd;
+    if (codePoint < 0x80) {
+      bytes.push(codePoint);
+    } else if (codePoint < 0x800) {
+      bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
+    } else if (codePoint < 0x10000) {
+      bytes.push(
+        0xe0 | (codePoint >> 12),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f),
+      );
+    } else {
+      bytes.push(
+        0xf0 | (codePoint >> 18),
+        0x80 | ((codePoint >> 12) & 0x3f),
+        0x80 | ((codePoint >> 6) & 0x3f),
+        0x80 | (codePoint & 0x3f),
+      );
+    }
+  }
+  return Uint8Array.from(bytes);
+}
+
+/** Standard base64 with padding, as MIME bodies and encoded headers use it. */
+export function encodeBase64(bytes: Uint8Array): string {
+  const characters: string[] = [];
+  for (let index = 0; index < bytes.length; index += 3) {
+    const chunk = [bytes[index] ?? 0, bytes[index + 1] ?? 0, bytes[index + 2] ?? 0] as const;
+    const triple = (chunk[0] << 16) | (chunk[1] << 8) | chunk[2];
+    const available = Math.min(3, bytes.length - index);
+    for (let sextet = 0; sextet < 4; sextet++) {
+      // Three bytes fill four characters; fewer fill one more than they have, then "=".
+      characters.push(
+        sextet <= available ? (base64Alphabet[(triple >> (18 - 6 * sextet)) & 0x3f] ?? "") : "=",
+      );
+    }
+  }
+  return characters.join("");
+}
+
+/** Base64url without padding, as Gmail takes a whole message in `raw`. */
+export function encodeBase64Url(bytes: Uint8Array): string {
+  return encodeBase64(bytes).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
