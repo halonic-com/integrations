@@ -18,10 +18,12 @@ tools: []
 needs: []
 
 limits:
-  # Without streaming, the Messages API sends its response headers only once
-  # the whole answer is done, so a long answer would hit the default 30 s
-  # headers timeout. Allow it the full 10 minutes the kit allows overall.
-  # The field name follows the kit and may still change in the sheet.
+  # `chat` doesn't stream, and then the Messages API sends its response
+  # headers only once the whole answer is done, so a long answer would hit
+  # the default 30 s headers timeout. Allow it the full 10 minutes the kit
+  # allows overall. `stream` gets its headers at once and doesn't need it,
+  # but the sheet has one limit for both. The field name follows the kit and
+  # may still change in the sheet.
   headersTimeoutMs: 600000
 
 recording:
@@ -34,3 +36,12 @@ recording:
     - response.body.content[*].text
     - response.body.content[*].thinking # the model's reasoning about the user's content
     - response.body.content[*].input
+    # The same content in a streamed answer: each event's data.
+    - response.body[*].data.content_block.text
+    - response.body[*].data.content_block.thinking
+    - response.body[*].data.content_block.input
+    - response.body[*].data.delta.text
+    - response.body[*].data.delta.thinking
+    # Pieces of a tool's arguments. Each piece becomes a placeholder, so a
+    # streamed tool call doesn't replay yet: see the README.
+    - response.body[*].data.delta.partial_json

@@ -252,6 +252,9 @@ importers:
 
   integrations/models/anthropic:
     dependencies:
+      '@halonicjs/integration-shared':
+        specifier: workspace:*
+        version: link:../../shared
       zod:
         specifier: 'catalog:'
         version: 4.6.7
