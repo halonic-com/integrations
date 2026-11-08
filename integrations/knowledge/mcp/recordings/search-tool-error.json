@@ -1,0 +1,182 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "halonic-knowledge-mcp",
+                "version": "0.1.0"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://docs.example.com/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "capabilities": {
+                "tools": {
+                  "listChanged": false
+                }
+              },
+              "protocolVersion": "2025-11-25",
+              "serverInfo": {
+                "name": "example-docs",
+                "version": "1.4.0"
+              }
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+          "mcp-protocol-version": "2025-11-25",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "method": "POST",
+        "url": "https://docs.example.com/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {},
+        "status": 202
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "arguments": {
+                "field-1": "<scrubbed:content>",
+                "field-2": 0
+              },
+              "name": "search_docs"
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+          "mcp-protocol-version": "2025-11-25",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "method": "POST",
+        "url": "https://docs.example.com/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "result": {
+              "content": [
+                {
+                  "text": "<scrubbed:content>",
+                  "type": "text"
+                }
+              ],
+              "isError": true
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "knowledge-mcp",
+  "scenario": "search-tool-error",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.body.params.arguments",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.result.content[0].text",
+      "rule": "user-content"
+    }
+  ]
+}

@@ -48,6 +48,8 @@ The old `packages/knowledge/mcp` took shortcuts this version doesn't:
   says so, and Halonic fences it off.
 - **One host, from a setting.** The key goes only to the server the
   workspace chose. Arbitrary `headers` from config are no longer sent.
+- **Honest capabilities.** `semantic` is `false`: the source can't know
+  how the server searches.
 - **Our errors.** `KnowledgeMcpError` with a `code`; never the server's
   own text.
 
@@ -77,9 +79,21 @@ common shapes (`hits.ts`, `document.ts`):
 | ref                 | 1,000 characters; longer refs aren't results |
 | document            | 100,000 characters, with a note when cut     |
 
-Text that is cut ends with `…`, never in the middle of a character.
+A query or a ref longer than 1,000 characters is refused before any
+request. Text that is cut ends with `…`, never in the middle of a character.
 
-## Still to come (HAL-346)
+## Requests
 
-The knowledge provider with its recordings follows in the next pull
-request.
+The source opens the MCP session on the first search or read, never in
+`connect`, and all sources of one connection share it. Each `search` and
+`get` is one tool call; the first also sends the two requests of the
+handshake. A session that fails to open or that the server ends is
+dropped, and the next call opens a new one. The failed call itself is
+never repeated. `close` ends the session on the server.
+
+## Recordings
+
+There is no test server yet, so the recordings in `recordings/` are
+invented MCP traffic fed through the recorder's `prepareRecording` with
+this sheet's `userContent` paths. They are scrubbed as a real recording
+would be, which also tests the paths.
