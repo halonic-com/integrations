@@ -79,7 +79,8 @@ integrations/
 │     └─ drive/           tool-google-drive
 ├─ knowledge/             knowledge sources
 │  └─ mcp/                knowledge-mcp
-└─ mcp/                   mcp: our own MCP client
+├─ mcp/                   mcp: our own MCP client
+└─ shared/                a library, not an integration: code different providers share
 ```
 
 - A **model provider** goes in `integrations/models/<provider>/`.
@@ -94,6 +95,9 @@ integrations/
   A `shared/` folder is a **library**, not an integration: it has no
   permission sheet, no tools and no `Integration`. Never copy its code into
   a service.
+- **Code shared by different providers**, such as reading a streamed
+  answer for the model providers and the MCP client, lives in the
+  `integrations/shared/` library until the kit offers it.
 - An integration that belongs to no group sits directly in
   `integrations/<name>/`. Its name may not start with `model-`, `tool-` or
   `knowledge-`: those names belong to the groups.
