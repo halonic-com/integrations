@@ -31,6 +31,9 @@ const firstBackoffMs = 1_000;
  * Any other method only when the caller says the service makes it safe to
  * repeat, such as with an idempotency key. Never a `DELETE`: a timeout
  * doesn't prove it didn't happen.
+ *
+ * Methods are matched case-sensitively, so callers must pass upper-case
+ * names. The request helper's method type only allows those.
  */
 export function isRepeatable(method: string, repeatable: boolean): boolean {
   switch (method) {

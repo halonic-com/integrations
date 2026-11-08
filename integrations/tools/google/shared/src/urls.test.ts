@@ -14,6 +14,16 @@ describe("googleUrl", () => {
     expect(url).toBe("https://www.googleapis.com/drive/v3/files/..%2F..%2Fadmin%3Fx%3D1%23y");
   });
 
+  it.each([
+    ["an empty part", ""],
+    ["a '.' part", "."],
+    ["a '..' part", ".."],
+  ])("refuses %s, which would change the path", (_label, part) => {
+    expect(() =>
+      googleUrl(googleBaseUrls.gmail, ["users", "me", "messages", part, "trash"]),
+    ).toThrow(expect.objectContaining({ name: "GoogleError", code: "bad-arguments" }));
+  });
+
   it("encodes query values, repeats lists and leaves out undefined", () => {
     const url = googleUrl(googleBaseUrls.gmail, ["users", "me", "messages"], {
       q: "from:billing@example.com subject:a&b=c",

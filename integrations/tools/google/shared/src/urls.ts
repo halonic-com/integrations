@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GoogleError } from "./errors.ts";
 
 /** The base URLs of the Google APIs our integrations call. Each ends in `/`. */
 export const googleBaseUrls = {
@@ -12,11 +13,19 @@ export const googleBaseUrls = {
 export type QueryValue = string | number | boolean | readonly string[] | undefined;
 
 /**
+ * Path parts that `new URL` would resolve as dot segments, or that would
+ * point at the parent resource. Encoding doesn't help: `new URL` also
+ * resolves `%2e`, so these are refused instead.
+ */
+const unsafePathParts: ReadonlySet<string> = new Set(["", ".", ".."]);
+
+/**
  * Builds a Google API URL and returns its `href` for `host.http`.
  *
  * Each path part is encoded on its own, so an id such as `../admin` can't
- * change the path (guide, section 4, rule 4). Query values are encoded by
- * `URLSearchParams`.
+ * change the path (guide, section 4, rule 4). A part that is empty, `.` or
+ * `..` would still change it, so it throws a `bad-arguments` error. Query
+ * values are encoded by `URLSearchParams`.
  *
  * @example
  * googleUrl(googleBaseUrls.gmail, ["users", "me", "messages", messageId], {
@@ -29,11 +38,22 @@ export function googleUrl(
   path: readonly string[],
   query: Readonly<Record<string, QueryValue>> = {},
 ): string {
-  const url = new URL(path.map((part) => encodeURIComponent(part)).join("/"), base);
+  const url = new URL(path.map(encodePathPart).join("/"), base);
   for (const [name, value] of Object.entries(query)) {
     appendQueryValue(url.searchParams, name, value);
   }
   return url.href;
+}
+
+function encodePathPart(part: string): string {
+  if (unsafePathParts.has(part)) {
+    // The value is left out of the message: it may come from the model.
+    throw new GoogleError(
+      "bad-arguments",
+      "A path part can't be empty, '.' or '..'. Check the ids",
+    );
+  }
+  return encodeURIComponent(part);
 }
 
 function appendQueryValue(params: URLSearchParams, name: string, value: QueryValue): void {
