@@ -171,4 +171,16 @@ export class GmailClient {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts"]);
     return await this.#google.postJson(url, { message }, createdDraftSchema, signal);
   }
+
+  /** One request: sends once. `postJson` never retries, so a timeout can't send the mail twice. */
+  async sendMessage(message: RawMessage, signal?: AbortSignal): Promise<SentMessage> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", "send"]);
+    return await this.#google.postJson(url, message, sentMessageSchema, signal);
+  }
+
+  /** One request: sends a draft once, never retried. Gmail removes the draft. */
+  async sendDraft(draftId: string, signal?: AbortSignal): Promise<SentMessage> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts", "send"]);
+    return await this.#google.postJson(url, { id: draftId }, sentMessageSchema, signal);
+  }
 }

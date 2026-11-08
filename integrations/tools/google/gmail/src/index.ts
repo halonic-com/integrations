@@ -8,12 +8,11 @@ import { modifyLabelsTool } from "./tools/modify-labels.ts";
 import { readMessageTool } from "./tools/read-message.ts";
 import { readThreadTool } from "./tools/read-thread.ts";
 import { searchTool } from "./tools/search.ts";
+import { sendTool } from "./tools/send.ts";
+import { sendDraftTool } from "./tools/send-draft.ts";
 import { triageTool } from "./tools/triage.ts";
 
-/**
- * The same tools, in the same order, as in integration.yaml. The two send
- * tools follow in the next pull request.
- */
+/** The same tools, in the same order, as in integration.yaml. */
 const tools: readonly ToolImplementation<GmailClient>[] = [
   triageTool,
   searchTool,
@@ -23,6 +22,8 @@ const tools: readonly ToolImplementation<GmailClient>[] = [
   getDraftTool,
   modifyLabelsTool,
   createDraftTool,
+  sendTool,
+  sendDraftTool,
 ];
 
 export const gmail: Integration = {
