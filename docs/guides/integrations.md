@@ -456,8 +456,13 @@ result.
 
    export class AnthropicError extends Error {
      override readonly name = "AnthropicError";
-     constructor(readonly code: AnthropicErrorCode, message: string) {
+     readonly code: AnthropicErrorCode;
+
+     // A field set in the body, not `constructor(readonly code …)`:
+     // `erasableSyntaxOnly` refuses parameter properties (TS1294).
+     constructor(code: AnthropicErrorCode, message: string) {
        super(message);
+       this.code = code;
      }
    }
    ```
