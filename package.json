@@ -16,6 +16,11 @@
     }
   },
   "scripts": {
+    "verify": "node tooling/check/src/cli/verify.ts",
+    "check": "node tooling/check/src/cli/check.ts",
+    "check:terms": "node tooling/check/src/cli/terms.ts",
+    "check:licences": "node tooling/check/src/cli/licences.ts",
+    "check:pr-title": "node tooling/check/src/cli/pr-title.ts",
     "format": "biome format --write ."
   },
   "devDependencies": {

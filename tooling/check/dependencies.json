@@ -1,0 +1,55 @@
+{
+  "//": "Every external dependency, why we have it and which packages may use it (plan 7.1). Liam reviews each one in the pull request, and every library an integration uses also needs the user's approval, because integrations ship in the cloud runtime. Dev tooling needs Liam's approval only. Integrations may add a library only for talking to the outside world, and only one that brings in nothing else. allowedIn takes package names; * matches any text.",
+  "dependencies": {
+    "@biomejs/biome": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "@halonicjs/root"
+      ],
+      "reason": "Formatter and linter in one fast tool."
+    },
+    "@types/node": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "*"
+      ],
+      "reason": "Type definitions for Node, for tests and tooling. The integration tsconfig loads no Node types."
+    },
+    "@typescript/typescript6": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "@halonicjs/tooling-check"
+      ],
+      "reason": "The TypeScript parser API for tooling/check until TypeScript 7.1 ships its own API (D9). Remove then."
+    },
+    "turbo": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "@halonicjs/root"
+      ],
+      "reason": "Per-package tasks, --affected and the build cache (D9)."
+    },
+    "typescript": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "*"
+      ],
+      "reason": "Type-checking with TypeScript 7 (D9)."
+    },
+    "vitest": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "*"
+      ],
+      "reason": "Test runner (D9)."
+    },
+    "zod": {
+      "category": "general",
+      "allowedIn": [
+        "@halonicjs/integration-*",
+        "@halonicjs/tooling-record"
+      ],
+      "reason": "Checks every response an integration receives and the recording file format. The one general library the user allows; it has no dependencies."
+    }
+  }
+}

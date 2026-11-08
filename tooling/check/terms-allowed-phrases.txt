@@ -1,0 +1,3 @@
+# Harmless technical phrases that contain a protected term, removed before
+# the personal-terms guard matches (plan 11.1). Only ever technical phrases
+# such as CSS property names; never a term itself. One per line.

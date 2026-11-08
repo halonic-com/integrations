@@ -1,0 +1,9 @@
+{
+  "//": "Settings for tooling/check. See docs/guides/checks.md.",
+  "published": [],
+  "fileSize": {
+    "warnLines": 300,
+    "maxLines": 500,
+    "warnFunctionLines": 60
+  }
+}
