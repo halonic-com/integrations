@@ -28,7 +28,10 @@ published permanently.
   names and e-mail addresses of real people. Use the fakes in the tests
   and `example.com` addresses.
 - Never add a library without an entry in `tooling/check/dependencies.json`
-  and Liam's approval. Integrations use no outside code except Zod and, in
+  and Liam's review. Every library an integration uses also needs the
+  user's approval, because integrations ship in the cloud runtime. Dev
+  tooling needs Liam's approval only. Integrations use no outside code
+  except Zod and, in
   rare cases, one library for their own service that brings in nothing
   else ([dependencies.md](docs/guides/dependencies.md)).
 - Never use Node APIs, `fetch` or dynamic code in an integration. Go

@@ -40,6 +40,11 @@ Write `integration.yaml` before any code. It lists:
 When in doubt, pick the stricter `risk`. A tool that can reach people
 outside the account is `send`.
 
+> **Not settled yet:** the file name `integration.yaml` and its fields
+> (`hosts`, `fromSetting`, `secrets`, `tokens`, `needs`, `recording`)
+> follow the kit's permission sheet, which is still being decided (I2,
+> HAL-99). Expect names to change.
+
 ## 3. Rules for the code
 
 1. **All network access goes through `context.http`.** Never call `fetch`,
@@ -48,6 +53,8 @@ outside the account is `send`.
 2. **Never handle key values.** Ask the kit to add a key
    (`auth: { secret, as }`). Your code never sees the value. OAuth refresh
    goes through the kit's helper.
+   **Not settled yet:** the `auth` option and the refresh helper depend on
+   the kit's `HttpClient` (I2, HAL-99). The rule itself stays.
 3. **No dynamic code:** no `eval`, no `new Function`, no `import()` with a
    computed name, and no `node:*` outside tests. Every integration must fit
    in the cloud runtime bundle. `pnpm check` fails on Node APIs, and the
@@ -64,6 +71,10 @@ outside the account is `send`.
    explicitly (no `export *`).
 
 ## 4. Tests and recordings
+
+> **Not settled yet:** where the conformance suite lives is part of the
+> kit (I2, HAL-99). `pnpm record` arrives with `tooling/record` (HAL-149)
+> and doesn't exist on `main` yet.
 
 - The shared conformance suite from the kit must pass on recorded
   responses, in Node and in `workerd`.
