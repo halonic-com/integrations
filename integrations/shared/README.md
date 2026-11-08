@@ -16,6 +16,7 @@ services goes in that provider's own `shared/` folder instead, such as
 | `EventStream`            | reads server-sent events (`text/event-stream`) from a response body, piece by piece |
 | `EventStreamError`       | `too-large` or `bad-encoding`; map it to your own `unexpected-response`             |
 | `HttpClient` and friends | a local stand-in for the kit's `HttpClient` type, until the kit is published        |
+| `cutText`                | cuts a text to a limit, ending with `…`, never in the middle of a character         |
 
 `EventStream` is used by the model providers that stream and by our MCP
 client. It keeps only the unfinished line and the event being built, never
