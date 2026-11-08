@@ -10,19 +10,19 @@ shared kit for "Offer to Halonic" (I6) unchanged.
 
 ## What is always removed
 
-| What | How |
-| --- | --- |
-| `authorization`, `proxy-authorization`, `x-api-key`, `api-key`, `x-auth-token` | Value becomes `scrubbed-secret-<n>`; a scheme such as `Bearer ` is kept |
-| `cookie`, `set-cookie` | Value becomes `scrubbed` |
-| A user name or password in a URL | Becomes `scrubbed` |
-| Query parameters and form fields named like a secret (`key`, `api_key`, `access_token`, `token`, `sig`, `code`, `*token*`, `*secret*`, `password`, ...) | Value becomes `scrubbed-secret-<n>` |
-| JSON fields named like a secret, when the value is a string | Value becomes `scrubbed-secret-<n>`. Numbers stay, so `max_tokens: 1024` survives |
-| The key values the kit added during the recording, anywhere, including URL-encoded, base64-encoded or split into pieces | `scrubbed-secret-<n>` |
-| Token-shaped values anywhere (JWTs, `sk-...`, `ghp_...`, `AIza...`, `ya29....`, `xox?-...`, AWS key IDs, ...) | `scrubbed-secret-<n>` |
-| Long random-looking values anywhere | `scrubbed-secret-<n>` |
-| E-mail addresses anywhere | `person-<n>@example.com` |
-| Phone numbers anywhere | `+447700900<nnn>` |
-| Base64 text anywhere | Decoded, scrubbed with the rules above and encoded again |
+| What                                                                                                                                                    | How                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `authorization`, `proxy-authorization`, `x-api-key`, `api-key`, `x-auth-token`                                                                          | Value becomes `scrubbed-secret-<n>`; a scheme such as `Bearer ` is kept           |
+| `cookie`, `set-cookie`                                                                                                                                  | Value becomes `scrubbed`                                                          |
+| A user name or password in a URL                                                                                                                        | Becomes `scrubbed`                                                                |
+| Query parameters and form fields named like a secret (`key`, `api_key`, `access_token`, `token`, `sig`, `code`, `*token*`, `*secret*`, `password`, ...) | Value becomes `scrubbed-secret-<n>`                                               |
+| JSON fields named like a secret, when the value is a string                                                                                             | Value becomes `scrubbed-secret-<n>`. Numbers stay, so `max_tokens: 1024` survives |
+| The key values the kit added during the recording, anywhere, including URL-encoded, base64-encoded or split into pieces                                 | `scrubbed-secret-<n>`                                                             |
+| Token-shaped values anywhere (JWTs, `sk-...`, `ghp_...`, `AIza...`, `ya29....`, `xox?-...`, AWS key IDs, ...)                                           | `scrubbed-secret-<n>`                                                             |
+| Long random-looking values anywhere                                                                                                                     | `scrubbed-secret-<n>`                                                             |
+| E-mail addresses anywhere                                                                                                                               | `person-<n>@example.com`                                                          |
+| Phone numbers anywhere                                                                                                                                  | `+447700900<nnn>`                                                                 |
+| Base64 text anywhere                                                                                                                                    | Decoded, scrubbed with the rules above and encoded again                          |
 
 Stand-ins are stable within one recording: the same value always gets the
 same stand-in, so a test can still see that the page token in one response is
@@ -52,7 +52,11 @@ export const recordingPolicy = definePolicy({
   // A form field is just its name.
   userContent: {
     request: ["raw"],
-    response: ["messages[].snippet", "messages[].payload.headers[].value", "messages[].payload.parts[].body.data"],
+    response: [
+      "messages[].snippet",
+      "messages[].payload.headers[].value",
+      "messages[].payload.parts[].body.data",
+    ],
   },
 
   // Bodies that are neither JSON nor form data stop the recording, unless
