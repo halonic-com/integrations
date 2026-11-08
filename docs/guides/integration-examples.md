@@ -776,11 +776,11 @@ export type AnthropicErrorCode =
 
 export class AnthropicError extends Error {
   override readonly name = "AnthropicError";
-  constructor(
-    readonly code: AnthropicErrorCode,
-    message: string,
-  ) {
+  readonly code: AnthropicErrorCode;
+
+  constructor(code: AnthropicErrorCode, message: string) {
     super(message);
+    this.code = code;
   }
 }
 
