@@ -60,8 +60,22 @@ A tool whose name isn't 1 to 64 letters, digits, `_` or `-` is left out,
 and the server's other tools stay usable. That is Halonic's rule for
 listed tools (`ports.untrusted-tool-listings`), and narrower than the
 MCP specification's, which also allows `.` and up to 128 characters: such
-a tool would be refused by Halonic anyway. The kit has no way yet to tell
-the user which tools were left out.
+a tool would be refused by Halonic anyway.
+
+The same rule holds for every other string a call sends back, because
+Halonic can't fence those either:
+
+- A tool is left out when a property name at any depth, a `required`
+  string or a `$defs` name breaks the rule.
+- An `enum` or `const` is dropped from the schema when it holds a string
+  that breaks the rule, or anything other than `null`, booleans, numbers
+  and such strings. An `enum` with more than 64 values is dropped too.
+- A tool is left out when its unfenced strings add up to more than 2,048
+  characters: its name, property names, `required` strings, `$defs` names
+  and the strings in `enum` and `const`, each time it appears. Short
+  names can be chained into an instruction.
+
+The kit has no way yet to tell the user which tools were left out.
 
 ## Results and errors
 
