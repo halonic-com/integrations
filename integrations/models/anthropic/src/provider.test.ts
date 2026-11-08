@@ -9,6 +9,21 @@ import { anthropic } from "./index.ts";
 import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
 import { createAnthropicProvider } from "./provider.ts";
 
+/**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording.
+ */
+const policy = {
+  userContent: [
+    "request.body.system",
+    "request.body.messages[*].content[*].text",
+    "request.body.messages[*].content[*].content",
+    "request.body.messages[*].content[*].input",
+    "request.body.tools[*].description",
+  ],
+};
+
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {
   id: "claude",
@@ -26,17 +41,20 @@ const question: ChatRequest = {
   params: { maxTokens: 1024 },
 };
 
+/** The question in the answer-text recording, with a system prompt. */
+const briefQuestion: ChatRequest = {
+  ...question,
+  messages: [{ role: "system", content: "Be brief." }, ...question.messages],
+};
+
 function provider(http: IntegrationHttpClient) {
   return createAnthropicProvider(http, config);
 }
 
 describe("chat", () => {
   it("names the key for the kit and parses the text and usage", async () => {
-    const recording = replay(answerText);
-    const response = await provider(recording.http).chat({
-      ...question,
-      messages: [{ role: "system", content: "Be brief." }, ...question.messages],
-    });
+    const recording = replay(answerText, { policy });
+    const response = await provider(recording.http).chat(briefQuestion);
     recording.assertAllUsed();
     expect(recording.sent[0]?.init.auth).toEqual({
       secret: "anthropic-key",
@@ -57,7 +75,7 @@ describe("chat", () => {
   });
 
   it("returns the tool calls the model asks for", async () => {
-    const recording = replay(toolCall);
+    const recording = replay(toolCall, { policy });
     const response = await provider(recording.http).chat({
       ...question,
       tools: [
@@ -85,16 +103,16 @@ describe("chat", () => {
   });
 
   it("passes the signal on", async () => {
-    const recording = replay(answerText);
+    const recording = replay(answerText, { policy });
     const signal = { aborted: false };
-    await provider(recording.http).chat({ ...question, signal });
+    await provider(recording.http).chat({ ...briefQuestion, signal });
     expect(recording.sent[0]?.init.signal).toBe(signal);
   });
 });
 
 describe("chat errors", () => {
   it("reports a refused key without Anthropic's own text", async () => {
-    const recording = replay(keyRefused);
+    const recording = replay(keyRefused, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);
@@ -107,7 +125,7 @@ describe("chat errors", () => {
   });
 
   it("reports an overloaded API as unavailable", async () => {
-    const recording = replay(overloaded);
+    const recording = replay(overloaded, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);

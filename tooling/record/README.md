@@ -214,7 +214,10 @@ run on the recordings it ships:
 import { replay } from "@halonicjs/tooling-record/replay";
 import listMessages from "../recordings/list-messages.json" with { type: "json" };
 
-const recording = replay(listMessages);
+// The request paths of the integration's `recording` section.
+const policy = { userContent: ["request.body.raw"] };
+
+const recording = replay(listMessages, { policy });
 // ... call the integration with `recording.http` as its host's HTTP client ...
 expect(recording.sent[0]?.body).toEqual({ q: "is:unread" });
 recording.assertAllUsed();
@@ -226,9 +229,20 @@ recording.assertAllUsed();
   in no other. A header the integration sets must have the recorded value,
   when the recording kept it. A stand-in the recording has in a request
   header, such as a session ID, must be sent back.
-- Request bodies are scrubbed, so they aren't compared. Check what the
-  integration sent through `sent`: a JSON body parsed, any other body, such
-  as a multipart upload, as text.
+- The request body must match the recorded one. A recorded body is
+  scrubbed, so the replay first scrubs the sent body with the same rules and
+  the integration's policy, passed as `policy`. Then JSON is compared by
+  value, form data and text (such as a multipart upload) line by line. The
+  first difference fails the call with its place, such as
+  `request.body.messages[0].role` or `line 6`. Stand-ins match whatever their
+  number, and a text body needs no `allowContentTypes`: its recorded content
+  type is allowed.
+- Without the policy, a field the recorder replaced as user content doesn't
+  match. Pass the request paths of the `recording` section in
+  `integration.yaml`.
+- Check what the integration sent, unscrubbed, through `sent`: a JSON body
+  parsed, any other body as text. A recording can't show user content, such
+  as an instruction the integration adds to the messages.
 - The response has `status`, `headers`, `text()`, `json()` and `body` as a
   byte stream, with an event stream in its wire format.
 - `fakeResponse` answers every call with one status and body, for error

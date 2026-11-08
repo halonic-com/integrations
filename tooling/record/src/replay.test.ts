@@ -14,8 +14,11 @@ const recording: RecordingFile = {
       request: {
         method: "POST",
         url,
-        headers: { authorization: "Bearer <scrubbed:secret>" },
-        body: { kind: "json", value: { query: "<scrubbed:content>" } },
+        headers: {
+          authorization: "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+        },
+        body: { kind: "json", value: { query: "<scrubbed:content>", limit: 10 } },
       },
       response: { status: 200, headers: {}, body: { kind: "json", value: { items: [] } } },
     },
@@ -25,26 +28,20 @@ const recording: RecordingFile = {
 
 const bearer = { secret: "key", as: "bearer" } as const;
 
+/** What the example integration declares in its `recording` section. */
+const policy = { userContent: ["request.body.query"] };
+
+/** A request that matches the recording, scrubbed. */
+const matching = { method: "POST", body: '{"query":"hi","limit":10}', auth: bearer };
+
 describe("replay", () => {
   it("answers a matching call with the recorded response and keeps what was sent", async () => {
-    const recorded = replay(recording);
-    const response = await recorded.http.fetch(url, {
-      method: "POST",
-      body: '{"query":"hi"}',
-      auth: bearer,
-    });
+    const recorded = replay(recording, { policy });
+    const response = await recorded.http.fetch(url, matching);
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ items: [] });
-    expect(recorded.sent.map((request) => request.body)).toEqual([{ query: "hi" }]);
+    expect(recorded.sent.map((request) => request.body)).toEqual([{ query: "hi", limit: 10 }]);
     recorded.assertAllUsed();
-  });
-
-  it("keeps a body that isn't JSON as text, such as a multipart upload", async () => {
-    const recorded = replay(recording);
-    const body = "--b\r\nContent-Type: text/plain\r\n\r\nhi\r\n--b--";
-    const response = await recorded.http.fetch(url, { method: "POST", body, auth: bearer });
-    expect(response.status).toBe(200);
-    expect(recorded.sent.map((request) => request.body)).toEqual([body]);
   });
 
   it("gives the recorded headers and the body as text", async () => {
@@ -89,10 +86,10 @@ describe("replay", () => {
   });
 
   it("fails an unexpected call and an unused exchange", async () => {
-    const recorded = replay(recording);
+    const recorded = replay(recording, { policy });
     expect(() => recorded.assertAllUsed()).toThrow("Used 0 of 1");
-    await recorded.http.fetch(url, { method: "POST", auth: bearer });
-    await expect(recorded.http.fetch(url, { method: "POST" })).rejects.toThrow("Unexpected call 2");
+    await recorded.http.fetch(url, matching);
+    await expect(recorded.http.fetch(url, matching)).rejects.toThrow("Unexpected call 2");
   });
 
   it("fails when the recording has a key the request doesn't ask for", async () => {
@@ -106,17 +103,14 @@ describe("replay", () => {
       ...recording,
       exchanges: recording.exchanges.map((exchange) => ({
         ...exchange,
-        request: { ...exchange.request, headers: {} },
+        request: { ...exchange.request, headers: { "content-type": "application/json" } },
       })),
     };
-    const recorded = replay(withoutKey, { unsetSecrets: ["key"] });
-    await recorded.http.fetch(url, { method: "POST", auth: bearer });
+    const recorded = replay(withoutKey, { policy, unsetSecrets: ["key"] });
+    await recorded.http.fetch(url, matching);
     recorded.assertAllUsed();
     await expect(
-      replay(recording, { unsetSecrets: ["key"] }).http.fetch(url, {
-        method: "POST",
-        auth: bearer,
-      }),
+      replay(recording, { policy, unsetSecrets: ["key"] }).http.fetch(url, matching),
     ).rejects.toThrow("a key in the authorization header; the request doesn't ask for one");
   });
 

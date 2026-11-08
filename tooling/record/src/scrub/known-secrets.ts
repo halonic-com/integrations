@@ -1,6 +1,13 @@
 import { encodeBase64 } from "./base64.ts";
 import { mergeRanges, type TextRange } from "./text-ranges.ts";
 
+/*
+ * The replay imports this file, and integration tests typecheck it with the
+ * integration preset, which has no Web or Node globals. Node and the cloud
+ * runtimes all have these, so only the parts used here are declared.
+ */
+declare const URLSearchParams: new (pairs: [string, string][]) => { toString(): string };
+
 /** Secrets shorter than this are only found whole; pieces of them would match too often. */
 const MIN_LENGTH_FOR_PIECES = 20;
 

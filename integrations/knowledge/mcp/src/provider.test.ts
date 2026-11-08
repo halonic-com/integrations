@@ -7,6 +7,15 @@ import searchToolError from "../recordings/search-tool-error.json" with { type: 
 import { KnowledgeMcpError, knowledgeMcp } from "./index.ts";
 import { noWait } from "./test/no-wait.ts";
 
+/**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording.
+ */
+const policy = {
+  userContent: ["request.body.params.arguments"],
+};
+
 const url = "https://docs.example.com/mcp";
 
 /**
@@ -37,13 +46,13 @@ function provider(recording: Replay, settings?: Record<string, unknown>) {
 
 describe("knowledge-mcp on recordings", () => {
   it("sends nothing until a source searches", () => {
-    const recording = replay(searchText);
+    const recording = replay(searchText, { policy });
     provider(recording);
     expect(recording.sent).toHaveLength(0);
   });
 
   it("searches through the search tool and ends the session on close", async () => {
-    const recording = replay(searchText);
+    const recording = replay(searchText, { policy });
     const { connection, source } = provider(recording);
     const hits = await source.search("holiday policy");
     await connection.close();
@@ -71,7 +80,7 @@ describe("knowledge-mcp on recordings", () => {
 
   it("reads a document through the get tool from a server whose key isn't set up", async () => {
     // The key is optional in the sheet, so the kit sends the requests without it.
-    const recording = replay(getWithoutKey, { unsetSecrets: ["mcp-server-key"] });
+    const recording = replay(getWithoutKey, { policy, unsetSecrets: ["mcp-server-key"] });
     const source = connect(recording).createKnowledgeProvider?.({
       id: "guides",
       config: { searchTool: "search_docs", getTool: "read_doc", refArg: "path" },
@@ -93,7 +102,7 @@ describe("knowledge-mcp on recordings", () => {
   });
 
   it("reports a tool's own failure without the server's text", async () => {
-    const recording = replay(searchToolError);
+    const recording = replay(searchToolError, { policy });
     const search = provider(recording).source.search("holiday policy");
     await expect(search).rejects.toBeInstanceOf(KnowledgeMcpError);
     await expect(search).rejects.toMatchObject({
@@ -104,7 +113,7 @@ describe("knowledge-mcp on recordings", () => {
   });
 
   it("tells the user to check the key when the server refuses it", async () => {
-    const recording = replay(keyRefused);
+    const recording = replay(keyRefused, { policy });
     const search = provider(recording).source.search("holiday policy");
     await expect(search).rejects.toMatchObject({
       name: "KnowledgeMcpError",
