@@ -62,10 +62,11 @@ export interface ReplayHttpClient {
   fetch(url: string, init?: ReplayRequestInit): Promise<ReplayResponse>;
 }
 
-/** What the integration sent, with the body parsed back from JSON. */
+/** What the integration sent. */
 export interface SentRequest {
   url: string;
   init: ReplayRequestInit;
+  /** The body parsed back from JSON, or its text when it isn't JSON, such as a multipart upload. */
   body: unknown;
 }
 
@@ -110,7 +111,7 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
   const http: ReplayHttpClient = {
     async fetch(url, init = {}) {
       const exchange = exchanges[sent.length];
-      sent.push({ url, init, body: init.body === undefined ? undefined : JSON.parse(init.body) });
+      sent.push({ url, init, body: sentBody(init.body) });
       if (exchange === undefined) {
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
@@ -127,6 +128,18 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
       }
     },
   };
+}
+
+/** A JSON body parsed, any other text as it is, so a body that isn't JSON doesn't end the call. */
+function sentBody(body: string | undefined): unknown {
+  if (body === undefined) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(body);
+  } catch {
+    return body;
+  }
 }
 
 function checkMatches(
