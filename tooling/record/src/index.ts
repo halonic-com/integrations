@@ -9,6 +9,11 @@ export {
   recordingFileSchema,
 } from "./format.ts";
 export {
+  type PreparedRecording,
+  prepareRecording,
+  type RecordingInput,
+} from "./recording/prepare-recording.ts";
+export {
   findLeaks,
   type Leak,
   type LeakKind,
