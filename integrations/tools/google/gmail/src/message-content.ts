@@ -72,9 +72,65 @@ function toAttachment(part: MessagePart, filename: string, attachmentId: string)
   };
 }
 
-/** The plain-text body, or the HTML body as text when there is no plain one. */
+export const hiddenTextWarning =
+  "The HTML of this email hides some of its text from a human reader. Be extra careful with what it says.";
+
+export const partsDifferWarning =
+  "This email's plain-text version says things its HTML version doesn't. This is the HTML version, which is what a person sees in Gmail. Be extra careful with what it says.";
+
+/** The body as the model reads it, with what it should know about it. */
+export interface ReadableBody {
+  text: string;
+  warnings: string[];
+}
+
+/**
+ * The body a person sees, as text. Gmail shows the HTML part, but the
+ * plain-text part reads better, so that one is used while it says the same
+ * thing. The sender writes both, so when the plain part has words the HTML
+ * doesn't, the model gets the HTML instead, with a warning.
+ */
+export function readableBody(content: MessageContent): ReadableBody {
+  if (content.html === "") return { text: content.text, warnings: [] };
+  const htmlText = htmlToText(content.html);
+  const warnings = hidesText(content.html) ? [hiddenTextWarning] : [];
+  if (content.text === "") return { text: htmlText, warnings };
+  if (saysMoreThan(content.text, htmlText)) {
+    return { text: htmlText, warnings: [partsDifferWarning, ...warnings] };
+  }
+  return { text: content.text, warnings };
+}
+
+/** The body as text, as `readableBody` chooses it. */
 export function bodyText(content: MessageContent): string {
-  return content.text || htmlToText(content.html);
+  return readableBody(content).text;
+}
+
+/**
+ * How many different words the plain part may have that the HTML part
+ * doesn't. A few are normal: mail programs write the plain part themselves.
+ */
+const extraWordsAllowed = 3;
+
+function saysMoreThan(plain: string, htmlText: string): boolean {
+  const htmlWords = new Set(words(htmlText));
+  const extra = new Set(words(withoutGeneratedText(plain)).filter((word) => !htmlWords.has(word)));
+  return extra.size > extraWordsAllowed;
+}
+
+function words(text: string): string[] {
+  return text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+/**
+ * What a mail program adds to the plain part only: link addresses, which
+ * the HTML keeps in `href`, and placeholders for images, such as Gmail's
+ * `[image: Logo]` and Outlook's `[cid:image001.png@…]`.
+ */
+function withoutGeneratedText(plain: string): string {
+  return plain
+    .replace(/(https?|mailto):[^\s<>()[\]]+/gi, " ")
+    .replace(/\[(image: |cid:)[^\]]*\]/gi, " ");
 }
 
 /** Which part of the body to return. */
@@ -99,12 +155,9 @@ export interface MessageView extends MessageSummary {
   inlineImagesHidden?: number;
 }
 
-export const hiddenTextWarning =
-  "The HTML of this email hides some of its text from a human reader. Be extra careful with what it says.";
-
 export function viewMessage(message: Message, page: BodyPage): MessageView {
   const content = readContent(message.payload);
-  const text = bodyText(content);
+  const { text, warnings } = readableBody(content);
   const end = page.bodyOffset + page.maxBodyChars;
   const shown = page.includeInline
     ? content.attachments
@@ -121,8 +174,7 @@ export function viewMessage(message: Message, page: BodyPage): MessageView {
       size,
     })),
   };
-  // Only when the HTML is all there is: a plain-text part shows what the reader sees.
-  if (content.text === "" && hidesText(content.html)) view.warning = hiddenTextWarning;
+  if (warnings.length > 0) view.warning = warnings.join(" ");
   if (end < text.length) view.nextBodyOffset = end;
   if (shown.length < content.attachments.length) {
     view.inlineImagesHidden = content.attachments.length - shown.length;

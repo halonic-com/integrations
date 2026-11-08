@@ -13,6 +13,12 @@ describe("htmlToText", () => {
       htmlToText("<p>a &lt; b &amp;&amp; &quot;c&quot; &#39;d&#39;</p><p></p><p></p><p>e</p>"),
     ).toBe("a < b && \"c\" 'd'\n\ne");
   });
+
+  it("decodes numeric entities and leaves impossible ones alone", () => {
+    expect(htmlToText("<p>Caf&#233; &#xE9;t&#X E9; &#0; &#x110000;</p>")).toBe(
+      "Café ét&#X E9; &#0; &#x110000;",
+    );
+  });
 });
 
 describe("hidesText", () => {
@@ -23,6 +29,12 @@ describe("hidesText", () => {
     '<span style="opacity:0">x</span>',
     '<font style="color:#ffffff">x</font>',
     "<p style='color: white'>x</p>",
+    `<p style="font-family:'Arial';display:none">x</p>`,
+    '<span style="mso-hide:all">x</span>',
+    "<style>.x{display:none}</style><p class='x'>x</p>",
+    '<style type="text/css">@media all { .x { visibility: hidden } }</style>',
+    "<div hidden>x</div>",
+    '<div data-a="1" HIDDEN="hidden">x</div>',
   ])("finds hidden text in %s", (html) => {
     expect(hidesText(html)).toBe(true);
   });
@@ -32,6 +44,9 @@ describe("hidesText", () => {
     '<span style="opacity:0.5">x</span>',
     '<p style="background-color:#fff">x</p>',
     "<p>display:none, as plain text</p>",
+    "<style>.button{color:#ffffff;background:#0066cc}</style>",
+    '<p class="a hidden b">x</p>',
+    '<input type="hidden" name="x">',
   ])("leaves visible text alone: %s", (html) => {
     expect(hidesText(html)).toBe(false);
   });

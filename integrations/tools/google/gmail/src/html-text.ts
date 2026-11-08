@@ -28,18 +28,56 @@ export function htmlToText(html: string): string {
   for (const [entity, character] of entities) {
     text = text.replace(entity, character);
   }
-  return text.replace(/\n{3,}/g, "\n\n").trim();
+  return decodeNumericEntities(text)
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** `&#233;` and `&#xE9;`, which mail programs use for every letter outside ASCII. */
+function decodeNumericEntities(text: string): string {
+  return text.replace(/&#(x[0-9a-f]+|\d+);/gi, (entity, code: string) => {
+    const point =
+      code[0] === "x" || code[0] === "X" ? Number.parseInt(code.slice(1), 16) : Number(code);
+    return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+  });
 }
 
 /**
- * Inline styles that hide text from a person reading the mail: no display,
- * hidden, zero size or opacity, or white or transparent text. Newsletters
- * use them for preview text; an attacker can use them to show the model
- * words the user never sees.
+ * CSS that hides text from a person reading the mail: no display, hidden,
+ * zero size or opacity, or Outlook's own `mso-hide`. Newsletters use it for
+ * preview text; an attacker can use it to show the model words the user
+ * never sees.
  */
-const hidingStyle =
-  /style\s*=\s*["'][^"']*(display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(?![.\d]*[1-9])|opacity\s*:\s*0(?![.\d]*[1-9])|(?<![\w-])color\s*:\s*(#fff(fff)?\b|white\b|transparent))/i;
+const hidingDeclaration =
+  /(display\s*:\s*none|visibility\s*:\s*hidden|mso-hide\s*:\s*all|font-size\s*:\s*0(?![.\d]*[1-9])|opacity\s*:\s*0(?![.\d]*[1-9]))/i;
 
+/**
+ * White or transparent text. Only checked in a `style` attribute: in a
+ * `<style>` block it is mostly a button's label on a coloured background.
+ */
+const invisibleColor = /(?<![\w-])color\s*:\s*(#fff(fff)?\b|white\b|transparent)/i;
+
+/**
+ * True when the HTML hides some of its text: through a `style` attribute,
+ * a rule in a `<style>` block (such as `.x{display:none}`) or the `hidden`
+ * attribute. A heuristic, so a warning, never a refusal.
+ */
 export function hidesText(html: string): boolean {
-  return hidingStyle.test(html);
+  for (const attribute of html.matchAll(/\sstyle\s*=\s*(["'])(.*?)\1/gis)) {
+    const css = attribute[2] ?? "";
+    if (hidingDeclaration.test(css) || invisibleColor.test(css)) return true;
+  }
+  for (const block of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) {
+    if (hidingDeclaration.test(block[1] ?? "")) return true;
+  }
+  return hasHiddenAttribute(html);
+}
+
+/** `<div hidden>`, but not `class="hidden"` or `type="hidden"`. */
+function hasHiddenAttribute(html: string): boolean {
+  for (const [tag] of html.matchAll(/<[a-z][^>]*>/gi)) {
+    const attributeNames = tag.replace(/"[^"]*"|'[^']*'/g, '""');
+    if (/\shidden(?=[\s=/>])/i.test(attributeNames)) return true;
+  }
+  return false;
 }

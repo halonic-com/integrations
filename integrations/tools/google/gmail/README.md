@@ -81,6 +81,15 @@ something else:
 - **Reads are retried** after a `429` or a `5xx`, as the guide's rule 10
   and the Google library ask. The old connector never retried. Nothing that
   changes the mailbox is retried.
+- **The model reads what a person sees.** Gmail shows a mail's HTML part,
+  and the sender writes the plain-text part too, so they can make the two
+  say different things. The reading tools still prefer the plain part, but
+  only while it has no words the HTML lacks (more than three, after link
+  addresses and image placeholders are left out). Otherwise the model gets
+  the HTML as text and a `warning`. The hidden-text `warning` now also
+  looks at the HTML when there is a plain part, and also catches `<style>`
+  rules, the `hidden` attribute and `mso-hide:all`. Both are heuristics:
+  they warn, they never refuse.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without
