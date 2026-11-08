@@ -16,6 +16,14 @@ export const maxDescriptionChars = 2_000;
 export const maxParametersChars = 20_000;
 
 /**
+ * How deeply a tool's argument schema may nest objects and arrays. Real
+ * schemas stay within a handful of levels; thousands of levels fit within
+ * {@link maxParametersChars} but break `JSON.stringify` and every other
+ * step that walks the schema.
+ */
+export const maxParametersDepth = 64;
+
+/**
  * The whole tool list: descriptions plus argument schemas as JSON, about
  * 50,000 tokens. The list goes into the context on every turn, so a server
  * whose tools are each within their limits can't add up to millions of

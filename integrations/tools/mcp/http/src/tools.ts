@@ -2,7 +2,12 @@ import type { McpTool } from "@halonicjs/integration-mcp";
 import { cutText } from "@halonicjs/integration-shared";
 import { McpToolsError } from "./errors.ts";
 import type { IntegrationTool } from "./kit.ts";
-import { maxDescriptionChars, maxParametersChars, maxToolListChars } from "./limits.ts";
+import {
+  maxDescriptionChars,
+  maxParametersChars,
+  maxParametersDepth,
+  maxToolListChars,
+} from "./limits.ts";
 
 /**
  * The server's tool list, as Halonic offers it to agents. Refuses the
@@ -55,9 +60,18 @@ export function toIntegrationTools(tools: readonly McpTool[]): IntegrationTool[]
  *   characters a person can't see (see {@link withoutHiddenText}). They
  *   still reach the model as the server wrote them otherwise.
  *
- * @throws {McpToolsError} `unexpected-response` for an argument schema above {@link maxParametersChars}
+ * @throws {McpToolsError} `unexpected-response` for an argument schema
+ *   nested deeper than {@link maxParametersDepth} or above {@link maxParametersChars}
  */
 export function toIntegrationTool(tool: McpTool): IntegrationTool {
+  // Checked first: the size check and the copy below walk the schema
+  // recursively, and a deep enough one overflows the stack.
+  if (nestsDeeperThan(tool.inputSchema, maxParametersDepth)) {
+    throw new McpToolsError(
+      "unexpected-response",
+      `The MCP server's tool ${tool.name} nests its arguments more than ${maxParametersDepth} levels deep.`,
+    );
+  }
   if (JSON.stringify(tool.inputSchema).length > maxParametersChars) {
     throw new McpToolsError(
       "unexpected-response",
@@ -74,12 +88,36 @@ export function toIntegrationTool(tool: McpTool): IntegrationTool {
 }
 
 /**
- * Format characters (zero-width characters, direction marks, the invisible
- * "tag" letters) and control characters other than line breaks and tabs.
- * A person reading the tool list can't see them, but the model reads them,
- * so a server could hide instructions in them.
+ * Whether `value` nests objects and arrays more than `maxDepth` levels
+ * deep. Walks with its own list rather than recursion, so any depth is
+ * safe to check.
  */
-const hiddenText = /(?![\n\t])[\p{Cc}\p{Cf}]/gu;
+function nestsDeeperThan(value: unknown, maxDepth: number): boolean {
+  const pending: { value: unknown; depth: number }[] = [{ value, depth: 0 }];
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    if (typeof next.value !== "object" || next.value === null) {
+      continue;
+    }
+    const depth = next.depth + 1;
+    if (depth > maxDepth) {
+      return true;
+    }
+    for (const child of Object.values(next.value)) {
+      pending.push({ value: child, depth });
+    }
+  }
+  return false;
+}
+
+/**
+ * Format characters (zero-width characters, direction marks, the invisible
+ * "tag" letters), variation selectors, and control characters other than
+ * line breaks and tabs. A person reading the tool list can't see them, but
+ * the model reads them, so a server could hide instructions in them.
+ * Variation selectors aren't format characters, but a run of them after a
+ * visible character can carry hidden bytes.
+ */
+const hiddenText = /(?![\n\t])[\p{Cc}\p{Cf}]|[\u{FE00}-\u{FE0F}]|[\u{E0100}-\u{E01EF}]/gu;
 
 /** `text` without the characters a person can't see. */
 export function withoutHiddenText(text: string): string {
@@ -99,10 +137,13 @@ function withoutHiddenSchemaText<Schema>(schema: Schema): Schema {
   if (typeof schema !== "object" || schema === null) {
     return schema;
   }
-  const copy: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(schema)) {
-    const isText = (key === "description" || key === "title") && typeof value === "string";
-    copy[key] = isText ? withoutHiddenText(value) : withoutHiddenSchemaText(value);
-  }
+  // Built with `fromEntries`, which always makes own keys: assigning a
+  // `__proto__` key would set the copy's prototype and lose the key.
+  const copy = Object.fromEntries(
+    Object.entries(schema).map(([key, value]) => {
+      const isText = (key === "description" || key === "title") && typeof value === "string";
+      return [key, isText ? withoutHiddenText(value) : withoutHiddenSchemaText(value)];
+    }),
+  );
   return copy as Schema;
 }

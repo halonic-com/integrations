@@ -13,6 +13,16 @@ import { McpToolsError, mcpHttp } from "./index.ts";
  * scrubbed by the recorder with this sheet's `userContent` paths: tool
  * arguments and results are placeholders, the server's tool list is kept.
  */
+
+/**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording.
+ */
+const policy = {
+  userContent: ["request.body.params.arguments"],
+};
+
 const url = "https://tools.example.com/mcp";
 
 /**
@@ -34,14 +44,14 @@ function sentBody(recording: Replay, index: number): unknown {
 
 describe("tool-mcp-http on recordings", () => {
   it("declares no tools and sends nothing until a tool is listed or called", () => {
-    const recording = replay(listTools);
+    const recording = replay(listTools, { policy });
     connect(recording.http);
     expect(mcpHttp.tools).toEqual([]);
     expect(recording.sent).toHaveLength(0);
   });
 
   it("lists the server's tools as write and untrusted, whatever their hints say", async () => {
-    const recording = replay(listTools);
+    const recording = replay(listTools, { policy });
     const tools = await connect(recording.http).listTools?.();
     recording.assertAllUsed();
     expect(tools).toEqual([
@@ -71,7 +81,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("calls a tool with the caller's arguments and returns its text", async () => {
-    const recording = replay(callTool);
+    const recording = replay(callTool, { policy });
     const args = { title: "Garden plan", text: "Plant the tomatoes after the last frost." };
     const result = await connect(recording.http).callTool("add_note", args);
     recording.assertAllUsed();
@@ -88,7 +98,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("fails a call whose tool reports an error, without the server's text", async () => {
-    const recording = replay(callToolError);
+    const recording = replay(callToolError, { policy });
     const error = await connect(recording.http)
       .callTool("add_note", { title: "Garden plan" })
       .catch((caught: unknown) => caught);
@@ -101,7 +111,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("shows the server's new tools on the next list, after it changed them", async () => {
-    const recording = replay(toolsChanged);
+    const recording = replay(toolsChanged, { policy });
     const connection = connect(recording.http);
     const names = async () => (await connection.listTools?.())?.map((tool) => tool.name);
 
@@ -116,7 +126,7 @@ describe("tool-mcp-http on recordings", () => {
 
   it("tells the user to check the key when the server needs one and none is set up", async () => {
     // Without the optional key, the kit sends the request without it.
-    const recording = replay(missingKey, { unsetSecrets: ["mcp-server-key"] });
+    const recording = replay(missingKey, { policy, unsetSecrets: ["mcp-server-key"] });
     await expect(connect(recording.http).listTools?.()).rejects.toMatchObject({
       name: "McpToolsError",
       code: "not-signed-in",
@@ -126,7 +136,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("stops a cancelled call and tells the server", async () => {
-    const recording = replay(callCancelled);
+    const recording = replay(callCancelled, { policy });
     const controller = new AbortController();
     const abort = new DOMException("This operation was aborted", "AbortError");
     // The kit aborts the request once the caller's signal fires: here, as
@@ -156,7 +166,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("refuses a wrong url setting before any request", async () => {
-    const recording = replay(listTools);
+    const recording = replay(listTools, { policy });
     await expect(
       connect(recording.http, { url: "not an address" }).listTools?.(),
     ).rejects.toMatchObject({
@@ -168,7 +178,7 @@ describe("tool-mcp-http on recordings", () => {
   });
 
   it("closes without a request when no session was opened", async () => {
-    const recording = replay(listTools);
+    const recording = replay(listTools, { policy });
     const connection = connect(recording.http);
     await connection.close();
     await connection.close();

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { maxDescriptionChars, maxParametersChars, maxToolListChars } from "./limits.ts";
+import {
+  maxDescriptionChars,
+  maxParametersChars,
+  maxParametersDepth,
+  maxToolListChars,
+} from "./limits.ts";
 import { toIntegrationTool, toIntegrationTools, withoutHiddenText } from "./tools.ts";
 
 const inputSchema = { type: "object" as const, properties: { text: { type: "string" } } };
@@ -43,8 +48,42 @@ describe("toIntegrationTool", () => {
     expect(() => toIntegrationTool({ name: "echo", inputSchema: huge })).toThrow(/tool echo/);
   });
 
+  it("refuses an argument schema nested deeper than the limit, naming the tool", () => {
+    // Small enough for the size limit, deep enough to overflow JSON.stringify.
+    const json = `{"type":"object","default":${"[".repeat(5_000)}${"]".repeat(5_000)}}`;
+    expect(json.length).toBeLessThan(maxParametersChars);
+    const deep = JSON.parse(json);
+    expect(() => toIntegrationTool({ name: "echo", inputSchema: deep })).toThrow(
+      expect.objectContaining({
+        code: "unexpected-response",
+        message: `The MCP server's tool echo nests its arguments more than ${maxParametersDepth} levels deep.`,
+      }),
+    );
+  });
+
+  it("accepts an argument schema exactly at the nesting limit", () => {
+    // The schema object itself is the first level.
+    const nested = `${"[".repeat(maxParametersDepth - 1)}${"]".repeat(maxParametersDepth - 1)}`;
+    const atLimit = JSON.parse(`{"type":"object","default":${nested}}`);
+    expect(toIntegrationTool({ name: "echo", inputSchema: atLimit }).parameters).toEqual(atLimit);
+    const overLimit = JSON.parse(`{"type":"object","default":[${nested}]}`);
+    expect(() => toIntegrationTool({ name: "echo", inputSchema: overLimit })).toThrow(
+      /levels deep/,
+    );
+  });
+
+  it("keeps a property named __proto__ in the schema", () => {
+    // JSON.parse makes "__proto__" an ordinary key, as it is in the server's answer.
+    const schema = JSON.parse(
+      '{"type":"object","properties":{"__proto__":{"type":"string"},"a":{"type":"string"}}}',
+    );
+    const parameters = toIntegrationTool({ name: "echo", inputSchema: schema }).parameters;
+    expect(Object.keys(parameters["properties"] as object)).toEqual(["__proto__", "a"]);
+    expect(JSON.stringify(parameters)).toBe(JSON.stringify(schema));
+  });
+
   it("takes hidden characters out of the descriptions, also inside the schema", () => {
-    const hidden = "Echoes\u200b text.\u202e\u{e0041}\u0007";
+    const hidden = "Echoes\u200b text.\u202e\u{e0041}\u0007\ufe01\u{e0100}";
     const tool = toIntegrationTool({
       name: "echo",
       description: hidden,

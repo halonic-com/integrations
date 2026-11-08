@@ -85,6 +85,7 @@ server.
 | tools per server                | 200, in at most 10 pages; more is refused, not cut                      |
 | a tool's description            | 2,000 characters                                                        |
 | a tool's argument schema (JSON) | 20,000 characters; a larger one is refused, not cut                     |
+| nesting in an argument schema   | 64 levels of objects and arrays; a deeper schema is refused             |
 | the whole tool list             | 200,000 characters of descriptions and schemas; a larger one is refused |
 | a tool's result                 | 50,000 characters, about 12,000 tokens                                  |
 
