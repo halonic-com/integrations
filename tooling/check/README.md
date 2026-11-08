@@ -1,8 +1,8 @@
 # @halonicjs/tooling-check
 
 Our own repo checks: package manifests, layers, dependencies, names, file
-size, the lockfile, absolute local paths, licences and the personal-terms
-guard. Imports are read with the TypeScript parser, not regular
+size, the lockfile, absolute local paths, the Google fields of the
+permission sheets, licences and the personal-terms guard. Imports are read with the TypeScript parser, not regular
 expressions.
 
 - **Layer:** tooling
@@ -37,6 +37,11 @@ so both repos check the same things. What differs:
   `requirement-guard`, `dco`) are left out: this repo has no Studio, no
   requirements and needs no sign-off line.
 - `dependencies.json` adds Zod, under a new `general` category.
+- `src/rules/google-sheet.ts` and `src/lib/sheet-yaml.ts` are this repo's
+  own: the main repo has no permission sheets. `sheet-yaml.ts` reads only
+  the sheet fields the rule asks for, and only the YAML the sheets use, so
+  the check needs no YAML library. It goes when `halonic validate` checks
+  sheets.
 
 Every other file is unchanged. A fix to a shared file goes into the main
 repo first and is then copied here.

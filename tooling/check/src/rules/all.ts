@@ -3,6 +3,7 @@ import type { Report } from "../lib/problems.ts";
 import { checkAbsolutePaths } from "./absolute-paths.ts";
 import { checkDependencies } from "./dependencies.ts";
 import { checkFileSize } from "./file-size.ts";
+import { checkGoogleSheet } from "./google-sheet.ts";
 import { checkLayers } from "./layers.ts";
 import { checkLockfile } from "./lockfile.ts";
 import { checkNames } from "./names.ts";
@@ -17,4 +18,5 @@ export const rules: Readonly<Record<string, (context: CheckContext) => Report>> 
   "file-size": checkFileSize,
   lockfile: checkLockfile,
   "absolute-paths": checkAbsolutePaths,
+  "google-sheet": checkGoogleSheet,
 };

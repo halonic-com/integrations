@@ -26,6 +26,7 @@ repo's two layers. When a check changes there, change it here too.
 | `file-size`      | a source file has more than 500 lines (a warning above 300; a warning for functions above 60). Generated files and fixtures are exempt                                                                                                                                       |
 | `lockfile`       | a `pnpm-lock.yaml` entry has no sha512 hash, or comes from a tarball URL, git, a local folder or another registry. The only exception is the Node runtime from `devEngines`, which must come from the Node.js release hosts with a hash per platform                         |
 | `absolute-paths` | docs, code or config hold an absolute path from one machine, such as a Windows user folder or a Linux home folder. Tests and fixtures are exempt                                                                                                                             |
+| `google-sheet`   | a sheet has `googleScopes`, `googleApis` or `googleCheck` without `google-account`; an entry isn't `{ scope, reason }` or `{ api, name }` with text; `googleScopes` lacks `googleApis`; `googleCheck` isn't a `GET` without body to one of the sheet's `hosts`               |
 
 ## Licences
 
