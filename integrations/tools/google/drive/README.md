@@ -58,6 +58,8 @@ setting act on it.
   part downloads the file again. A file over the kit's 10 MiB response
   limit can't be read at all. Files that aren't text, Word, Excel and
   PowerPoint files among them, return their details only.
+- **Paths** in `drive_tree` join names with `/`. Drive allows `/` in a
+  name, so a path can be ambiguous; every entry's `id` is not.
 - **Retries:** the Google library retries a read at most twice, after a
   `429` or a `5xx`, waiting with the host's `wait`. Creating, updating and
   moving are never retried: a timeout doesn't prove nothing changed.
