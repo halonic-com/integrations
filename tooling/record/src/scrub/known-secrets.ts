@@ -70,7 +70,16 @@ export class KnownSecrets {
 function encodingsOf(secret: string): string[] {
   const base64 = encodeBase64(secret, { urlSafe: false, padded: true });
   const base64Url = encodeBase64(secret, { urlSafe: true, padded: false });
-  return [secret, encodeURIComponent(secret), base64, base64.replace(/=+$/, ""), base64Url];
+  // As it appears inside a JSON string, for when a saved file is scanned.
+  const jsonEscaped = JSON.stringify(secret).slice(1, -1);
+  return [
+    secret,
+    jsonEscaped,
+    encodeURIComponent(secret),
+    base64,
+    base64.replace(/=+$/, ""),
+    base64Url,
+  ];
 }
 
 function unique(values: readonly string[]): string[] {

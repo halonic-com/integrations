@@ -79,6 +79,38 @@ usually a typo, and it means content you meant to remove is still there.
 The error names the place (`exchanges[2].response.body`) and the reason,
 never a value.
 
+## The safety net
+
+After scrubbing, `prepareRecording` builds the exact file text and scans all
+of it once more, separately from the rules: for the key values the kit
+added (also encoded, JSON-escaped or in pieces), the `halonic-fake-` prefix
+every fake key in our tests carries, known token shapes, e-mail addresses
+and phone numbers, also inside base64. If it finds anything, a rule missed
+it, and nothing is saved.
+
+## The recording file
+
+`integrations/<name>/recordings/<scenario>.json` (layout to be confirmed with
+the conformance suite):
+
+```json
+{
+  "format": "halonic-recording/1",
+  "integration": "gmail",
+  "scenario": "list-messages",
+  "exchanges": [
+    {
+      "request": { "method": "GET", "url": "https://...", "headers": [["authorization", "Bearer scrubbed-secret-1"]], "body": { "type": "empty" } },
+      "response": { "status": 200, "headers": [["content-type", "application/json"]], "body": { "type": "json", "value": {} } }
+    }
+  ]
+}
+```
+
+Headers are `[name, value]` pairs in lower case, so repeated headers
+survive. Bodies are saved parsed (`empty`, `json`, `form` or `text`), so a
+reviewer can read them in a pull request.
+
 ## Still read every recording
 
 The rules catch what they can recognise. A name, an address or a sentence
