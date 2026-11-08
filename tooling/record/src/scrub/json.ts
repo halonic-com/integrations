@@ -8,7 +8,8 @@ import { scrubText } from "./text.ts";
 
 /**
  * Scrubs a parsed JSON value. Walks every value and applies, in order:
- * 1. declared user-content paths: the whole value becomes a placeholder of the same type
+ * 1. declared user-content paths: the whole value becomes a placeholder of the same type.
+ *    A string that holds JSON stays JSON, with the placeholders inside it
  * 2. secret-like field names: every string in the value, also inside a
  *    list or object, becomes a secret stand-in (numbers stay, so
  *    `max_tokens: 1024` survives)
@@ -45,20 +46,39 @@ class JsonWalk {
   visit(value: JsonValue, path: ValuePath, secret = false): JsonValue {
     const declared = this.userContent.match(path);
     if (declared !== undefined) {
-      this.context.matchedUserContent.add(declared);
-      this.context.report.add("user-content", this.locate(path));
+      this.markUserContent(declared, path);
       return asUserContent(value);
     }
     if (typeof value === "string") {
       return secret ? this.replaceSecret(value, path) : this.visitString(value, path);
     }
+    if (Array.isArray(value) || (value !== null && typeof value === "object")) {
+      return this.visitContainer(value, path, secret);
+    }
+    return value;
+  }
+
+  /**
+   * When a declared path goes on past this list or object but the value has
+   * another shape than the path expects (a list where it wants fields, or
+   * fields where it wants a list), the path can't reach its content, so all of
+   * it becomes user content. Model-written JSON has no fixed shape, so this
+   * can happen at any depth.
+   */
+  private visitContainer(
+    value: JsonValue[] | { [key: string]: JsonValue },
+    path: ValuePath,
+    secret: boolean,
+  ): JsonValue {
+    const unreachable = this.userContent.cannotEnter(path, value);
+    if (unreachable !== undefined) {
+      this.markUserContent(unreachable, path);
+      return asUserContent(value);
+    }
     if (Array.isArray(value)) {
       return value.map((item, index) => this.visit(item, [...path, index], secret));
     }
-    if (value !== null && typeof value === "object") {
-      return this.visitObject(value, path, secret);
-    }
-    return value;
+    return this.visitObject(value, path, secret);
   }
 
   private visitObject(
@@ -86,17 +106,39 @@ class JsonWalk {
   }
 
   /**
-   * A string that is itself JSON (some APIs nest it) is scrubbed as JSON, so
-   * the field-name rules still apply inside it.
+   * A string that is itself JSON (some APIs nest it, such as OpenAI's tool
+   * arguments) is scrubbed as JSON at the same path, so the field-name rules
+   * and declared paths still apply inside it, including the shape check in
+   * `visitContainer`.
    */
   private visitString(value: string, path: ValuePath): string {
     const nested = parseNestedJson(value);
     if (nested === undefined) {
-      return scrubText(value, this.locate(path), this.context);
+      return this.visitPlainString(value, path);
     }
     const scrubbed = this.visit(nested, path);
     const unchanged = JSON.stringify(scrubbed) === JSON.stringify(nested);
     return unchanged ? value : JSON.stringify(scrubbed);
+  }
+
+  /**
+   * A declared path that goes on inside this string expects JSON. When the
+   * string isn't JSON (tool arguments cut off at the token limit), the path
+   * can't reach its content, so the whole string is user content instead of
+   * being kept as text.
+   */
+  private visitPlainString(value: string, path: ValuePath): string {
+    const declared = this.userContent.reachesInside(path);
+    if (declared !== undefined) {
+      this.markUserContent(declared, path);
+      return USER_CONTENT.text;
+    }
+    return scrubText(value, this.locate(path), this.context);
+  }
+
+  private markUserContent(declared: string, path: ValuePath): void {
+    this.context.matchedUserContent.add(declared);
+    this.context.report.add("user-content", this.locate(path));
   }
 
   private locate(path: ValuePath): string {
@@ -108,10 +150,15 @@ class JsonWalk {
   }
 }
 
-/** The same shape with every leaf replaced by a fixed value of its type. */
+/**
+ * The same shape with every leaf replaced by a fixed value of its type. A
+ * string that holds JSON gets the same treatment inside, so it still parses
+ * on replay: an integration that reads it must not fail on the recording.
+ */
 function asUserContent(value: JsonValue): JsonValue {
   if (typeof value === "string") {
-    return USER_CONTENT.text;
+    const nested = parseNestedJson(value);
+    return nested === undefined ? USER_CONTENT.text : JSON.stringify(asUserContent(nested));
   }
   if (typeof value === "number") {
     return USER_CONTENT.number;

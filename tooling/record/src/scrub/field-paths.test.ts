@@ -22,6 +22,26 @@ describe("FieldPaths", () => {
     expect(paths.match(["files", "notes.txt", "content"])).toBeDefined();
   });
 
+  it("finds a path that goes on past a position, such as inside a JSON string", () => {
+    const declared = "response.body.calls[*].arguments.*";
+    const paths = new FieldPaths([declared], "response");
+    expect(paths.reachesInside(["calls", 0, "arguments"])).toBe(declared);
+    expect(paths.reachesInside(["calls", 0, "arguments", "city"])).toBeUndefined();
+    expect(paths.reachesInside(["calls", 0, "name"])).toBeUndefined();
+  });
+
+  it("finds a path that can't take its next step into a value", () => {
+    const fields = "response.body.calls[*].arguments.*";
+    const items = "response.body.rows[*]";
+    const paths = new FieldPaths([fields, items], "response");
+    expect(paths.cannotEnter(["calls", 0, "arguments"], { city: "x" })).toBeUndefined();
+    expect(paths.cannotEnter(["calls", 0, "arguments"], ["x"])).toBe(fields);
+    expect(paths.cannotEnter(["calls", 0, "arguments"], null)).toBe(fields);
+    expect(paths.cannotEnter(["rows"], ["x"])).toBeUndefined();
+    expect(paths.cannotEnter(["rows"], { a: "x" })).toBe(items);
+    expect(paths.cannotEnter(["calls", 0, "name"], ["x"])).toBeUndefined();
+  });
+
   it("matches lists of lists", () => {
     const paths = new FieldPaths(["request.body.rows[*][*]"], "request");
     expect(paths.match(["rows", 0, 2])).toBeDefined();
