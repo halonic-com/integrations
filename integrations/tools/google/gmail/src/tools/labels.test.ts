@@ -32,7 +32,9 @@ describe("gmail_list_labels", () => {
         text: async () => JSON.stringify({ labels }),
       }),
     };
-    const result = JSON.parse(await gmail.connect({ http }).callTool("gmail_list_labels", {}));
+    const result = JSON.parse(
+      await gmail.connect({ http, wait: async () => {} }).callTool("gmail_list_labels", {}),
+    );
     expect(result.labels).toHaveLength(maxLabels);
     expect(result.omittedLabels).toBe(3);
   });

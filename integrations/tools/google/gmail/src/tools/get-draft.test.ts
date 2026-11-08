@@ -25,7 +25,7 @@ function connectToDraft(headers: Record<string, string>, body: string) {
       text: async () => JSON.stringify(draft),
     }),
   };
-  return gmail.connect({ http });
+  return gmail.connect({ http, wait: async () => {} });
 }
 
 describe("google.get-draft-returns-bcc", () => {
