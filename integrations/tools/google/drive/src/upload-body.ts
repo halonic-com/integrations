@@ -14,6 +14,12 @@ export interface UploadBody {
   readonly body: string;
 }
 
+/**
+ * The file's metadata, sent as JSON: an object such as `NewFileMetadata`,
+ * or `{}` for an update that keeps the name and folder.
+ */
+export type UploadMetadata = object;
+
 /** The content of the upload: text, and the type the caller says it is. */
 export interface UploadContent {
   /** A media type without parameters, such as `text/csv`. Checked with {@link contentTypeSchema}. */
@@ -55,10 +61,7 @@ const boundaryCandidates = 10;
  * @example
  * multipartUploadBody({ name: "notes.md", mimeType: "text/markdown" }, { type: "text/markdown", text: "# Notes" });
  */
-export function multipartUploadBody(
-  metadata: Readonly<Record<string, unknown>>,
-  content: UploadContent,
-): UploadBody {
+export function multipartUploadBody(metadata: UploadMetadata, content: UploadContent): UploadBody {
   if (!mediaTypePattern.test(content.type)) {
     throw new GoogleError("bad-arguments", "mimeType must be a media type such as text/plain.");
   }
