@@ -1,6 +1,6 @@
 import { decodeBase64Text, encodeBase64 } from "./base64.ts";
 import type { ScrubContext } from "./context.ts";
-import { isExampleEmail, isExamplePhone } from "./fakes.ts";
+import { isExampleEmail, isExamplePhone, SECRET } from "./fakes.ts";
 import {
   CANDIDATE_RUN,
   EMAIL,
@@ -35,9 +35,9 @@ export function scrubText(text: string, where: string, context: ScrubContext, de
 }
 
 function replaceKnownSecrets(text: string, where: string, context: ScrubContext): string {
-  return replaceRanges(text, context.knownSecrets.find(text), (secret) => {
+  return replaceRanges(text, context.knownSecrets.find(text), () => {
     context.report.add("known-secret", where);
-    return context.fakes.secret(secret);
+    return SECRET;
   });
 }
 

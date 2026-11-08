@@ -30,68 +30,66 @@ export interface ScrubResult {
  * between calls. Stand-ins are stable within the call, so the same e-mail
  * address or ID gets the same stand-in in every exchange.
  *
- * Throws `RecordingRefused` when something can't be scrubbed safely; the
- * caller must then save nothing.
+ * Throws `RecordingRefused` when something can't be scrubbed safely, or a
+ * declared user-content path can't be read; the caller must then save nothing.
  */
 export function scrubExchanges(
   exchanges: readonly CapturedExchange[],
   options: ScrubOptions,
 ): ScrubResult {
+  const { policy } = options;
   const context: ScrubContext = {
-    policy: options.policy,
+    policy,
     knownSecrets: new KnownSecrets(options.knownSecrets ?? []),
     fakes: new Fakes(),
     report: new ReportBuilder(),
     matchedUserContent: new Set(),
   };
+  const userContent: UserContentPaths = {
+    request: new FieldPaths(policy.userContent, "request"),
+    response: new FieldPaths(policy.userContent, "response"),
+  };
   const scrubbed = exchanges.map((exchange, index) =>
-    scrubExchange(exchange, `exchanges[${index}]`, context),
+    scrubExchange(exchange, `exchanges[${index}]`, userContent, context),
   );
-  const declared = [...options.policy.userContent.request, ...options.policy.userContent.response];
-  const unmatched = [...new Set(declared)].filter((path) => !context.matchedUserContent.has(path));
+  const unmatched = [...new Set(policy.userContent)].filter(
+    (path) => !context.matchedUserContent.has(path),
+  );
   return { exchanges: scrubbed, report: context.report.build(unmatched) };
+}
+
+interface UserContentPaths {
+  readonly request: FieldPaths;
+  readonly response: FieldPaths;
 }
 
 function scrubExchange(
   exchange: CapturedExchange,
   where: string,
+  userContent: UserContentPaths,
   context: ScrubContext,
 ): RecordedExchange {
   const { request, response } = exchange;
-  const { policy } = context;
-  const requestBody = parseBody(
-    request.body,
-    request.headers,
-    policy.textContentTypes,
-    `${where}.request.body`,
-  );
+  const allowed = context.policy.allowContentTypes;
+  const requestBody = parseBody(request.body, request.headers, allowed, `${where}.request.body`);
   const responseBody = parseBody(
     response.body,
     response.headers,
-    policy.textContentTypes,
+    allowed,
     `${where}.response.body`,
   );
   return {
+    transport: "http",
     request: {
       method: request.method.toUpperCase(),
       url: scrubUrl(request.url, `${where}.request.url`, context),
       headers: scrubHeaders(request.headers, `${where}.request.headers`, context),
-      body: scrubBody(
-        requestBody,
-        `${where}.request.body`,
-        new FieldPaths(policy.userContent.request),
-        context,
-      ),
+      body: scrubBody(requestBody, `${where}.request.body`, userContent.request, context),
     },
     response: {
       status: response.status,
       headers: scrubHeaders(response.headers, `${where}.response.headers`, context),
-      body: scrubBody(
-        responseBody,
-        `${where}.response.body`,
-        new FieldPaths(policy.userContent.response),
-        context,
-      ),
+      body: scrubBody(responseBody, `${where}.response.body`, userContent.response, context),
     },
   };
 }

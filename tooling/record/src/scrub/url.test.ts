@@ -23,24 +23,37 @@ describe("scrubUrl", () => {
     );
   });
 
-  it("replaces a user name and password", () => {
+  it("removes a user name and password", () => {
     const context = testContext();
     expect(scrubUrl(`https://user:${FAKE.plainKey}@api.example.com/`, "url", context)).toBe(
-      "https://scrubbed:scrubbed@api.example.com/",
+      "https://api.example.com/",
     );
     expect(rulesUsed(context)).toEqual(["url-userinfo"]);
+  });
+
+  it("puts the scrubbed name, not the address, in the report", () => {
+    const context = testContext();
+    scrubUrl(`https://api.example.com/?${encodeURIComponent(FAKE.email)}=1`, "url", context);
+    expect(JSON.stringify(context.report.build([]))).not.toContain(FAKE.email);
+  });
+
+  it("uses the fixed stand-in when a query parameter holds the integration's key", () => {
+    const context = testContext({}, [FAKE.plainKey]);
+    expect(scrubUrl(`https://api.example.com/?key=${FAKE.plainKey}`, "url", context)).toBe(
+      "https://api.example.com/?key=%3Cscrubbed%3Asecret%3E",
+    );
   });
 
   it("replaces an e-mail address in the path", () => {
     expect(
       scrubUrl(`https://api.example.com/users/${FAKE.email}/messages`, "url", testContext()),
-    ).toBe("https://api.example.com/users/person-1%40example.com/messages");
+    ).toBe("https://api.example.com/users/person1%40example.com/messages");
   });
 
   it("replaces an e-mail address in a query value", () => {
     expect(
       scrubUrl(`https://api.example.com/search?q=from:${FAKE.email}`, "url", testContext()),
-    ).toBe("https://api.example.com/search?q=from%3Aperson-1%40example.com");
+    ).toBe("https://api.example.com/search?q=from%3Aperson1%40example.com");
   });
 
   it("leaves an ordinary URL exactly as it was", () => {

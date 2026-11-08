@@ -1,23 +1,15 @@
-import { findLeaks, type Leak } from "../safety-net/find-leaks.ts";
+import {
+  formatRecording,
+  RECORDING_FORMAT,
+  type RecordingFile,
+  recordingFileSchema,
+} from "../format.ts";
+import { findLeaks, type Leak } from "../safety-net.ts";
 import { RecordingRefused } from "../scrub/context.ts";
-import type { CapturedExchange, RecordedExchange } from "../scrub/exchange.ts";
+import type { CapturedExchange } from "../scrub/exchange.ts";
 import type { ScrubPolicy } from "../scrub/policy.ts";
-import type { ScrubReport } from "../scrub/report.ts";
+import { reportEntries, type ScrubReport } from "../scrub/report.ts";
 import { scrubExchanges } from "../scrub/scrubber.ts";
-
-/** Bumped when the file layout changes, so the conformance suite can tell. */
-export const RECORDING_FORMAT = "halonic-recording/1";
-
-/**
- * One recording file: `integrations/<name>/recordings/<scenario>.json`.
- * To be confirmed with the conformance suite (Ravi, I1–I3).
- */
-export interface RecordingFile {
-  readonly format: typeof RECORDING_FORMAT;
-  readonly integration: string;
-  readonly scenario: string;
-  readonly exchanges: readonly RecordedExchange[];
-}
 
 export interface RecordingInput {
   readonly integration: string;
@@ -42,8 +34,9 @@ export type PreparedRecording =
  * Turns captured traffic into the exact text of a recording file, or says
  * why it must not be saved. Pure: the caller writes `text` only when `ok`.
  *
- * Two independent checks: the scrubber's rules, then the safety net over the
- * finished text. If the safety net finds anything, a rule missed it; the
+ * Three checks, in order: the scrubber's rules; the file must match the
+ * recording format; and the safety net over the finished text, report
+ * included. If the safety net finds anything, a rule missed it; the
  * recording is refused rather than saved with a leak.
  *
  * @param scrub - only for tests, to show the safety net catches what a broken rule lets through
@@ -67,8 +60,20 @@ export function prepareRecording(
     integration: input.integration,
     scenario: input.scenario,
     exchanges: scrubbed.exchanges,
+    scrubReport: reportEntries(scrubbed.report),
   };
-  const text = `${JSON.stringify(file, null, 2)}\n`;
+  const checked = recordingFileSchema.safeParse(file);
+  if (!checked.success) {
+    // Only the place is named: a Zod message could quote the value.
+    const where = checked.error.issues[0]?.path.join(".") ?? "";
+    return {
+      ok: false,
+      reason: "refused",
+      where,
+      message: "the file doesn't match the recording format",
+    };
+  }
+  const text = formatRecording(checked.data);
 
   const leaks = findLeaks(text, input.knownSecrets);
   if (leaks.length > 0) {

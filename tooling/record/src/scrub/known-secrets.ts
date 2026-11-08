@@ -32,6 +32,11 @@ export class KnownSecrets {
     return mergeRanges([...this.findWhole(text), ...this.findPieces(text)]);
   }
 
+  /** True when all of `value` is a known secret (or an encoding of one). */
+  isWhole(value: string): boolean {
+    return this.wholeValues.includes(value);
+  }
+
   private findWhole(text: string): TextRange[] {
     const found: TextRange[] = [];
     for (const value of this.wholeValues) {

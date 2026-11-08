@@ -1,6 +1,6 @@
-import { decodeBase64Text } from "../scrub/base64.ts";
-import { isExampleEmail, isExamplePhone } from "../scrub/fakes.ts";
-import { KnownSecrets } from "../scrub/known-secrets.ts";
+import { decodeBase64Text } from "./scrub/base64.ts";
+import { isExampleEmail, isExamplePhone } from "./scrub/fakes.ts";
+import { KnownSecrets } from "./scrub/known-secrets.ts";
 import {
   CANDIDATE_RUN,
   EMAIL,
@@ -8,7 +8,7 @@ import {
   PHONE,
   PLACEHOLDER,
   TOKEN_SHAPES,
-} from "../scrub/patterns.ts";
+} from "./scrub/patterns.ts";
 
 export type LeakKind = "known-secret" | "fake-key" | "token-shape" | "email" | "phone";
 

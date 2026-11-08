@@ -40,7 +40,7 @@ function mailExchanges(): CapturedExchange[] {
 }
 
 const mailPolicy = definePolicy({
-  userContent: { response: ["messages[].subject", "messages[].snippet"] },
+  userContent: ["response.body.messages[*].subject", "response.body.messages[*].snippet"],
 });
 
 describe("scrubExchanges", () => {
@@ -50,27 +50,28 @@ describe("scrubExchanges", () => {
       knownSecrets: [FAKE.apiKey],
     });
     expect(exchanges[0]).toEqual({
+      transport: "http",
       request: {
         method: "GET",
-        url: "https://mail.example.com/v1/users/person-1%40example.com/messages?maxResults=2",
-        headers: [["authorization", "Bearer scrubbed-secret-1"]],
-        body: { type: "empty" },
+        url: "https://mail.example.com/v1/users/person1%40example.com/messages?maxResults=2",
+        headers: { authorization: "Bearer <scrubbed:secret>" },
+        body: { kind: "empty" },
       },
       response: {
         status: 200,
-        headers: [["content-type", "application/json"]],
+        headers: { "content-type": "application/json" },
         body: {
-          type: "json",
+          kind: "json",
           value: {
             messages: [
               {
                 id: "m1",
-                from: "person-2@example.com",
-                subject: "scrubbed user content",
-                snippet: "scrubbed user content",
+                from: "person2@example.com",
+                subject: "<scrubbed:content>",
+                snippet: "<scrubbed:content>",
               },
             ],
-            nextPageToken: "scrubbed-secret-2",
+            nextPageToken: "scrubbed-secret-1",
           },
         },
       },
@@ -82,9 +83,9 @@ describe("scrubExchanges", () => {
     const [first, second] = exchanges;
     // The page token from the first response is the one sent in the second request.
     expect(second?.request.url).toBe(
-      "https://mail.example.com/v1/users/person-1%40example.com/messages?pageToken=scrubbed-secret-2",
+      "https://mail.example.com/v1/users/person1%40example.com/messages?pageToken=scrubbed-secret-1",
     );
-    expect(first?.request.url).toContain("person-1%40example.com");
+    expect(first?.request.url).toContain("person1%40example.com");
   });
 
   it("finds a key split across the URL and the body", () => {
@@ -110,10 +111,10 @@ describe("scrubExchanges", () => {
 
   it("lists declared user-content paths that matched nothing", () => {
     const policy = definePolicy({
-      userContent: { response: ["messages[].snippet", "mesages[].subject"] },
+      userContent: ["response.body.messages[*].snippet", "response.body.mesages[*].subject"],
     });
     const { report } = scrubExchanges(mailExchanges(), { policy });
-    expect(report.unmatchedUserContent).toEqual(["mesages[].subject"]);
+    expect(report.unmatchedUserContent).toEqual(["response.body.mesages[*].subject"]);
   });
 
   it("refuses the whole recording when one body can't be parsed", () => {
@@ -125,7 +126,7 @@ describe("scrubExchanges", () => {
     expect(() => scrubExchanges([...exchanges, htmlPage], { policy: mailPolicy })).toThrow(
       new RecordingRefused(
         "exchanges[2].response.body",
-        'a body with content type "text/html" can\'t be scrubbed. If the integration really needs it, allow it with textContentTypes',
+        'a body with content type "text/html" can\'t be scrubbed. If the integration really needs it, allow it with recording.allowContentTypes',
       ),
     );
   });

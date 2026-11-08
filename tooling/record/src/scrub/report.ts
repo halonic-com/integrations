@@ -68,3 +68,25 @@ export function summarizeReport(report: ScrubReport): string[] {
   }
   return [...counts].map(([rule, count]) => `${count} ${RULE_LABELS[rule]}`);
 }
+
+/** One line of the report saved in the recording file: a rule, a place and how often. */
+export interface ReportEntry {
+  readonly rule: ScrubRule;
+  readonly path: string;
+  readonly count: number;
+}
+
+/**
+ * The report as it is saved in the recording file: replacements grouped by
+ * rule and place, in the order they were first made. Values are never in it.
+ */
+export function reportEntries(report: ScrubReport): ReportEntry[] {
+  const entries = new Map<string, { rule: ScrubRule; path: string; count: number }>();
+  for (const { rule, where } of report.replacements) {
+    const key = `${rule} ${where}`;
+    const entry = entries.get(key) ?? { rule, path: where, count: 0 };
+    entry.count += 1;
+    entries.set(key, entry);
+  }
+  return [...entries.values()];
+}

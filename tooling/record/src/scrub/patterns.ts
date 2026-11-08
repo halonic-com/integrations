@@ -58,7 +58,7 @@ export function hasPhoneLength(match: string): boolean {
 }
 
 /** The stand-ins the scrubber writes; never treated as something to remove. */
-export const PLACEHOLDER = /^scrubbed(?:-secret-\d+)?$/;
+export const PLACEHOLDER = /^(?:scrubbed(?:-secret-\d+)?|<scrubbed:(?:secret|content)>)$/;
 
 /** The shortest mixed run that can count as random. */
 const MIN_RANDOM_LENGTH = 24;
