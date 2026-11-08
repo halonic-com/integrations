@@ -4,10 +4,18 @@ import answerJson from "../recordings/answer-json.json" with { type: "json" };
 import answerText from "../recordings/answer-text.json" with { type: "json" };
 import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import quotaExceeded from "../recordings/quota-exceeded.json" with { type: "json" };
+import streamServerError from "../recordings/stream-server-error.json" with { type: "json" };
+import streamText from "../recordings/stream-text.json" with { type: "json" };
 import toolCall from "../recordings/tool-call.json" with { type: "json" };
 import { OpenAiError } from "./errors.ts";
 import { openai } from "./index.ts";
-import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
+import type {
+  ChatRequest,
+  ChatStreamEvent,
+  IntegrationHttpClient,
+  LlmProvider,
+  ProviderConfig,
+} from "./kit.ts";
 import { createOpenAiProvider } from "./provider.ts";
 
 /**
@@ -47,6 +55,17 @@ const briefQuestion: ChatRequest = {
 
 function provider(http: IntegrationHttpClient) {
   return createOpenAiProvider(http, config);
+}
+
+async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
+  if (llm.stream === undefined) {
+    throw new Error("The provider doesn't stream.");
+  }
+  const read: ChatStreamEvent[] = [];
+  for await (const piece of llm.stream(request)) {
+    read.push(piece);
+  }
+  return read;
 }
 
 describe("chat", () => {
@@ -168,13 +187,86 @@ describe("chat errors", () => {
   });
 });
 
+describe("stream", () => {
+  it("asks for the usage and yields the text, then done with the token counts", async () => {
+    const recording = replay(streamText, { policy });
+    const read = await readStream(provider(recording.http), briefQuestion);
+    recording.assertAllUsed();
+    expect(recording.sent[0]?.body).toMatchObject({
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+    expect(recording.sent[0]?.init.auth).toEqual({ secret: "openai-key", as: "bearer" });
+    const texts = read.filter((piece) => piece.type === "text").map((piece) => piece.delta);
+    expect(texts).toHaveLength(3);
+    expect(read.at(-1)).toEqual({
+      type: "done",
+      response: {
+        content: texts.join(""),
+        toolCalls: [],
+        usage: { inputTokens: 24, outputTokens: 9 },
+        finishReason: "stop",
+      },
+    });
+  });
+
+  it("sends the same body as chat apart from the streaming switches", async () => {
+    const chatRecording = replay(answerText, { policy });
+    await provider(chatRecording.http).chat(briefQuestion);
+    const streamRecording = replay(streamText, { policy });
+    await readStream(provider(streamRecording.http), briefQuestion);
+    expect(streamRecording.sent[0]?.body).toEqual({
+      ...(chatRecording.sent[0]?.body as object),
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+  });
+
+  it("passes the signal on", async () => {
+    const recording = replay(streamText, { policy });
+    const signal = { aborted: false };
+    await readStream(provider(recording.http), { ...briefQuestion, signal });
+    expect(recording.sent[0]?.init.signal).toBe(signal);
+  });
+
+  it("reports an error chunk mid-answer by its type", async () => {
+    const recording = replay(streamServerError, { policy });
+    const read: ChatStreamEvent[] = [];
+    const error = await (async () => {
+      for await (const piece of provider(recording.http).stream?.(question) ?? []) {
+        read.push(piece);
+      }
+    })().catch((caught) => caught);
+    expect(read.map((piece) => piece.type)).toEqual(["text"]);
+    expect(error).toBeInstanceOf(OpenAiError);
+    expect(error).toMatchObject({ code: "unavailable" });
+    expect(error.message).toBe(
+      "OpenAI is having trouble right now. Try again later (server_error).",
+    );
+  });
+
+  it("reports a refused key before any event, like chat", async () => {
+    const http = fakeResponse(401, async () => ({
+      error: { type: "invalid_request_error", code: "invalid_api_key", message: "Incorrect key" },
+    }));
+    const error = await readStream(provider(http), question).catch((caught) => caught);
+    expect(error).toMatchObject({ code: "not-signed-in", name: "OpenAiError" });
+  });
+
+  it("refuses a successful answer that isn't an event stream", async () => {
+    const http = fakeResponse(200, async () => ({ choices: [] }));
+    const error = await readStream(provider(http), question).catch((caught) => caught);
+    expect(error).toMatchObject({ code: "unexpected-response" });
+  });
+});
+
 describe("the integration", () => {
   it("reports only the capabilities the mapping handles", () => {
     const connection = openai.connect({ http: replay(answerText).http });
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "gpt",
       type: "openai",
-      capabilities: { tools: true, jsonOutput: true, vision: false, streaming: false },
+      capabilities: { tools: true, jsonOutput: true, vision: false, streaming: true },
     });
   });
 

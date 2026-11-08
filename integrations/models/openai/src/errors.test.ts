@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { codeForStatus, errorForResponse } from "./errors.ts";
 import type { HttpResponse } from "./kit.ts";
 
+const noHeaders = { get: () => null };
+
 function response(status: number, body: unknown): HttpResponse {
-  return { ok: false, status, json: async () => body };
+  return { ok: false, status, headers: noHeaders, body: null, json: async () => body };
 }
 
 describe("codeForStatus", () => {
@@ -70,6 +72,8 @@ describe("errorForResponse", () => {
   it("uses the status alone when the body isn't JSON", async () => {
     const notJson: HttpResponse = {
       ok: false,
+      headers: noHeaders,
+      body: null,
       status: 502,
       json: async () => {
         throw new SyntaxError("Unexpected token '<', \"<html>\" is not valid JSON");

@@ -17,10 +17,12 @@ tools: []
 needs: []
 
 limits:
-  # Without streaming, Chat Completions sends its response headers only once
-  # the whole answer is done, so a long answer would hit the default 30 s
-  # headers timeout. Allow it the full 10 minutes the kit allows overall.
-  # The field name follows the kit and may still change in the sheet.
+  # `chat` doesn't stream, and then Chat Completions sends its response
+  # headers only once the whole answer is done, so a long answer would hit
+  # the default 30 s headers timeout. Allow it the full 10 minutes the kit
+  # allows overall. `stream` gets its headers at once and doesn't need it,
+  # but the sheet has one limit for both. The field name follows the kit and
+  # may still change in the sheet.
   headersTimeoutMs: 600000
 
 recording:
@@ -31,3 +33,9 @@ recording:
     - response.body.choices[*].message.content
     - response.body.choices[*].message.refusal
     - response.body.choices[*].message.tool_calls[*].function.arguments
+    # The same content in a streamed answer: each chunk's data.
+    - response.body[*].data.choices[*].delta.content
+    - response.body[*].data.choices[*].delta.refusal
+    # Pieces of a tool's arguments. Each piece becomes a placeholder, so a
+    # streamed tool call doesn't replay yet: see the README.
+    - response.body[*].data.choices[*].delta.tool_calls[*].function.arguments

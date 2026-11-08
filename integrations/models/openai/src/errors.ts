@@ -68,6 +68,28 @@ export async function errorForResponse(response: HttpResponse): Promise<OpenAiEr
   return new OpenAiError(code, `${messages[code]}${detail ? ` (${detail})` : ""}.`);
 }
 
+/**
+ * The error for a chunk with `error` in a streamed answer. The HTTP status
+ * was already `200`, so the code comes from OpenAI's error code or type
+ * instead. Any other one is `unavailable`, like a `5xx`.
+ */
+export function errorForStreamChunk(data: unknown): OpenAiError {
+  const body = errorBodySchema.safeParse(data);
+  if (!body.success) {
+    return unexpectedResponse();
+  }
+  const detail = body.data.error.code ?? body.data.error.type;
+  const code = codeForErrorType.get(detail ?? "") ?? "unavailable";
+  return new OpenAiError(code, `${messages[code]}${detail ? ` (${detail})` : ""}.`);
+}
+
+/** OpenAI's error codes and types we know, by our code. A Map, because the name comes from the service. */
+const codeForErrorType: ReadonlyMap<string, OpenAiErrorCode> = new Map([
+  ["invalid_request_error", "bad-arguments"],
+  ["rate_limit_exceeded", "rate-limited"],
+  [quotaCode, "quota-exceeded"],
+]);
+
 /** For a body that isn't JSON or that the schema refuses. The parse error isn't attached: it can quote the body. */
 export function unexpectedResponse(): OpenAiError {
   return new OpenAiError("unexpected-response", `${messages["unexpected-response"]}.`);

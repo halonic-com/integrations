@@ -1,0 +1,197 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_completion_tokens": 1024,
+            "messages": [
+              {
+                "content": "<scrubbed:content>",
+                "role": "system"
+              },
+              {
+                "content": "<scrubbed:content>",
+                "role": "user"
+              }
+            ],
+            "model": "gpt-5-mini",
+            "stream": true,
+            "stream_options": {
+              "include_usage": true
+            }
+          }
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions"
+      },
+      "response": {
+        "body": {
+          "kind": "sse",
+          "value": [
+            {
+              "data": {
+                "choices": [
+                  {
+                    "delta": {
+                      "content": "<scrubbed:content>",
+                      "refusal": null,
+                      "role": "assistant"
+                    },
+                    "finish_reason": null,
+                    "index": 0,
+                    "logprobs": null
+                  }
+                ],
+                "created": 1767225600,
+                "id": "chatcmpl-FAKE000000000000000000002",
+                "model": "gpt-5-mini-2025-08-07",
+                "object": "chat.completion.chunk",
+                "service_tier": "default",
+                "system_fingerprint": null,
+                "usage": null
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "choices": [
+                  {
+                    "delta": {
+                      "content": "<scrubbed:content>"
+                    },
+                    "finish_reason": null,
+                    "index": 0,
+                    "logprobs": null
+                  }
+                ],
+                "created": 1767225600,
+                "id": "chatcmpl-FAKE000000000000000000002",
+                "model": "gpt-5-mini-2025-08-07",
+                "object": "chat.completion.chunk",
+                "service_tier": "default",
+                "system_fingerprint": null,
+                "usage": null
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "choices": [
+                  {
+                    "delta": {
+                      "content": "<scrubbed:content>"
+                    },
+                    "finish_reason": null,
+                    "index": 0,
+                    "logprobs": null
+                  }
+                ],
+                "created": 1767225600,
+                "id": "chatcmpl-FAKE000000000000000000002",
+                "model": "gpt-5-mini-2025-08-07",
+                "object": "chat.completion.chunk",
+                "service_tier": "default",
+                "system_fingerprint": null,
+                "usage": null
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "choices": [
+                  {
+                    "delta": {},
+                    "finish_reason": "stop",
+                    "index": 0,
+                    "logprobs": null
+                  }
+                ],
+                "created": 1767225600,
+                "id": "chatcmpl-FAKE000000000000000000002",
+                "model": "gpt-5-mini-2025-08-07",
+                "object": "chat.completion.chunk",
+                "service_tier": "default",
+                "system_fingerprint": null,
+                "usage": null
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "choices": [],
+                "created": 1767225600,
+                "id": "chatcmpl-FAKE000000000000000000002",
+                "model": "gpt-5-mini-2025-08-07",
+                "object": "chat.completion.chunk",
+                "service_tier": "default",
+                "system_fingerprint": null,
+                "usage": {
+                  "completion_tokens": 9,
+                  "completion_tokens_details": {
+                    "reasoning_tokens": 0
+                  },
+                  "prompt_tokens": 24,
+                  "prompt_tokens_details": {
+                    "cached_tokens": 0
+                  },
+                  "total_tokens": 33
+                }
+              },
+              "event": "message"
+            },
+            {
+              "data": "[DONE]",
+              "event": "message"
+            }
+          ]
+        },
+        "headers": {
+          "content-type": "text/event-stream; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-openai",
+  "scenario": "stream-text",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[1].content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].data.choices[0].delta.content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].data.choices[0].delta.content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].data.choices[0].delta.content",
+      "rule": "user-content"
+    }
+  ]
+}
