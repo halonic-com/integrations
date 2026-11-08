@@ -1,6 +1,7 @@
 /**
- * What keys, tokens, e-mail addresses and phone numbers look like. Shared by
- * the scrubber and the safety net, so both judge text the same way.
+ * What keys, tokens and phone numbers look like. Shared by the scrubber and
+ * the safety net, so both judge text the same way. E-mail addresses are found
+ * in `emails.ts`.
  *
  * Every pattern but `AUTH_SCHEME` is global; use it with `matchAll` or
  * `replace`, which work on a copy and never share `lastIndex` between calls.
@@ -41,9 +42,6 @@ export const AUTH_SCHEME = /^(?:Bearer|Basic|Digest|Token)\s+/i;
  * is then checked: is it encoded text, or does it look random?
  */
 export const CANDIDATE_RUN = /(?<![\w+/-])[\w+/-]{16,}={0,2}(?![\w+/=-])/g;
-
-/** E-mail addresses, including ones in HTML, URLs and mail headers. */
-export const EMAIL = /[\w.%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 
 /**
  * Phone numbers written the way people write them: with a country code

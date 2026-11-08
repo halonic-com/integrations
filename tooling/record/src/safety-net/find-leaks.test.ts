@@ -44,12 +44,52 @@ describe("findLeaks", () => {
     expect(findLeaks(`{"raw":"${encoded}"}`, [])).toEqual([{ kind: "email", offset: 8 }]);
   });
 
+  it("looks inside URL-encoded text, such as a search in a query string", () => {
+    const url = `https://mail.example.com/v1/messages?q=${encodeURIComponent(`from:${FAKE.email}`)}`;
+    expect(findLeaks(`{"url":"${url}"}`, [])).toEqual([{ kind: "email", offset: 8 }]);
+  });
+
+  it("looks inside a URL encoded twice, as in a URL inside a query value", () => {
+    const next = `https://mail.example.com/?q=${encodeURIComponent(FAKE.email)}`;
+    const url = `https://login.example.com/?next=${encodeURIComponent(next)}`;
+    expect(kinds(`{"url":"${url}"}`)).toEqual(["email"]);
+  });
+
+  it("counts an address once when it is both plain and encoded in one run", () => {
+    const value = `${FAKE.email}%20${encodeURIComponent(FAKE.otherEmail)}`;
+    expect(kinds(`{"x":"${value}"}`)).toEqual(["email"]);
+  });
+
+  it("scans a large base64 body quickly", () => {
+    // A body of 200,000 base64 characters with no `%` or `@` in it took about
+    // 26 seconds before the encoded-text pattern was anchored to the start of
+    // a run and addresses were looked for from each `@`.
+    const body = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo".repeat(6_000).slice(0, 200_000);
+    const encodedAddress = encodeURIComponent(FAKE.email);
+    const started = performance.now();
+    const found = kinds(`{"raw":"${body}","q":"${encodedAddress}"}`);
+    const elapsed = performance.now() - started;
+    expect(found).toEqual(["email"]);
+    expect(elapsed).toBeLessThan(1_000);
+  });
+
+  it.each([".", "_", "+", "%2C"])("finds an address glued onto another with %j", (separator) => {
+    expect(kinds(`{"x":"${FAKE.email}${separator}x@other.test"}`)).toContain("email");
+  });
+
+  it("refuses two scrubbed addresses that ended up glued together", () => {
+    // The scrubber replaces glued addresses one by one, so their stand-ins
+    // can run together. That no longer reads as a stand-in, so it is refused.
+    expect(kinds(`{"x":"person1@example.comperson2@example.com"}`)).toEqual(["email"]);
+  });
+
   it("accepts the scrubber's own stand-ins", () => {
     const scrubbed = JSON.stringify({
       authorization: "Bearer <scrubbed:secret>",
       cookie: "<scrubbed:secret>",
       nextPageToken: "scrubbed-secret-1",
       url: "https://api.example.com/?key=%3Cscrubbed%3Asecret%3E",
+      search: "https://api.example.com/?q=from%3Aperson1%40example.com&n=%2B447700900001",
       replyTo: "support@mail.example.com",
       from: "person1@example.com",
       phone: "+447700900001",

@@ -1,5 +1,6 @@
 import { RecordingRefused } from "./context.ts";
 import type { JsonValue } from "./exchange.ts";
+import { isQueryPath } from "./query-paths.ts";
 
 /**
  * The paths an integration uses to point at user-content fields, such as
@@ -40,10 +41,12 @@ export class FieldPaths {
   /**
    * Keeps the paths that start at `<side>.body`. Throws `RecordingRefused`
    * for a path it can't read: a path that silently matched nothing would
-   * leave content in the file that was meant to be removed.
+   * leave content in the file that was meant to be removed. Query paths
+   * (`request.query.q`) are left to `QueryPaths`.
    */
   constructor(sources: readonly string[], side: BodySide) {
     this.patterns = sources
+      .filter((source) => !isQueryPath(source))
       .map((source) => ({ source, parsed: parsePath(source) }))
       .filter(({ parsed }) => parsed.side === side)
       .map(({ source, parsed }) => ({ source, steps: parsed.steps }));
@@ -119,7 +122,7 @@ function sideOf(source: string): BodySide {
   if (source.startsWith("response.body")) {
     return "response";
   }
-  throw unreadable(source, "it must start with request.body or response.body");
+  throw unreadable(source, "it must start with request.body, response.body or request.query");
 }
 
 function toStep(field: string | undefined, item: string | undefined): Step {

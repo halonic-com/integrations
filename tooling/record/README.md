@@ -56,6 +56,7 @@ recording:
     - response.body.payload.parts[*].body.data
     - response.body[*].data.delta.text # streamed text, in every event
     - request.body.raw
+    - request.query.q # a search in the request URL's query string
   # Query parameters, form fields and JSON fields that carry a secret, when
   # their names don't already say so. Optional.
   secretFields: [upload_id]
@@ -67,8 +68,10 @@ recording:
 
 Paths start at `request.body` or `response.body`, then use `.name` for a
 field, `.*` for any field name, `[*]` for every item of a list and `[n]` for
-one item. A form field is `request.body.<name>`. In an event stream, the body
-is the list of events, so `response.body[*].data` is each event's data.
+one item. A form field is `request.body.<name>`. A query parameter of the
+request URL is `request.query.<name>`, one name without wildcards; it doesn't
+reach a URL inside a query value or in a response header. In an event
+stream, the body is the list of events, so `response.body[*].data` is each event's data.
 `request.body` alone means the whole body. A path the recorder can't read
 stops the recording.
 
@@ -120,8 +123,9 @@ After scrubbing, `prepareRecording` builds the exact file text and scans all
 of it once more, separately from the rules: for the key values the kit
 added (also encoded, JSON-escaped or in pieces), the `halonic-fake-` prefix
 every fake key in our tests carries, known token shapes, e-mail addresses
-and phone numbers, also inside base64. Then it reads the file and checks
-that every header, query parameter, form field and JSON field named like a
+and phone numbers, also inside base64 and inside URL-encoded text, so
+`from%3Aperson%40mail.test` in a query string is found too. Then it reads
+the file and checks that every header, query parameter, form field and JSON field named like a
 secret holds a stand-in, since a short password has no shape to find. If it
 finds anything, a rule missed it, and nothing is saved.
 

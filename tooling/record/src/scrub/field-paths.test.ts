@@ -63,6 +63,11 @@ describe("FieldPaths", () => {
     expect(paths.match(["raw"])).toBeUndefined();
   });
 
+  it("leaves query paths to QueryPaths", () => {
+    const paths = new FieldPaths(["request.query.q"], "request");
+    expect(paths.match(["q"])).toBeUndefined();
+  });
+
   it.each([
     ["no side", "messages[*].snippet"],
     ["an old-style list", "response.body.messages[].snippet"],
