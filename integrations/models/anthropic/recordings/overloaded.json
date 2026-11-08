@@ -1,0 +1,65 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_tokens": 1024,
+            "messages": [
+              {
+                "content": [
+                  {
+                    "text": "<scrubbed:content>",
+                    "type": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "model": "claude-haiku-4-5-20251001"
+          }
+        },
+        "headers": {
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "message": "Overloaded",
+              "type": "overloaded_error"
+            },
+            "type": "error"
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 529
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-anthropic",
+  "scenario": "overloaded",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content[0].text",
+      "rule": "user-content"
+    }
+  ]
+}

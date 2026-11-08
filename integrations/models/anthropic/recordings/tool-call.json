@@ -1,0 +1,118 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_tokens": 1024,
+            "messages": [
+              {
+                "content": [
+                  {
+                    "text": "<scrubbed:content>",
+                    "type": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "model": "claude-haiku-4-5-20251001",
+            "tools": [
+              {
+                "description": "<scrubbed:content>",
+                "input_schema": {
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ],
+                  "type": "object"
+                },
+                "name": "weather_forecast"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "content": [
+              {
+                "text": "<scrubbed:content>",
+                "type": "text"
+              },
+              {
+                "id": "toolu_01FAKE00000000000000001",
+                "input": {
+                  "city": "<scrubbed:content>"
+                },
+                "name": "weather_forecast",
+                "type": "tool_use"
+              }
+            ],
+            "id": "msg_01FAKE0000000000000000001",
+            "model": "claude-haiku-4-5-20251001",
+            "role": "assistant",
+            "stop_reason": "tool_use",
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "input_tokens": 402,
+              "output_tokens": 57
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-anthropic",
+  "scenario": "tool-call",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.tools[0].description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.content[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.content[1].input",
+      "rule": "user-content"
+    }
+  ]
+}
