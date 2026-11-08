@@ -4,8 +4,9 @@ import { type RecordingFile, recordingFileSchema } from "./format.ts";
  * Replays a recording file as `host.http`, the way the conformance suite
  * will: each call must match the next exchange by method and URL, an
  * unexpected call fails, and `assertAllUsed` fails on an unused exchange.
- * Request bodies in a recording are scrubbed, so they aren't compared; tests
- * check what was sent through `sent`.
+ * The key and the headers the integration sets must match the recording too
+ * (see `checkMatches`). Request bodies in a recording are scrubbed, so they
+ * aren't compared; tests check what was sent through `sent`.
  *
  * For integration tests only: import it from `@halonicjs/tooling-record/replay`
  * in a devDependency. Replace with `@halonicjs/testing-integration` once it
@@ -16,10 +17,11 @@ import { type RecordingFile, recordingFileSchema } from "./format.ts";
  * The HTTP shapes below are the parts of the kit's `host.http` a replay
  * needs. Tooling can't import an integration, so they are written out here;
  * they match the local kit types the integrations use today, so a `Replay`'s
- * `http` can be passed where an integration expects its `IntegrationHttpClient`.
+ * `http` can be passed where an integration expects its `IntegrationHttpClient`
+ * or `HttpClient`.
  */
 
-/** Where the kit puts the integration's key in a request. */
+/** Where the kit puts the integration's key. */
 export type KeyPlacement =
   | { secret: string; as: "bearer" }
   | { secret: string; as: "header"; header: string; prefix?: string }
@@ -39,10 +41,20 @@ export interface ReplayRequestInit {
 export interface ReplayResponse {
   readonly ok: boolean;
   readonly status: number;
-  /** The recorded response headers. Headers the recorder leaves out give `null`. */
   readonly headers: { get(name: string): string | null };
-  json(): Promise<unknown>;
+  /** The body as a stream that yields it in one piece; `null` when there is none. */
+  readonly body: ReplayByteStream | null;
   text(): Promise<string>;
+  json(): Promise<unknown>;
+}
+
+/** The parts of a `ReadableStream<Uint8Array>` a replay gives back. */
+export interface ReplayByteStream {
+  getReader(): {
+    read(): Promise<{ done: false; value: Uint8Array } | { done: true; value?: undefined }>;
+    cancel(reason?: unknown): Promise<void>;
+    releaseLock(): void;
+  };
 }
 
 /** `host.http`, as a replay provides it. */
@@ -64,9 +76,22 @@ export interface Replay {
 }
 
 type Exchange = RecordingFile["exchanges"][number];
+type RecordedHeaders = Exchange["request"]["headers"];
+type RecordedBody = Exchange["response"]["body"];
+
+/*
+ * Integration tests typecheck this file with the integration preset, which
+ * has no Web or Node globals. The runtimes the tests run on all have these
+ * two, so only the parts used here are declared.
+ */
+declare const TextEncoder: new () => { encode(text: string): Uint8Array };
+declare const URLSearchParams: new (pairs: [string, string][]) => { toString(): string };
 
 /** The placeholder the recorder writes where the kit put the integration's key. */
 const scrubbedSecret = "<scrubbed:secret>";
+
+/** The numbered stand-in the recorder writes for a token the service issued, such as a session id. */
+const standIn = /scrubbed-secret-\d+/;
 
 /** Reads `recording` with the recording file schema, so a file the suite would refuse fails here too. */
 export function replay(recording: unknown): Replay {
@@ -101,11 +126,31 @@ function checkMatches(exchange: Exchange, url: string, init: ReplayRequestInit):
       `Expected ${exchange.request.method} ${exchange.request.url}, got ${method} ${url}`,
     );
   }
-  // The recorded key header must be where this request asks the kit to put the key.
-  for (const placement of [init.auth ?? []].flat()) {
+  checkKey(exchange.request.headers, init.auth);
+  checkHeaders(exchange.request.headers, init.headers ?? {});
+}
+
+/**
+ * The key is where the request asks the kit to put it, and nowhere else: a
+ * recording with a key the request doesn't ask for fails as well.
+ */
+function checkKey(recorded: RecordedHeaders, auth: ReplayRequestInit["auth"]): void {
+  const keyHeaders = new Set<string>();
+  for (const placement of [auth ?? []].flat()) {
     const expected = recordedKeyHeader(placement);
-    if (expected !== undefined && exchange.request.headers[expected.name] !== expected.value) {
+    if (expected === undefined) {
+      continue;
+    }
+    keyHeaders.add(expected.name);
+    if (recorded[expected.name] !== expected.value) {
       throw new Error(`The recording has no key in the ${expected.name} header.`);
+    }
+  }
+  for (const [name, value] of Object.entries(recorded)) {
+    if (value.includes(scrubbedSecret) && !keyHeaders.has(name)) {
+      throw new Error(
+        `The recording has a key in the ${name} header; the request doesn't ask for one.`,
+      );
     }
   }
 }
@@ -125,49 +170,100 @@ function recordedKeyHeader(placement: KeyPlacement): { name: string; value: stri
   }
 }
 
+/**
+ * A header the integration sets has the recorded value, when the recording
+ * has it: the recorder leaves out headers that change on every run. A header
+ * the recording has with a stand-in, such as a session id, must be sent: the
+ * integration got that value from an earlier response.
+ */
+function checkHeaders(recorded: RecordedHeaders, sent: Record<string, string>): void {
+  const sentByName = new Map(
+    Object.entries(sent).map(([name, value]) => [name.toLowerCase(), value]),
+  );
+  for (const [name, value] of sentByName) {
+    const recordedValue = recorded[name];
+    if (recordedValue !== undefined && recordedValue !== value) {
+      throw new Error(`The ${name} header is "${value}"; the recording has "${recordedValue}".`);
+    }
+  }
+  for (const [name, value] of Object.entries(recorded)) {
+    if (standIn.test(value) && !sentByName.has(name)) {
+      throw new Error(`The request has no ${name} header; the recording has one.`);
+    }
+  }
+}
+
 function toResponse(recorded: Exchange["response"]): ReplayResponse {
-  const { body } = recorded;
+  const headers = new Map(Object.entries(recorded.headers));
+  const text = bodyText(recorded.body);
   return {
     ok: recorded.status >= 200 && recorded.status < 300,
     status: recorded.status,
-    // The recorder saves header names in lower case, as `Headers.get` matches them.
-    headers: { get: (name) => recorded.headers[name.toLowerCase()] ?? null },
-    text: async () => {
-      switch (body.kind) {
-        case "empty":
-          return "";
-        case "json":
-          return JSON.stringify(body.value);
-        case "text":
-          return body.value;
-        default:
-          throw new Error(`The replay can't read a "${body.kind}" body as text yet.`);
-      }
-    },
-    json: async () => {
-      switch (body.kind) {
-        case "json":
-          return body.value;
-        case "empty":
-          throw new SyntaxError("Unexpected end of JSON input");
-        default:
-          throw new Error(`The replay can't read a "${body.kind}" body as JSON yet.`);
-      }
+    headers: { get: (name) => headers.get(name.toLowerCase()) ?? null },
+    body: recorded.body.kind === "empty" ? null : byteStream(text),
+    text: async () => text,
+    // Parsed from the text, like a real `Response`, so an empty or event-stream body fails the same way.
+    json: async () => JSON.parse(text),
+  };
+}
+
+/** The body as the service sent it. */
+function bodyText(body: RecordedBody): string {
+  switch (body.kind) {
+    case "empty":
+      return "";
+    case "json":
+      return JSON.stringify(body.value);
+    case "form":
+      return new URLSearchParams(body.value).toString();
+    case "text":
+      return body.value;
+    case "sse":
+      return body.value.map(eventText).join("");
+  }
+}
+
+/** One event in the event-stream format. The recorder parsed `data` only when it was a JSON object or list. */
+function eventText({ event, data }: { event: string; data: unknown }): string {
+  const dataText = typeof data === "string" ? data : JSON.stringify(data);
+  const dataLines = dataText.split("\n").map((line) => `data: ${line}\n`);
+  return `event: ${event}\n${dataLines.join("")}\n`;
+}
+
+/** A byte stream that yields `text` in one piece. */
+function byteStream(text: string): ReplayByteStream {
+  return {
+    getReader() {
+      let done = false;
+      return {
+        async read() {
+          if (done) {
+            return { done: true };
+          }
+          done = true;
+          return { done: false, value: new TextEncoder().encode(text) };
+        },
+        async cancel() {},
+        releaseLock() {},
+      };
     },
   };
 }
 
 /**
  * A response for error paths that recordings can't show, such as a body that
- * isn't JSON. It has no headers, and `text` gives what `json` gives, as JSON.
+ * isn't JSON. It has no headers or body stream, and `text` gives what `json`
+ * gives, as JSON.
  */
 export function fakeResponse(status: number, json: () => Promise<unknown>): ReplayHttpClient {
-  const response: ReplayResponse = {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: { get: () => null },
-    json,
-    text: async () => JSON.stringify(await json()),
+  return {
+    fetch: async () => ({
+      ok: status >= 200 && status < 300,
+      status,
+      headers: { get: () => null },
+      body: null,
+      text: async () => JSON.stringify(await json()),
+      json,
+    }),
   };
-  return { fetch: async () => response };
 }
