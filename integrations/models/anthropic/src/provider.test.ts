@@ -50,6 +50,7 @@ describe("chat", () => {
     expect(response).toEqual({
       content: "<scrubbed:content>",
       toolCalls: [],
+      replay: { type: "anthropic", data: [{ type: "text", text: "<scrubbed:content>" }] },
       usage: { inputTokens: 21, outputTokens: 9 },
       finishReason: "stop",
     });

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { ChatMessage, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
 
 /**
@@ -23,7 +24,18 @@ export interface AnthropicMessage {
 export type AnthropicBlock =
   | { type: "text"; text: string }
   | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
-  | { type: "tool_result"; tool_use_id: string; content: string };
+  | { type: "tool_result"; tool_use_id: string; content: string }
+  | ReplayedBlock;
+
+/** A block from an earlier answer, sent back as it came: thinking, text, tool_use or newer. */
+export type ReplayedBlock = z.infer<typeof replayedBlockSchema>;
+
+/**
+ * Run history is stored, so a replay is checked only as far as the API
+ * needs: a list of blocks, each with a type. Its fields are Anthropic's.
+ */
+const replayedBlockSchema = z.looseObject({ type: z.string() });
+const replayedContentSchema = z.array(replayedBlockSchema);
 
 export interface AnthropicTool {
   name: string;
@@ -111,10 +123,7 @@ function toAnthropicTurn(message: ChatMessage): AnthropicMessage | undefined {
     case "user":
       return { role: "user", content: textBlocks(message.content) };
     case "assistant":
-      return {
-        role: "assistant",
-        content: [...textBlocks(message.content), ...(message.toolCalls ?? []).map(toToolUseBlock)],
-      };
+      return { role: "assistant", content: replayedBlocks(message) ?? assistantBlocks(message) };
     case "tool":
       return {
         role: "user",
@@ -123,6 +132,28 @@ function toAnthropicTurn(message: ChatMessage): AnthropicMessage | undefined {
         ],
       };
   }
+}
+
+type AssistantMessage = Extract<ChatMessage, { role: "assistant" }>;
+
+/**
+ * The turn exactly as Anthropic answered it, when we have it. Thinking
+ * blocks must go back unchanged, so the turn is never rebuilt from
+ * `content` and `toolCalls` while it is here. Another provider's replay,
+ * after a model switch, is ignored. Parsing copies the list, so joining
+ * turns never changes the stored history.
+ */
+function replayedBlocks(message: AssistantMessage): AnthropicBlock[] | undefined {
+  if (message.replay?.type !== "anthropic") {
+    return undefined;
+  }
+  const parsed = replayedContentSchema.safeParse(message.replay.data);
+  return parsed.success ? parsed.data : undefined;
+}
+
+/** Without a replay, the turn is rebuilt: text first, then the tool calls. */
+function assistantBlocks(message: AssistantMessage): AnthropicBlock[] {
+  return [...textBlocks(message.content), ...(message.toolCalls ?? []).map(toToolUseBlock)];
 }
 
 /** The API refuses an empty text block, so empty text sends none. */

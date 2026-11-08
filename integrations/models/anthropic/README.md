@@ -29,10 +29,16 @@ again.
 | `meta`, `reasoningEffort`, `extra` | not sent                                                         |
 
 The answer maps back to `ChatResponse`: text blocks joined, `tool_use`
-blocks as `toolCalls`, `usage` with every input token (prompt cache reads
-and writes included) and every output token, and the stop reason as
+blocks as `toolCalls`, the whole ordered content as `replay`, `usage` with
+every input token (prompt cache reads and writes included) and every
+output token, and the stop reason as
 `finishReason` (`end_turn` and `stop_sequence` → `stop`, `tool_use` →
 `tool_calls`, `max_tokens` → `length`, anything else → `other`).
+
+Thinking is sent back unchanged: an assistant message with an Anthropic
+`replay` goes back as exactly that content, signatures and block order
+included. Without one, or with another provider's after a model switch,
+the turn is rebuilt from `content` and `toolCalls`.
 
 ## Limits
 

@@ -26,6 +26,7 @@ describe("fromAnthropicResponse", () => {
     expect(response).toEqual({
       content: "Let me check.",
       toolCalls: [{ id: "toolu_1", name: "weather_forecast", arguments: { city: "Ghent" } }],
+      replay: expect.objectContaining({ type: "anthropic" }),
       usage: { inputTokens: 10, outputTokens: 3 },
       finishReason: "tool_calls",
     });
