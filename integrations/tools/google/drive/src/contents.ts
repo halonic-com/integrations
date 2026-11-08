@@ -21,8 +21,14 @@ export type ReadPlan =
   | { kind: "download"; format: string }
   | { kind: "binary" };
 
-/** Types that are text, though not under `text/`, as in the old connector. */
-const textLikeType = /json|xml|csv|javascript|yaml/;
+/**
+ * Types that are text, though not under `text/`: JSON, XML, CSV,
+ * JavaScript and YAML, also with a suffix such as `image/svg+xml`. The
+ * whole subtype must match, because Word, Excel and PowerPoint files
+ * (`application/vnd.openxmlformats-officedocument.*`) contain `xml` but
+ * are ZIP files.
+ */
+const textLikeType = /^[\w.-]+\/([\w.-]+\+)?(json|xml|csv|javascript|x-yaml|yaml)$/;
 
 export function readPlan(type: string | undefined): ReadPlan {
   const formats = type === undefined ? undefined : exportFormats.get(type);
@@ -43,22 +49,31 @@ export interface TextPart {
 }
 
 /**
- * Returns at most `maxChars` characters from `offset`. A part doesn't end
- * between the two halves of a character outside the Basic Multilingual
- * Plane (an emoji, say), so each part is valid text. The one exception is
- * a part of one character: it must move forward, or a reader would ask for
- * the same part again and again.
+ * Returns at most `maxChars` characters from `offset`. A part doesn't start
+ * or end between the two halves of a character outside the Basic
+ * Multilingual Plane (an emoji, say), so each part is valid text. The one
+ * exception is a part of one character: it must move forward, or a reader
+ * would ask for the same part again and again.
+ *
+ * "Characters" are UTF-16 code units, as in JavaScript strings, so an
+ * emoji counts as two.
  */
 export function textPart(text: string, offset: number, maxChars: number): TextPart {
-  let end = Math.min(offset + maxChars, text.length);
-  if (end < text.length && end - 1 > offset && isHighSurrogate(text.charCodeAt(end - 1))) {
+  // An offset the model picked itself can land inside an emoji.
+  const start = isLowSurrogate(text.charCodeAt(offset)) ? offset + 1 : offset;
+  let end = Math.min(start + maxChars, text.length);
+  if (end < text.length && end - 1 > start && isHighSurrogate(text.charCodeAt(end - 1))) {
     end -= 1;
   }
-  const part: TextPart = { content: text.slice(offset, end) };
+  const part: TextPart = { content: text.slice(start, end) };
   if (end < text.length) part.nextOffset = end;
   return part;
 }
 
 function isHighSurrogate(code: number): boolean {
   return code >= 0xd800 && code <= 0xdbff;
+}
+
+function isLowSurrogate(code: number): boolean {
+  return code >= 0xdc00 && code <= 0xdfff;
 }

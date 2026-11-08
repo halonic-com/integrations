@@ -20,10 +20,19 @@ describe("readPlan", () => {
       kind: "download",
       format: "application/x-yaml",
     });
+    expect(readPlan("application/ld+json")).toEqual({
+      kind: "download",
+      format: "application/ld+json",
+    });
+    expect(readPlan("image/svg+xml")).toEqual({ kind: "download", format: "image/svg+xml" });
   });
 
   it("calls everything else binary, also a missing type and a type named like an object key", () => {
     expect(readPlan("application/pdf")).toEqual({ kind: "binary" });
+    const office = "application/vnd.openxmlformats-officedocument";
+    expect(readPlan(`${office}.wordprocessingml.document`)).toEqual({ kind: "binary" });
+    expect(readPlan(`${office}.spreadsheetml.sheet`)).toEqual({ kind: "binary" });
+    expect(readPlan(`${office}.presentationml.presentation`)).toEqual({ kind: "binary" });
     expect(readPlan(undefined)).toEqual({ kind: "binary" });
     expect(readPlan("constructor")).toEqual({ kind: "binary" });
   });
@@ -48,6 +57,10 @@ describe("textPart", () => {
     const text = "ab😀cd"; // the emoji is two UTF-16 code units, at 2 and 3
     expect(textPart(text, 0, 3)).toEqual({ content: "ab", nextOffset: 2 });
     expect(textPart(text, 2, 3)).toEqual({ content: "😀c", nextOffset: 5 });
+  });
+
+  it("starts after an emoji when the offset lands inside it", () => {
+    expect(textPart("ab😀cd", 3, 2)).toEqual({ content: "cd" });
   });
 
   it("still moves forward when one character is asked for at an emoji", () => {
