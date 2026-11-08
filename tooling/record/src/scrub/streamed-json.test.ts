@@ -103,7 +103,12 @@ describe("StreamedJson", () => {
   });
 
   it("refuses a path that doesn't start at an event's data", () => {
-    for (const path of ["request.body.arguments", "response.body.delta.partial_json"]) {
+    const paths = [
+      "request.body.arguments",
+      "response.body.delta.partial_json",
+      "response.body[*].dataset.partial_json",
+    ];
+    for (const path of paths) {
       expect(() => new StreamedJson([path])).toThrow(RecordingRefused);
     }
   });

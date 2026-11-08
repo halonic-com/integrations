@@ -24,6 +24,11 @@ interface Piece {
  * scrubber's other rules then see complete JSON in the first piece, so a
  * `userContent` path such as `...partial_json.*` keeps the field names as it
  * does for JSON that came whole.
+ *
+ * Pieces are told apart by the numeric `index` fields of the objects along
+ * their path. So an object on the way that has a numeric `index` field for
+ * some other reason splits the pieces into groups as well. Anthropic and
+ * OpenAI send no such field, but check for one before adding a third provider.
  */
 export class StreamedJson {
   private readonly paths: FieldPaths;
@@ -31,7 +36,7 @@ export class StreamedJson {
   /** Throws `RecordingRefused` for a path that doesn't start at an event's data. */
   constructor(sources: readonly string[]) {
     for (const source of sources) {
-      if (!source.startsWith(EVENT_DATA)) {
+      if (!startsAtEventData(source)) {
         throw unreadable(source, "streamedJson", `it must start with ${EVENT_DATA}`);
       }
     }
@@ -89,7 +94,12 @@ export class StreamedJson {
 function joinGroups(pieces: readonly Piece[]): Map<string, string> {
   const groups = new Map<string, Piece[]>();
   for (const piece of pieces) {
-    groups.set(piece.group, [...(groups.get(piece.group) ?? []), piece]);
+    const group = groups.get(piece.group);
+    if (group === undefined) {
+      groups.set(piece.group, [piece]);
+    } else {
+      group.push(piece);
+    }
   }
   const replacements = new Map<string, string>();
   for (const group of groups.values()) {
@@ -102,6 +112,11 @@ function joinGroups(pieces: readonly Piece[]): Map<string, string> {
     });
   }
   return replacements;
+}
+
+/** Whether a path is an event's data or lies inside it, and not in a field such as `dataset`. */
+function startsAtEventData(source: string): boolean {
+  return source === EVENT_DATA || source.startsWith(`${EVENT_DATA}.`);
 }
 
 function rewrite(
