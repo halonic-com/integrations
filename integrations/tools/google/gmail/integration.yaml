@@ -209,9 +209,12 @@ recording:
     - response.body.message.payload.parts[*].parts[*].parts[*].body.data
     # labels.list: the user names their own labels
     - response.body.labels[*].name
-    # settings.sendAs.list: the signature and the name shown as sender
+    # settings.sendAs.list: the signature, the name shown as sender and the
+    # account owner's own addresses
     - response.body.sendAs[*].signature
     - response.body.sendAs[*].displayName
+    - response.body.sendAs[*].sendAsEmail
+    - response.body.sendAs[*].replyToAddress
     # messages.send and drafts.create: the whole outgoing message
     - request.body.raw
     - request.body.message.raw
