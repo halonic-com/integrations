@@ -1,0 +1,6 @@
+{
+  "extends": "../../../tooling/config/tsconfig/integration.json",
+  "include": [
+    "src"
+  ]
+}
