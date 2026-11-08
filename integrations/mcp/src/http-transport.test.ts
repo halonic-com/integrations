@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { McpError } from "./errors.ts";
 import { errorForStatus } from "./http-status.ts";
 import {
   maxResumesPerRequest,
@@ -295,7 +296,7 @@ describe("StreamableHttpTransport", () => {
         "an error status",
         [
           {
-            request: { method: "POST" },
+            request: { method: "POST", headers: session, body: callRequest },
             response: { status: 500, body: { kind: "text", text: "busy" } },
           },
         ],
@@ -304,7 +305,7 @@ describe("StreamableHttpTransport", () => {
         "an unknown content type",
         [
           {
-            request: { method: "POST" },
+            request: { method: "POST", headers: session, body: callRequest },
             response: { ...html, body: { kind: "text", text: "<html>" } },
           },
         ],
@@ -333,20 +334,28 @@ describe("StreamableHttpTransport", () => {
       "cancels %s",
       async (_case, exchanges) => {
         const { server, mcp } = await connect([...exchanges]);
-        await expect(mcp.callTool("echo", {})).rejects.toBeInstanceOf(Error);
+        await expect(mcp.callTool("echo", {})).rejects.toBeInstanceOf(McpError);
         server.assertAllUsed();
         server.assertNoBodyLeftOpen();
       },
     );
 
-    it.each([200, 404, 500])("cancels the answer to DELETE (%i)", async (status) => {
+    it.each([
+      [200, "resolves"],
+      [404, "resolves"],
+      [500, "rejects"],
+    ] as const)("cancels the answer to DELETE (%i)", async (status, outcome) => {
       const { server, mcp } = await connect([
         {
-          request: { method: "DELETE" },
+          request: { method: "DELETE", headers: session },
           response: { status, body: { kind: "text", text: "bye" } },
         },
       ]);
-      await mcp.close().catch(() => undefined);
+      if (outcome === "resolves") {
+        await expect(mcp.close()).resolves.toBeUndefined();
+      } else {
+        await expect(mcp.close()).rejects.toBeInstanceOf(McpError);
+      }
       server.assertAllUsed();
       server.assertNoBodyLeftOpen();
     });
@@ -366,6 +375,7 @@ describe("StreamableHttpTransport", () => {
       clientInfo,
     });
     await expect(mcp.initialize()).rejects.toMatchObject({ code: "unexpected-response" });
+    server.assertNoBodyLeftOpen();
   });
 
   it("reports an expired session when the server forgets it", async () => {
