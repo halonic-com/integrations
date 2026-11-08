@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { GmailClient } from "../client.ts";
 import type { ToolImplementation } from "../kit.ts";
 import { type MessageSummary, summarize } from "../message.ts";
+import { pageTokenSchema } from "./arguments.ts";
 
 /**
  * At most 25 messages: each one costs a request, and the result goes into
@@ -9,9 +10,6 @@ import { type MessageSummary, summarize } from "../message.ts";
  * small, fixed number of requests per call.
  */
 export const maxSearchResults = 25;
-
-/** Gmail's page tokens are short; this only stops a made-up one from being huge. */
-export const pageTokenSchema = z.string().min(1).max(500);
 
 const searchArguments = z.strictObject({
   query: z

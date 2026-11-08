@@ -1,0 +1,284 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/19a0c0ffee000001?format=full"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "historyId": "90211",
+            "id": "19a0c0ffee000001",
+            "internalDate": "1793865600000",
+            "labelIds": [
+              "INBOX",
+              "UNREAD"
+            ],
+            "payload": {
+              "body": {
+                "size": 0
+              },
+              "filename": "<scrubbed:content>",
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "To",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Subject",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Date",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Message-ID",
+                  "value": "<scrubbed:content>"
+                }
+              ],
+              "mimeType": "multipart/mixed",
+              "partId": "",
+              "parts": [
+                {
+                  "body": {
+                    "size": 0
+                  },
+                  "filename": "<scrubbed:content>",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "<scrubbed:content>"
+                    }
+                  ],
+                  "mimeType": "multipart/alternative",
+                  "partId": "0",
+                  "parts": [
+                    {
+                      "body": {
+                        "data": "<scrubbed:content>",
+                        "size": 60
+                      },
+                      "filename": "<scrubbed:content>",
+                      "headers": [
+                        {
+                          "name": "Content-Type",
+                          "value": "<scrubbed:content>"
+                        }
+                      ],
+                      "mimeType": "text/plain",
+                      "partId": "0.0"
+                    },
+                    {
+                      "body": {
+                        "data": "<scrubbed:content>",
+                        "size": 73
+                      },
+                      "filename": "<scrubbed:content>",
+                      "headers": [
+                        {
+                          "name": "Content-Type",
+                          "value": "<scrubbed:content>"
+                        }
+                      ],
+                      "mimeType": "text/html",
+                      "partId": "0.1"
+                    }
+                  ]
+                },
+                {
+                  "body": {
+                    "attachmentId": "scrubbed-secret-1",
+                    "size": 48213
+                  },
+                  "filename": "<scrubbed:content>",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "<scrubbed:content>"
+                    },
+                    {
+                      "name": "Content-Disposition",
+                      "value": "<scrubbed:content>"
+                    }
+                  ],
+                  "mimeType": "application/pdf",
+                  "partId": "1"
+                },
+                {
+                  "body": {
+                    "attachmentId": "ANGjdJ8fakeAttachmentIdForLogo",
+                    "size": 2048
+                  },
+                  "filename": "<scrubbed:content>",
+                  "headers": [
+                    {
+                      "name": "Content-Type",
+                      "value": "<scrubbed:content>"
+                    },
+                    {
+                      "name": "Content-Disposition",
+                      "value": "<scrubbed:content>"
+                    },
+                    {
+                      "name": "Content-ID",
+                      "value": "<scrubbed:content>"
+                    }
+                  ],
+                  "mimeType": "image/png",
+                  "partId": "2"
+                }
+              ]
+            },
+            "sizeEstimate": 20480,
+            "snippet": "<scrubbed:content>",
+            "threadId": "19a0c0ffee000001"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "read-message",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.snippet",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.headers[2].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.headers[3].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.headers[4].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[0].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[0].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[0].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[1].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[1].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[0].parts[1].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[1].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[1].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[1].headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[1].body.attachmentId",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[2].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[2].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[2].headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.payload.parts[2].headers[2].value",
+      "rule": "user-content"
+    }
+  ]
+}
