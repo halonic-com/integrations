@@ -86,3 +86,14 @@ something else:
   Drive, which is a different host and a different service the user may not
   have ticked. Where it goes is still to be decided.
 - **No tool descriptions or results name another integration's tools.**
+
+## Recordings
+
+The files in `recordings/` weren't recorded against Gmail: `pnpm record`
+and a Google test account aren't available yet. They come from the real
+recorder's code (`prepareRecording` from `tooling/record`, HAL-149), fed
+with invented traffic shaped like Gmail's documented answers: invented
+names, `example.com` addresses, and search queries such as
+`subject:halonic-test`. So they are scrubbed exactly as a real recording
+would be, which also checks this sheet's `userContent` paths. Replace them
+with real recordings once both are available.

@@ -1,0 +1,236 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Ahalonic-test&maxResults=2"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "messages": [
+              {
+                "id": "19a0c0ffee000001",
+                "threadId": "19a0c0ffee000001"
+              },
+              {
+                "id": "19a0c0ffee000002",
+                "threadId": "19a0c0ffee000002"
+              }
+            ],
+            "nextPageToken": "scrubbed-secret-1",
+            "resultSizeEstimate": 3
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/19a0c0ffee000001?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject&metadataHeaders=Date"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "historyId": "90210",
+            "id": "19a0c0ffee000001",
+            "internalDate": "1793865600000",
+            "labelIds": [
+              "INBOX",
+              "UNREAD"
+            ],
+            "payload": {
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "To",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Subject",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Date",
+                  "value": "<scrubbed:content>"
+                }
+              ],
+              "mimeType": "multipart/alternative"
+            },
+            "sizeEstimate": 4123,
+            "snippet": "<scrubbed:content>",
+            "threadId": "19a0c0ffee000001"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/19a0c0ffee000002?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject&metadataHeaders=Date"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "historyId": "90210",
+            "id": "19a0c0ffee000002",
+            "internalDate": "1793865600000",
+            "labelIds": [
+              "INBOX"
+            ],
+            "payload": {
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "To",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Cc",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Subject",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Date",
+                  "value": "<scrubbed:content>"
+                }
+              ],
+              "mimeType": "multipart/alternative"
+            },
+            "sizeEstimate": 4123,
+            "snippet": "<scrubbed:content>",
+            "threadId": "19a0c0ffee000002"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "search-two-messages",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.nextPageToken",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.snippet",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[2].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[3].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.snippet",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.payload.headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.payload.headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.payload.headers[2].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.payload.headers[3].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.payload.headers[4].value",
+      "rule": "user-content"
+    }
+  ]
+}
