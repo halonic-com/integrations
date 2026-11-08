@@ -36,11 +36,12 @@ describe("drive_get_file", () => {
   });
 
   it("turns a missing file into not-found without Google's own text", async () => {
-    const { connection } = connectToRecording(getFileNotFound);
+    const { connection, replay } = connectToRecording(getFileNotFound);
     const call = connection.callTool("drive_get_file", { fileId: "file-missing-04" });
     await expect(call).rejects.toBeInstanceOf(GoogleError);
     await expect(call).rejects.toMatchObject({ code: "not-found" });
     await expect(call).rejects.not.toThrow(/File not found/);
+    replay.assertAllUsed();
   });
 
   it.each([

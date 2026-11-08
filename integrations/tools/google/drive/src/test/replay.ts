@@ -8,13 +8,6 @@ import { drive } from "../index.ts";
 import type { IntegrationConnection } from "../kit.ts";
 
 /**
- * Connects Drive to a recording, through the shared replay in
- * `@halonicjs/tooling-record/replay`. The replay checks each call against
- * the next exchange and reads the file with the full recording schema.
- * Tests import the recording file as JSON and pass it in.
- */
-
-/**
  * A `wait` that resolves at once and records each pause, so a test can see
  * a retry's wait without waiting. The same shape as the Google library's
  * test `fakeWait`, which isn't exported.
@@ -48,7 +41,12 @@ function requireBearer(recorded: Replay): HttpClient {
   };
 }
 
-/** Connects the integration to a replay of one recording. */
+/**
+ * Connects Drive to a recording, through the shared replay in
+ * `@halonicjs/tooling-record/replay`. The replay checks each call against
+ * the next exchange and reads the file with the full recording schema.
+ * Tests import the recording file as JSON and pass it in.
+ */
 export function connectToRecording(recording: unknown): {
   connection: IntegrationConnection;
   replay: Replay;

@@ -9,13 +9,6 @@ import { z } from "zod";
 import { type DriveFile, driveFileSchema, fileFields, listedFileFields } from "./file.ts";
 import type { IntegrationHost } from "./kit.ts";
 
-/**
- * Every Drive request goes through this class. The Google library adds the
- * account's access token, maps Google's errors to `GoogleError` and never
- * retries a request that changes something. Tools call these methods and
- * never build requests themselves.
- */
-
 const fileListSchema = withNextPageToken(z.object({ files: z.array(driveFileSchema).default([]) }));
 export type FileList = z.infer<typeof fileListSchema>;
 
@@ -35,6 +28,12 @@ export interface ListFilesRequest {
  */
 const allDrives = { supportsAllDrives: true, includeItemsFromAllDrives: true } as const;
 
+/**
+ * Every Drive request goes through this class. The Google library adds the
+ * account's access token, maps Google's errors to `GoogleError` and never
+ * retries a request that changes something. Tools call these methods and
+ * never build requests themselves.
+ */
 export class DriveClient {
   readonly #google: GoogleApi;
 
