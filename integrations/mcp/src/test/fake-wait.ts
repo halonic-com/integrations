@@ -12,20 +12,29 @@ export interface FakeWait {
   readonly wait: McpHost["wait"];
   /** Each pause, clamped as the real host clamps it, in call order. */
   readonly waits: readonly number[];
+  /**
+   * Each pause as the code asked for it, before the host's clamp, in call
+   * order. Use this to check a limit the code sets itself, which `waits`
+   * would hide.
+   */
+  readonly asked: readonly number[];
 }
 
 /**
- * A `wait` that resolves at once and records the clamped pause, so a test
- * can say "waited 2 000 ms" without waiting. Like the real host, it rejects
- * with `signal.reason` when `signal` is aborted. `during` runs inside each
- * wait, so a test can cancel the call in the middle of a pause.
+ * A `wait` that resolves at once and records the pause, so a test can say
+ * "waited 2 000 ms" without waiting. Like the real host, it rejects with
+ * `signal.reason` when `signal` is aborted. `during` runs inside each wait,
+ * so a test can cancel the call in the middle of a pause.
  */
 export function fakeWait(during?: () => void): FakeWait {
   const waits: number[] = [];
+  const asked: number[] = [];
   return {
     waits,
+    asked,
     wait: async (ms, signal) => {
       throwIfAborted(signal);
+      asked.push(ms);
       waits.push(clampWaitMs(ms));
       during?.();
       throwIfAborted(signal);

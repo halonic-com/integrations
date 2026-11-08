@@ -43,8 +43,9 @@ export const maxResumesPerRequest = 10;
  * The shortest pause before a resume, in milliseconds. It applies when the
  * server sends no `retry:`, and also when it asks for less, so a server
  * that closes the stream at once can't make us send `GET`s back to back.
- * The spec lets a client wait longer than `retry:` asks. One second keeps
- * a call that the server closes on purpose a few times quick.
+ * The spec lets a client wait longer than `retry:` asks. One second is
+ * short enough that a call the server closes on purpose a few times stays
+ * quick.
  */
 export const minResumePauseMs = 1_000;
 

@@ -78,12 +78,12 @@ function resumeFrom(lastEventId: string, events: FakeEvent[], drop = false): Fak
   };
 }
 
-async function connect(exchanges: FakeExchange[], { wait, waits }: FakeWait = fakeWait()) {
+async function connect(exchanges: FakeExchange[], { wait, waits, asked }: FakeWait = fakeWait()) {
   const server = new FakeServer([...initializeExchanges, ...exchanges]);
   const transport = new StreamableHttpTransport({ http: server, wait }, { url: endpoint, auth });
   const mcp = new McpSession(transport, { clientInfo });
   await mcp.initialize();
-  return { server, mcp, waits };
+  return { server, mcp, waits, asked };
 }
 
 describe("StreamableHttpTransport", () => {
@@ -273,12 +273,13 @@ describe("StreamableHttpTransport", () => {
     });
 
     it("never asks the host to wait longer than its limit", async () => {
-      const { mcp, waits } = await connect([
+      const { mcp, asked } = await connect([
         cutCall([{ id: "e1", retry: "600000" }], true),
         resumeFrom("e1", [{ id: "e2", data: callAnswer }]),
       ]);
       await mcp.callTool("echo", {});
-      expect(waits).toEqual([maxResumePauseMs]);
+      // `asked`, not `waits`: the host would cut 600 000 ms down by itself.
+      expect(asked).toEqual([maxResumePauseMs]);
     });
 
     it("ends the call without resuming when it is cancelled during the pause", async () => {
