@@ -19,7 +19,12 @@ const searchArguments = z.strictObject({
     .max(2_000)
     .default("in:inbox")
     .describe("Gmail search query (default: in:inbox)."),
-  maxResults: z.int().min(1).max(maxSearchResults).default(15),
+  maxResults: z
+    .int()
+    .min(1)
+    .max(maxSearchResults)
+    .default(15)
+    .describe("Messages to return (default 15)."),
   pageToken: pageTokenSchema
     .optional()
     .describe("nextPageToken from the previous search, for more results."),
