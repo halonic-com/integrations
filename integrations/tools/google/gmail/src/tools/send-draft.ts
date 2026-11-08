@@ -3,7 +3,9 @@ import type { GmailClient } from "../client.ts";
 import type { ToolImplementation } from "../kit.ts";
 import { gmailIdSchema } from "./arguments.ts";
 
-const sendDraftArguments = z.strictObject({ draftId: gmailIdSchema });
+const sendDraftArguments = z.strictObject({
+  draftId: gmailIdSchema.describe("The draft's id, from gmail_create_draft."),
+});
 
 export const sendDraftTool = {
   declaration: {

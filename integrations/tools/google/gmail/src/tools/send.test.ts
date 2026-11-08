@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { composeArguments } from "../compose.ts";
 import { gmail } from "../index.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
+import { sendArguments } from "./send.ts";
 
 describe("risk of the tools that send", () => {
   it("marks both send tools send, so Halonic can ask or refuse", () => {
@@ -24,6 +26,20 @@ describe("gmail_send", () => {
       messageId: "19a0c0ffee000302",
       threadId: "19a0c0ffee000302",
     });
+  });
+
+  it("quotes the original of a reply only when asked, unlike a draft", () => {
+    const reply = { to: ["billing@example.com"], body: "Paid.", replyToMessageId: "m1" };
+    expect(sendArguments.parse(reply).quoteOriginal).toBe(false);
+    expect(sendArguments.parse({ ...reply, quoteOriginal: true }).quoteOriginal).toBe(true);
+    expect(composeArguments.parse(reply).quoteOriginal).toBe(true);
+  });
+
+  it("takes no arguments beyond the draft's", () => {
+    expect(Object.keys(sendArguments.shape)).toEqual(Object.keys(composeArguments.shape));
+    expect(
+      sendArguments.safeParse({ to: ["a@example.com"], body: "x", from: "b@example.com" }).success,
+    ).toBe(false);
   });
 
   it("turns a refused mail into bad-arguments without any part of the mail or Google's text", async () => {

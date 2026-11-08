@@ -5,7 +5,9 @@ import { gmail } from "./index.ts";
 /**
  * The permission sheet against the code, for what the conformance suite
  * doesn't compare yet (guide, section 3): every description word for word,
- * and `risk` and `untrusted` for every tool, in the same order.
+ * `risk` and `untrusted` for every tool, in the same order, and every
+ * argument. An argument without a description fails: the sheet couldn't
+ * show it, and the user would approve a tool without seeing it.
  *
  * Without a YAML parser: folded text (`>-`) joins its lines with spaces, so
  * with every run of whitespace squeezed to one space, each description must
@@ -19,6 +21,12 @@ const toolBlocks = sheet
   .slice(sheet.indexOf("\ntools:"), sheet.indexOf("\nneeds:"))
   .split(/\n {2}- name: /)
   .slice(1);
+
+/** The argument names a tool's block lists under `arguments:`. */
+function sheetArguments(block: string): string[] {
+  const section = /\n {4}arguments:\n((?: {6}.*\n)*)/.exec(`${block}\n`)?.[1] ?? "";
+  return [...section.matchAll(/^ {6}(\w+):/gm)].map((match) => match[1] ?? "");
+}
 
 describe("integration.yaml", () => {
   it("declares the code's tools in the same order", () => {
@@ -40,10 +48,11 @@ describe("integration.yaml", () => {
         { description?: string }
       >;
       for (const [argument, schema] of Object.entries(properties)) {
-        if (schema.description === undefined) continue;
-        expect(text).toContain(`${argument}:`);
+        expect(schema.description, `${argument} has no description`).toBeDefined();
         expect(text).toContain(schema.description);
       }
+      // Both ways: the sheet lists no argument the code doesn't take.
+      expect(sheetArguments(block).sort()).toEqual(Object.keys(properties).sort());
     },
   );
 });
