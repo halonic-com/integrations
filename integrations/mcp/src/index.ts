@@ -1,4 +1,9 @@
 export { McpError, type McpErrorCode } from "./errors.ts";
+export {
+  maxResumesWithoutProgress,
+  type StreamableHttpOptions,
+  StreamableHttpTransport,
+} from "./http-transport.ts";
 export type {
   JsonRpcNotification,
   JsonRpcRequest,
