@@ -24,6 +24,20 @@ export const maxParametersChars = 20_000;
 export const maxParametersDepth = 64;
 
 /**
+ * The values of an `enum` in an argument schema. Halonic's rule for listed
+ * tools (`ports.untrusted-tool-listings`): a longer one is dropped.
+ */
+export const maxEnumValues = 64;
+
+/**
+ * The strings of one tool that reach the model unfenced, added up: its
+ * name, property names, `required` strings, `$defs` names and the strings
+ * in `enum` and `const`. Halonic's rule for listed tools: chained, short
+ * names can still read as an instruction, so a tool above this is refused.
+ */
+export const maxUnfencedChars = 2_048;
+
+/**
  * The whole tool list: descriptions plus argument schemas as JSON, about
  * 50,000 tokens. The list goes into the context on every turn, so a server
  * whose tools are each within their limits can't add up to millions of

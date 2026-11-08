@@ -7,23 +7,17 @@ import {
   maxParametersChars,
   maxParametersDepth,
   maxToolListChars,
+  maxUnfencedChars,
 } from "./limits.ts";
-
-/**
- * The names Halonic accepts for a listed tool: 1 to 64 letters, digits,
- * `_` or `-` (`ports.untrusted-tool-listings` in the `halonic` repo, guide
- * section 6). Narrower than the MCP specification, which also allows `.`
- * and up to 128 characters. Calls send the name back unfenced, and model
- * providers accept no other names for tools.
- */
-export const listedToolNamePattern = /^[A-Za-z0-9_-]{1,64}$/;
+import { listedToolNamePattern, withListedNames } from "./listed-names.ts";
 
 /**
  * The server's tool list, as Halonic offers it to agents.
  *
  * Leaves out a tool whose name doesn't match {@link listedToolNamePattern},
- * as Halonic would: offering it would only get it refused there, one tool
- * at a time. The other tools stay usable.
+ * or that {@link toIntegrationTool} leaves out, as Halonic would: offering
+ * it would only get it refused there, one tool at a time. The other tools
+ * stay usable.
  *
  * Refuses the whole list, rather than leaving tools out, when a name
  * repeats or the list is above {@link maxToolListChars}: an agent should
@@ -48,6 +42,9 @@ export function toIntegrationTools(tools: readonly McpTool[]): IntegrationTool[]
     }
     seen.add(tool.name);
     const integrationTool = toIntegrationTool(tool);
+    if (integrationTool === undefined) {
+      continue;
+    }
     listChars += integrationTool.description.length;
     listChars += JSON.stringify(integrationTool.parameters).length;
     if (listChars > maxToolListChars) {
@@ -73,11 +70,17 @@ export function toIntegrationTools(tools: readonly McpTool[]): IntegrationTool[]
  * - The descriptions, the tool's and those in its schema, lose the
  *   characters a person can't see (see {@link withoutHiddenText}). They
  *   still reach the model as the server wrote them otherwise.
+ * - Strings a call sends back follow Halonic's name rule (see
+ *   {@link withListedNames}): the schema loses an `enum` or `const` that
+ *   breaks it.
  *
+ * @returns `undefined` for a tool Halonic would refuse: its name or a name
+ *   in its schema breaks the rule, or its unfenced strings add up to more
+ *   than {@link maxUnfencedChars} characters
  * @throws {McpToolsError} `unexpected-response` for an argument schema
  *   nested deeper than {@link maxParametersDepth} or above {@link maxParametersChars}
  */
-export function toIntegrationTool(tool: McpTool): IntegrationTool {
+export function toIntegrationTool(tool: McpTool): IntegrationTool | undefined {
   // Checked first: the size check and the copy below walk the schema
   // recursively, and a deep enough one overflows the stack.
   if (nestsDeeperThan(tool.inputSchema, maxParametersDepth)) {
@@ -92,10 +95,18 @@ export function toIntegrationTool(tool: McpTool): IntegrationTool {
       `The MCP server's tool ${tool.name} describes its arguments in more than ${maxParametersChars} characters.`,
     );
   }
+  const listed = withListedNames(tool.inputSchema);
+  if (!listedToolNamePattern.test(tool.name) || listed === undefined) {
+    return undefined;
+  }
+  const unfencedChars = [tool.name, ...listed.unfencedStrings].join("").length;
+  if (unfencedChars > maxUnfencedChars) {
+    return undefined;
+  }
   return {
     name: tool.name,
     description: cutText(withoutHiddenText(tool.description ?? ""), maxDescriptionChars),
-    parameters: withoutHiddenSchemaText(tool.inputSchema),
+    parameters: withoutHiddenSchemaText(listed.schema),
     risk: "write",
     untrusted: true,
   };
