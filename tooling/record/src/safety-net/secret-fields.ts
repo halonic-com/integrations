@@ -1,6 +1,6 @@
 import { isSecretHeader } from "../scrub/headers.ts";
 import { AUTH_SCHEME, PLACEHOLDER } from "../scrub/patterns.ts";
-import { type FieldKind, isSecretName } from "../scrub/secret-names.ts";
+import { type FieldKind, isSecretName, jsonFieldKind } from "../scrub/secret-names.ts";
 import { RELATIVE_BASE } from "../scrub/url.ts";
 
 /** Headers whose value is a URL, as the scrubber reads them. */
@@ -90,9 +90,10 @@ function checkJson(value: unknown, where: string, secret: boolean, found: string
     value.forEach((item: unknown, index) => {
       checkJson(item, `${where}[${index}]`, secret, found);
     });
-  } else {
+  } else if (value !== null && typeof value === "object") {
+    const kind = jsonFieldKind(value);
     for (const [key, child] of entries(value)) {
-      const childSecret = secret || isSecretField(key, "json");
+      const childSecret = secret || isSecretField(key, kind);
       checkJson(child, `${where}.${key}`, childSecret, found);
     }
   }

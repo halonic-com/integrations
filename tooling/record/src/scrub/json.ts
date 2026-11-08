@@ -3,7 +3,7 @@ import type { JsonValue } from "./exchange.ts";
 import { USER_CONTENT } from "./fakes.ts";
 import { type FieldPaths, formatPath, type ValuePath } from "./field-paths.ts";
 import { PLACEHOLDER } from "./patterns.ts";
-import { isSecretName } from "./secret-names.ts";
+import { isSecretName, jsonFieldKind } from "./secret-names.ts";
 import { scrubText } from "./text.ts";
 
 /**
@@ -87,11 +87,12 @@ class JsonWalk {
     secret: boolean,
   ): JsonValue {
     const result: { [key: string]: JsonValue } = {};
+    const kind = jsonFieldKind(value);
     for (const [key, child] of Object.entries(value)) {
       // The key is scrubbed first and the path uses the scrubbed key, so the
       // report in the file never holds an address that was used as a key.
       const scrubbedKey = scrubText(key, this.locate(path), this.context);
-      const childSecret = secret || isSecretName(key, "json", this.context.policy.secretFields);
+      const childSecret = secret || isSecretName(key, kind, this.context.policy.secretFields);
       result[scrubbedKey] = this.visit(child, [...path, scrubbedKey], childSecret);
     }
     return result;

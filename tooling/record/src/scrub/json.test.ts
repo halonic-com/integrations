@@ -35,6 +35,37 @@ describe("scrubJson", () => {
     expect(scrubJson(error, "body", noUserContent, testContext())).toEqual(error);
   });
 
+  it("replaces the authorization code in an OAuth token request sent as JSON", () => {
+    const context = testContext();
+    const request = {
+      grant_type: "authorization_code",
+      code: "fake-authorization-code",
+      client_id: "1234-fake.apps.googleusercontent.com",
+      client_secret: FAKE.googleClientSecret,
+      redirect_uri: "http://127.0.0.1:8085/callback",
+    };
+    expect(scrubJson(request, "body", noUserContent, context)).toEqual({
+      ...request,
+      code: "scrubbed-secret-1",
+      client_secret: "scrubbed-secret-2",
+    });
+    expect(rulesUsed(context)).toEqual(["secret-field", "secret-field"]);
+  });
+
+  it("replaces every token in an OAuth token answer", () => {
+    const answer = {
+      access_token: "fake-access-token",
+      refresh_token: "fake-refresh-token",
+      expires_in: 3599,
+      token_type: "Bearer",
+    };
+    expect(scrubJson(answer, "body", noUserContent, testContext())).toEqual({
+      ...answer,
+      access_token: "scrubbed-secret-1",
+      refresh_token: "scrubbed-secret-2",
+    });
+  });
+
   it("replaces fields the integration declares as secret", () => {
     const context = testContext({ secretFields: ["upload_handle"] });
     expect(scrubJson({ upload_handle: "abc" }, "body", noUserContent, context)).toEqual({

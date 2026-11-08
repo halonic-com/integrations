@@ -45,6 +45,15 @@ describe("findSecretFields", () => {
     ]);
   });
 
+  it("finds the authorization code in an OAuth token request sent as JSON, not an error code", () => {
+    const tokenRequest = { grant_type: "authorization_code", code: "fake" };
+    const text = recording(
+      { body: { kind: "json", value: tokenRequest } },
+      { body: { kind: "json", value: { error: { code: "invalid_grant" } } } },
+    );
+    expect(findSecretFields(text)).toEqual(["exchanges[0].request.body.code"]);
+  });
+
   it("looks inside stream event data", () => {
     const events = [{ event: "message", data: { session: { id: "x", token: "fake" } } }];
     const text = recording({}, { body: { kind: "sse", value: events } });
