@@ -163,7 +163,10 @@ export class McpSession {
     return this.#agreement;
   }
 
-  /** Sends one request and reads the server's messages until its answer. */
+  /**
+   * Sends one request and reads the server's messages until its answer.
+   * When the caller aborts, it tells the server to stop working on it.
+   */
   async #request<Schema extends z.ZodType>(
     method: string,
     params: Record<string, unknown>,
@@ -172,22 +175,48 @@ export class McpSession {
   ): Promise<z.infer<Schema>> {
     const id = this.#nextId;
     this.#nextId += 1;
-    for await (const value of this.#transport.send(
-      { jsonrpc: "2.0", id, method, params },
-      signal,
-    )) {
-      const message = parseIncoming(value);
-      const answer = await this.#handle(message, id, method, signal);
-      if (answer !== undefined) {
-        const parsed = schema.safeParse(answer);
-        if (!parsed.success) {
-          throw unexpectedResponse();
+    try {
+      for await (const value of this.#transport.send(
+        { jsonrpc: "2.0", id, method, params },
+        signal,
+      )) {
+        const message = parseIncoming(value);
+        const answer = await this.#handle(message, id, method, signal);
+        if (answer !== undefined) {
+          const parsed = schema.safeParse(answer);
+          if (!parsed.success) {
+            throw unexpectedResponse();
+          }
+          return parsed.data;
         }
-        return parsed.data;
       }
+      // The transport ended without an answer, even after any resume it tries.
+      throw new McpError("unavailable", `The MCP server stopped before it answered ${method}.`);
+    } catch (error) {
+      // The protocol forbids cancelling `initialize`.
+      if (signal?.aborted === true && method !== "initialize") {
+        this.#sendCancelled(id);
+      }
+      throw error;
     }
-    // The transport ended without an answer, even after any resume it tries.
-    throw new McpError("unavailable", `The MCP server stopped before it answered ${method}.`);
+  }
+
+  /**
+   * Tells the server we no longer want the answer to request `id`, so it
+   * can stop the work
+   * (https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/cancellation).
+   * The caller's signal is already aborted, so this goes without it, and
+   * nobody waits for it: the kit's timeout ends it. It is only a courtesy,
+   * so a failure changes nothing for the caller.
+   */
+  #sendCancelled(id: number): void {
+    this.#drain(
+      this.#transport.send({
+        jsonrpc: "2.0",
+        method: "notifications/cancelled",
+        params: { requestId: id, reason: "The caller cancelled the request." },
+      }),
+    ).catch(() => undefined);
   }
 
   /** @returns the result when `message` answers request `id`, otherwise `undefined` */

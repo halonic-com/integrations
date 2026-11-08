@@ -210,6 +210,57 @@ describe("McpSession.callTool", () => {
   });
 });
 
+describe("cancelling a request", () => {
+  const cancelled = (requestId: number) => ({
+    jsonrpc: "2.0",
+    method: "notifications/cancelled",
+    params: { requestId, reason: "The caller cancelled the request." },
+  });
+
+  /** An answer during which the caller aborts, so the server never answers. */
+  const abortWhileWaiting =
+    (signal: { aborted: boolean }): ScriptedAnswer =>
+    () => {
+      signal.aborted = true;
+      return [];
+    };
+
+  it("tells the server when the caller aborts a call", async () => {
+    const signal = { aborted: false };
+    const { transport, session } = await connected([abortWhileWaiting(signal)]);
+    await expect(session.callTool("echo", {}, signal)).rejects.toBeInstanceOf(Error);
+    expect(transport.sent.at(-1)).toEqual(cancelled(2));
+  });
+
+  it("tells the server nothing when a call fails without an abort", async () => {
+    const { transport, session } = await connected([() => []]);
+    await expect(session.callTool("echo", {})).rejects.toMatchObject({ code: "unavailable" });
+    expect(transport.sent.at(-1)).toMatchObject({ method: "tools/call" });
+  });
+
+  it("never cancels initialize", async () => {
+    const signal = { aborted: false };
+    const transport = new FakeTransport([abortWhileWaiting(signal)]);
+    await expect(new McpSession(transport, { clientInfo }).initialize(signal)).rejects.toThrow();
+    expect(transport.sent).toHaveLength(1);
+  });
+
+  it("keeps the caller's error when the server can't be told", async () => {
+    const signal = { aborted: false };
+    const { transport, session } = await connected([abortWhileWaiting(signal)]);
+    const send = transport.send.bind(transport);
+    vi.spyOn(transport, "send").mockImplementation(async function* (message) {
+      if ("method" in message && message.method === "notifications/cancelled") {
+        throw new Error("offline");
+      }
+      yield* send(message);
+    });
+    await expect(session.callTool("echo", {}, signal)).rejects.toMatchObject({
+      code: "unavailable",
+    });
+  });
+});
+
 describe("McpSession.close", () => {
   it("closes the transport", async () => {
     const { transport, session } = await connected([]);
