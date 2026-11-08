@@ -1,12 +1,13 @@
 import { parseBody, scrubBody } from "./body.ts";
 import type { ScrubContext } from "./context.ts";
-import type { CapturedExchange, RecordedExchange } from "./exchange.ts";
+import type { CapturedExchange, RecordedBody, RecordedExchange } from "./exchange.ts";
 import { Fakes } from "./fakes.ts";
 import { FieldPaths } from "./field-paths.ts";
 import { scrubHeaders } from "./headers.ts";
 import { KnownSecrets } from "./known-secrets.ts";
 import type { ScrubPolicy } from "./policy.ts";
 import { ReportBuilder, type ScrubReport } from "./report.ts";
+import { serviceErrorPaths } from "./service-errors.ts";
 import { scrubUrl } from "./url.ts";
 
 export interface ScrubOptions {
@@ -45,12 +46,9 @@ export function scrubExchanges(
     report: new ReportBuilder(),
     matchedUserContent: new Set(),
   };
-  const userContent: UserContentPaths = {
-    request: new FieldPaths(policy.userContent, "request"),
-    response: new FieldPaths(policy.userContent, "response"),
-  };
+  const requestUserContent = new FieldPaths(policy.userContent, "request");
   const scrubbed = exchanges.map((exchange, index) =>
-    scrubExchange(exchange, `exchanges[${index}]`, userContent, context),
+    scrubExchange(exchange, `exchanges[${index}]`, requestUserContent, context),
   );
   const unmatched = [...new Set(policy.userContent)].filter(
     (path) => !context.matchedUserContent.has(path),
@@ -58,15 +56,26 @@ export function scrubExchanges(
   return { exchanges: scrubbed, report: context.report.build(unmatched) };
 }
 
-interface UserContentPaths {
-  readonly request: FieldPaths;
-  readonly response: FieldPaths;
+/**
+ * The policy's response paths, then the error paths the recorder adds for
+ * this service's error format. The policy's come first, so a path the sheet
+ * declares itself is the one that matches and counts as used.
+ */
+function responseUserContent(
+  policy: ScrubPolicy,
+  url: string,
+  responseBody: RecordedBody,
+): FieldPaths {
+  return new FieldPaths(
+    [...policy.userContent, ...serviceErrorPaths(url, responseBody)],
+    "response",
+  );
 }
 
 function scrubExchange(
   exchange: CapturedExchange,
   where: string,
-  userContent: UserContentPaths,
+  requestUserContent: FieldPaths,
   context: ScrubContext,
 ): RecordedExchange {
   const { request, response } = exchange;
@@ -78,18 +87,19 @@ function scrubExchange(
     allowed,
     `${where}.response.body`,
   );
+  const responsePaths = responseUserContent(context.policy, request.url, responseBody);
   return {
     transport: "http",
     request: {
       method: request.method.toUpperCase(),
       url: scrubUrl(request.url, `${where}.request.url`, context),
       headers: scrubHeaders(request.headers, `${where}.request.headers`, context),
-      body: scrubBody(requestBody, `${where}.request.body`, userContent.request, context),
+      body: scrubBody(requestBody, `${where}.request.body`, requestUserContent, context),
     },
     response: {
       status: response.status,
       headers: scrubHeaders(response.headers, `${where}.response.headers`, context),
-      body: scrubBody(responseBody, `${where}.response.body`, userContent.response, context),
+      body: scrubBody(responseBody, `${where}.response.body`, responsePaths, context),
     },
   };
 }

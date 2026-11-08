@@ -24,7 +24,9 @@ export interface ScrubPolicy {
    * Fields that hold the user's own content (mail bodies, subjects, chat
    * text, file contents). Their values are replaced with placeholders of the
    * same type. The scrubber never guesses these: if a field isn't listed, its
-   * text stays (minus keys, e-mail addresses and phone numbers).
+   * text stays (minus keys, e-mail addresses and phone numbers). The only
+   * paths it adds by itself are a known service's error text, such as
+   * Google's (`service-errors.ts`).
    *
    * Paths start at `request.body` or `response.body`, then use dots for
    * fields, `[*]` for every item of a list, `[n]` for one item and `*` for
