@@ -1,0 +1,29 @@
+{
+  "name": "@halonicjs/integration-knowledge-mcp",
+  "private": true,
+  "type": "module",
+  "description": "Knowledge source on an MCP server: agents search and read its documents through two of its tools.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/integration-mcp": "workspace:*",
+    "@halonicjs/integration-shared": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "tomas"
+  }
+}
