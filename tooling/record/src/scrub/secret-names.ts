@@ -22,10 +22,11 @@ const SECRET_NAME_PARTS = [
 const SECRET_NAMES = ["key", "sig", "signature", "auth", "authorization", "pass"];
 
 /**
- * Only in URLs and form data: the OAuth authorization code. In JSON, `code`
- * is nearly always an error code that tests need to see.
+ * Only in URLs, form data and the JSON body of an OAuth token request: the
+ * OAuth authorization code. In other JSON, `code` is nearly always an error
+ * code that tests need to see.
  */
-const SECRET_NAMES_IN_URLS_AND_FORMS = ["code"];
+const AUTHORIZATION_CODE_NAMES = ["code"];
 
 /**
  * Names that contain a secret-like part but describe one instead of holding
@@ -33,8 +34,12 @@ const SECRET_NAMES_IN_URLS_AND_FORMS = ["code"];
  */
 const NOT_SECRET_NAMES = ["tokentype", "accesscontrolallowcredentials"];
 
-/** Where the name was found. Header names follow the JSON rules: `code` is never a secret there. */
-export type FieldKind = "json" | "query-or-form" | "header";
+/**
+ * Where the name was found. `oauth-token-json` is a JSON object that sends an
+ * OAuth grant (see `jsonFieldKind`). Header names follow the JSON rules:
+ * `code` is never a secret there.
+ */
+export type FieldKind = "json" | "oauth-token-json" | "query-or-form" | "header";
 
 /** True when a field with this name holds a secret, given what the integration declared. */
 export function isSecretName(name: string, kind: FieldKind, declared: readonly string[]): boolean {
@@ -48,10 +53,21 @@ export function isSecretName(name: string, kind: FieldKind, declared: readonly s
   if (SECRET_NAMES.includes(normalized)) {
     return true;
   }
-  if (kind === "query-or-form" && SECRET_NAMES_IN_URLS_AND_FORMS.includes(normalized)) {
+  const codeIsSecret = kind === "query-or-form" || kind === "oauth-token-json";
+  if (codeIsSecret && AUTHORIZATION_CODE_NAMES.includes(normalized)) {
     return true;
   }
   return SECRET_NAME_PARTS.some((part) => normalized.includes(part));
+}
+
+/**
+ * The kind of the fields in a JSON object. An OAuth token request names its
+ * `grant_type`; most are form data, but some clients send JSON, and then
+ * `code` is the authorization code as in a form.
+ */
+export function jsonFieldKind(fields: object): "json" | "oauth-token-json" {
+  const names = Object.keys(fields).map(normalize);
+  return names.includes("granttype") ? "oauth-token-json" : "json";
 }
 
 function normalize(name: string): string {

@@ -31,6 +31,7 @@ describe("findLeaks", () => {
     ["a JWT", FAKE.jwt],
     ["an sk- key", FAKE.openAiKey],
     ["a Google API key", FAKE.googleKey],
+    ["a Google client secret", FAKE.googleClientSecret],
   ])("finds %s", (_label, token) => {
     expect(kinds(`{"x":"${token}"}`)).toEqual(["token-shape"]);
   });

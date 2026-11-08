@@ -16,6 +16,7 @@ describe("scrubText", () => {
     ["a JWT", FAKE.jwt],
     ["an sk- key", FAKE.openAiKey],
     ["a Google API key", FAKE.googleKey],
+    ["a Google client secret", FAKE.googleClientSecret],
     ["one of our fake keys", FAKE.apiKey],
   ])("replaces %s by its shape", (_label, token) => {
     const context = testContext();

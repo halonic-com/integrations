@@ -20,8 +20,9 @@ export const TOKEN_SHAPES: readonly RegExp[] = [
   /\bgithub_pat_\w{20,}/g,
   // Slack
   /\bxox[abprs]-[\w-]{10,}/g,
-  // Google API keys, OAuth access tokens and refresh tokens
+  // Google API keys, OAuth client secrets, access tokens and refresh tokens
   /\bAIza[\w-]{35,}/g,
+  /\bGOCSPX-[\w-]{8,}/g,
   /\bya29\.[\w-]{20,}/g,
   /(?<![\w/])1\/\/[\w-]{20,}/g,
   // AWS access key IDs

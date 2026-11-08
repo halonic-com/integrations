@@ -22,6 +22,8 @@ export const FAKE = {
   jwt: "eyJhbGciOiJub25lIn0.eyJzdWIiOiJmYWtlIn0.ZmFrZS1zaWduYXR1cmU", // gitleaks:allow
   openAiKey: "sk-FAKEFAKEFAKEFAKEFAKEFAKE",
   googleKey: "AIzaFAKEfakeFAKEfakeFAKEfakeFAKEfakeFAK",
+  /** Google OAuth client secrets start with `GOCSPX-`. */
+  googleClientSecret: "GOCSPX-FAKEfakeFAKEfakeFAKEfake",
   /** `.test` is a reserved top-level domain (RFC 2606). */
   email: "person.one@mail.test",
   otherEmail: "person.two@mail.test",
