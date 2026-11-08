@@ -45,6 +45,7 @@ describe("definePolicy", () => {
       secretHeaders: [],
       secretFields: [],
       userContent: [],
+      streamedJson: [],
       allowContentTypes: [],
     });
     expect(definePolicy({})).toEqual(definePolicy());
@@ -55,6 +56,7 @@ describe("definePolicy", () => {
       secretHeaders: [],
       secretFields: ["fakeCode"],
       userContent: [],
+      streamedJson: [],
       allowContentTypes: [],
     });
   });

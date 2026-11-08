@@ -50,7 +50,7 @@ don't list those paths. A sheet can't opt out of them yet.
 recording:
   # Fields with the user's own content: mail bodies, subjects, chat text, file
   # contents. Each value becomes a placeholder of the same type
-  # ("<scrubbed:content>", 0 or false).
+  # ("<scrubbed:content>", 0 or false). An empty string stays empty.
   userContent:
     - response.body.messages[*].snippet
     - response.body.payload.parts[*].body.data
@@ -89,6 +89,28 @@ longer parse on replay, so the recorder keeps such a string valid JSON:
 When a path goes on inside a string that isn't JSON (arguments cut off at the
 token limit), the whole string becomes `"<scrubbed:content>"`.
 
+A streamed tool call sends its arguments in pieces, and no piece is JSON on
+its own: Anthropic's `delta.partial_json`, OpenAI's
+`choices[*].delta.tool_calls[*].function.arguments`. A placeholder in each
+piece would no longer join to JSON on replay, so declare the pieces in
+`streamedJson` too:
+
+```yaml
+recording:
+  streamedJson:
+    - response.body[*].data.delta.partial_json
+  userContent:
+    - response.body[*].data.delta.partial_json.*
+```
+
+Before any rule runs, the recorder joins the pieces of each text into its
+first piece and leaves the others empty, so `{"city": "Gh` + `ent"}` becomes
+`{"city":"<scrubbed:content>"}` + `""`. Pieces belong together when the
+objects along their path hold the same `index` values: the event's `index`
+for Anthropic, `choices[*].index` and `tool_calls[*].index` for OpenAI. The
+`userContent` paths then work as they do on complete JSON. Paths in
+`streamedJson` start at `response.body[*].data`.
+
 When a path meets a value of another shape than it expects (a list where `.*`
 wants fields, or fields where `[*]` wants a list), every value from there on
 becomes a placeholder, as if that value itself were declared. This holds at
@@ -104,7 +126,7 @@ the first, an event stream the second. A body that no declared path fits
 still becomes placeholders as a whole.
 
 Until the recorder reads `integration.yaml`, the same fields are passed as an
-object with `definePolicy({ secretHeaders, secretFields, userContent, allowContentTypes })`.
+object with `definePolicy({ secretHeaders, secretFields, userContent, streamedJson, allowContentTypes })`.
 
 After each recording, the recorder prints how many values each rule
 replaced. A `userContent` path that matched nothing stops the recording:

@@ -43,11 +43,13 @@ export class FieldPaths {
    * for a path it can't read: a path that silently matched nothing would
    * leave content in the file that was meant to be removed. Query paths
    * (`request.query.q`) are left to `QueryPaths`.
+   *
+   * @param section - the `recording` field the paths come from, for errors
    */
-  constructor(sources: readonly string[], side: BodySide) {
+  constructor(sources: readonly string[], side: BodySide, section = "userContent") {
     this.patterns = sources
       .filter((source) => !isQueryPath(source))
-      .map((source) => ({ source, parsed: parsePath(source) }))
+      .map((source) => ({ source, parsed: parsePath(source, section) }))
       .filter(({ parsed }) => parsed.side === side)
       .map(({ source, parsed }) => ({ source, steps: parsed.steps }));
   }
@@ -111,8 +113,8 @@ export function formatPath(path: ValuePath): string {
     .join("");
 }
 
-function parsePath(source: string): { side: BodySide; steps: Step[] } {
-  const side = sideOf(source);
+function parsePath(source: string, section: string): { side: BodySide; steps: Step[] } {
+  const side = sideOf(source, section);
   const rest = source.slice(`${side}.body`.length);
   const steps: Step[] = [];
   STEP.lastIndex = 0;
@@ -120,21 +122,25 @@ function parsePath(source: string): { side: BodySide; steps: Step[] } {
     const start = STEP.lastIndex;
     const found = STEP.exec(rest);
     if (found === null) {
-      throw unreadable(source, `it can't be read from "${rest.slice(start)}"`);
+      throw unreadable(source, section, `it can't be read from "${rest.slice(start)}"`);
     }
     steps.push(toStep(found[1], found[2]));
   }
   return { side, steps };
 }
 
-function sideOf(source: string): BodySide {
+function sideOf(source: string, section: string): BodySide {
   if (source.startsWith("request.body")) {
     return "request";
   }
   if (source.startsWith("response.body")) {
     return "response";
   }
-  throw unreadable(source, "it must start with request.body, response.body or request.query");
+  throw unreadable(
+    source,
+    section,
+    "it must start with request.body, response.body or request.query",
+  );
 }
 
 function toStep(field: string | undefined, item: string | undefined): Step {
@@ -144,11 +150,9 @@ function toStep(field: string | undefined, item: string | undefined): Step {
   return item === "*" ? { kind: "each-item" } : { kind: "item", index: Number(item) };
 }
 
-function unreadable(source: string, reason: string): RecordingRefused {
-  return new RecordingRefused(
-    "recording.userContent",
-    `the path "${source}" is unclear: ${reason}`,
-  );
+/** Exported for `StreamedJson`, which refuses paths outside an event's data the same way. */
+export function unreadable(source: string, section: string, reason: string): RecordingRefused {
+  return new RecordingRefused(`recording.${section}`, `the path "${source}" is unclear: ${reason}`);
 }
 
 function matchesSteps(steps: readonly Step[], path: ValuePath): boolean {

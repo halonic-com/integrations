@@ -34,11 +34,32 @@ refusal), its `tool_calls` with the arguments parsed, `usage` from
 `stop`, `tool_calls` → `tool_calls`, `length` → `length`, anything else →
 `other`).
 
+`stream` sends the same request with `stream: true` and
+`stream_options: { include_usage: true }` (without it a streamed answer has
+no token counts), and reads the
+[chunks](https://platform.openai.com/docs/api-reference/chat-streaming)
+with `EventStream` from `integrations/shared`. It yields each content piece
+as `text` and each tool call as `tool-call` pieces (the first with the
+call's id and name), and ends at `[DONE]` with one `done` holding exactly
+what `chat` returns for the same answer: the answer is rebuilt from the
+chunks and mapped by the same code. A refusal is yielded as one `text`
+piece just before `done`, because `chat` shows it only when there is no
+content. A chunk with `error` becomes an `OpenAiError` by its code if we
+know it, else by its type (`context_length_exceeded` with
+`invalid_request_error` → `bad-arguments`); when we know neither, it is
+`unavailable`, like `server_error`. A stream that ends before `[DONE]` or
+without usage is `unexpected-response`.
+
 ## Limits
 
-- **Capabilities:** `tools` and `jsonOutput`. `vision` is `false` until
-  `ChatMessage` carries images. `streaming` is `false` until `stream` is
-  added.
+- **Capabilities:** `tools`, `jsonOutput` and `streaming`. `vision` is
+  `false` until `ChatMessage` carries images.
+- **Headers timeout:** the sheet keeps the 10-minute `headersTimeoutMs`,
+  because `chat` gets its headers only when the answer is done. `stream`
+  gets them at once, and then has the kit's 60 seconds between two pieces.
+  A reasoning model can think for longer than that before its first
+  piece; such a stream ends with the kit's timeout, and `chat` is the
+  fallback.
 - **Sampling:** `temperature`, `topP` and `stop` are sent as given, but
   reasoning models refuse them, and a workflow that sets them for such a
   model gets `bad-arguments`. In the same way, only reasoning models accept
@@ -56,4 +77,8 @@ refusal), its `tool_calls` with the arguments parsed, `usage` from
   `pnpm record` and an OpenAI test account weren't available yet. They
   follow OpenAI's documented response shapes in the recorder's format,
   scrubbed as the recorder would scrub them. Replace them with real
-  recordings once both are available.
+  recordings once both are available. A streamed tool call has no
+  recording yet: the recorder scrubs each piece of the arguments on its
+  own, so the pieces no longer join to JSON on replay. Its mapping is
+  tested with hand-written chunks in `from-stream.test.ts` until the
+  recorder scrubs the joined arguments.

@@ -132,7 +132,8 @@ class JsonWalk {
     const declared = this.userContent.reachesInside(path);
     if (declared !== undefined) {
       this.markUserContent(declared, path);
-      return USER_CONTENT.text;
+      // Empty stays empty, as in `asUserContent`.
+      return value === "" ? value : USER_CONTENT.text;
     }
     return scrubText(value, this.locate(path), this.context);
   }
@@ -155,8 +156,15 @@ class JsonWalk {
  * The same shape with every leaf replaced by a fixed value of its type. A
  * string that holds JSON gets the same treatment inside, so it still parses
  * on replay: an integration that reads it must not fail on the recording.
+ *
+ * An empty string holds no content, so it stays empty. This keeps the empty
+ * pieces of joined streamed JSON (`streamed-json.ts`) empty, so the pieces
+ * still join to the scrubbed JSON in the first one.
  */
 function asUserContent(value: JsonValue): JsonValue {
+  if (value === "") {
+    return value;
+  }
   if (typeof value === "string") {
     const nested = parseNestedJson(value);
     return nested === undefined ? USER_CONTENT.text : JSON.stringify(asUserContent(nested));
