@@ -4,11 +4,11 @@ import { type FileDetails, fileDetails } from "../file.ts";
 import type { ToolImplementation } from "../kit.ts";
 import {
   allOf,
-  bracketsBalance,
   inFolder,
   nameOrContentHas,
   notTrashed,
   searchesContents,
+  staysInOneClause,
 } from "../query.ts";
 import { driveIdSchema, pageTokenSchema } from "./arguments.ts";
 
@@ -22,9 +22,11 @@ const searchArguments = z.strictObject({
     .string()
     .min(1)
     .max(2_000)
-    .refine(bracketsBalance)
+    .refine(staysInOneClause)
     .optional()
-    .describe(`Drive query syntax, such as "mimeType = 'application/pdf'".`),
+    .describe(
+      `Drive query syntax with strings in single quotes, such as "mimeType = 'application/pdf'".`,
+    ),
   pageSize: z
     .int()
     .min(1)
@@ -46,7 +48,7 @@ interface SearchResult {
 /**
  * The Drive query for the arguments. The model's own `query` is put in
  * brackets, so its `or` can't reach past the trash clause. The arguments
- * only let through a query whose brackets balance, so it can't close ours.
+ * only let through a query that stays in one clause, so it can't close ours.
  */
 export function searchQuery(args: Pick<SearchArguments, "text" | "folderId" | "query">): string {
   const clauses = [notTrashed];

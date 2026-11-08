@@ -13,12 +13,16 @@ export function quoted(value: string): string {
 }
 
 /**
- * Whether the brackets in a query balance outside its quoted strings, and
- * every string is closed. Only then does putting the query in brackets keep
- * it in one clause: `name = 'a') or (trashed = true` would close our
- * bracket and open its own.
+ * Whether putting the query in brackets keeps it in one clause. That holds
+ * when its brackets balance outside its quoted strings and every string is
+ * closed: `name = 'a') or (trashed = true` would close our bracket and open
+ * its own.
+ *
+ * A `"` outside a string is refused. We only know `'` strings; if Drive also
+ * read `"..."` as one, `name = "'") or (trashed = true or name = "'"` would
+ * balance for us and still break out for Drive.
  */
-export function bracketsBalance(query: string): boolean {
+export function staysInOneClause(query: string): boolean {
   let depth = 0;
   let inString = false;
   for (let index = 0; index < query.length; index++) {
@@ -29,6 +33,8 @@ export function bracketsBalance(query: string): boolean {
       else if (character === "'") inString = false;
     } else if (character === "'") {
       inString = true;
+    } else if (character === '"') {
+      return false;
     } else if (character === "(") {
       depth++;
     } else if (character === ")") {
