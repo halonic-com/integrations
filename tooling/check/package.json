@@ -1,0 +1,25 @@
+{
+  "name": "@halonicjs/tooling-check",
+  "private": true,
+  "type": "module",
+  "description": "Our own repo checks: layers, dependencies, names, file size, lockfile, licences and the personal-terms guard.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@typescript/typescript6": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "tooling",
+    "owner": "ravi"
+  }
+}
