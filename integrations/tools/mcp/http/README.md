@@ -56,6 +56,13 @@ other than line breaks and tabs.
 A list that repeats a tool's name is refused: the model would see one tool
 while a call reached the other.
 
+A tool whose name isn't 1 to 64 letters, digits, `_` or `-` is left out,
+and the server's other tools stay usable. That is Halonic's rule for
+listed tools (`ports.untrusted-tool-listings`), and narrower than the
+MCP specification's, which also allows `.` and up to 128 characters: such
+a tool would be refused by Halonic anyway. The kit has no way yet to tell
+the user which tools were left out.
+
 ## Results and errors
 
 A tool's result is the text the server returned. A part that isn't text,
