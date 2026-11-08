@@ -12,7 +12,8 @@ import { scrubText } from "./text.ts";
  * - query parameters with secret-like names (`key`, `api_key`,
  *   `access_token`, `sig`, `code` and the integration's own) get a secret stand-in
  * - query parameters the sheet declares as user content (`request.query.q`)
- *   get the user-content placeholder
+ *   get the user-content placeholder; one that also has a secret-like name
+ *   gets the secret stand-in, and still counts as matched
  * - a query value that is itself a web URL goes through these rules too
  * - every other part (path segments, parameter names and values, the
  *   fragment) goes through the free-text rules
@@ -101,6 +102,12 @@ function scrubQuery(url: URL, where: string, userContent: QueryPaths, context: S
     // The name is scrubbed first, so the report never holds an address used as a name.
     const name = scrubText(rawName, `${where}.query`, context);
     const location = `${where}.query.${name}`;
+    const declared = userContent.match(rawName);
+    // A declared parameter counts as matched whichever rule replaces it: one
+    // with a secret-like name (`request.query.code`) goes to the secret rule.
+    if (declared !== undefined) {
+      context.matchedUserContent.add(declared);
+    }
     if (
       value !== "" &&
       !PLACEHOLDER.test(value) &&
@@ -109,9 +116,7 @@ function scrubQuery(url: URL, where: string, userContent: QueryPaths, context: S
       context.report.add("secret-field", location);
       return [name, secretStandIn(value, context)];
     }
-    const declared = userContent.match(rawName);
     if (declared !== undefined) {
-      context.matchedUserContent.add(declared);
       return [name, replaceUserContent(value, location, context)];
     }
     return [name, scrubQueryValue(value, location, context)];

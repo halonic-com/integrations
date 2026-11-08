@@ -80,6 +80,17 @@ describe("scrubUrl", () => {
     expect([...context.matchedUserContent]).toEqual(["request.query.q"]);
   });
 
+  it("counts a declared parameter with a secret-like name as matched", () => {
+    const context = testContext();
+    const declared = new QueryPaths(["request.query.code"]);
+    const url = `https://api.example.com/callback?code=${FAKE.plainKey}`;
+    expect(scrubUrl(url, "url", context, declared)).toBe(
+      "https://api.example.com/callback?code=scrubbed-secret-1",
+    );
+    expect(rulesUsed(context)).toEqual(["secret-field"]);
+    expect([...context.matchedUserContent]).toEqual(["request.query.code"]);
+  });
+
   it("keeps an empty user-content parameter empty, and counts the path as used", () => {
     const context = testContext();
     const url = "https://api.example.com/search?q=";
