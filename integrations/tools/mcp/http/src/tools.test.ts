@@ -5,7 +5,12 @@ import {
   maxParametersDepth,
   maxToolListChars,
 } from "./limits.ts";
-import { toIntegrationTool, toIntegrationTools, withoutHiddenText } from "./tools.ts";
+import {
+  listedToolNamePattern,
+  toIntegrationTool,
+  toIntegrationTools,
+  withoutHiddenText,
+} from "./tools.ts";
 
 const inputSchema = { type: "object" as const, properties: { text: { type: "string" } } };
 
@@ -118,6 +123,24 @@ describe("toIntegrationTools", () => {
       { name: "a", inputSchema },
     ]);
     expect(tools.map((tool) => tool.name)).toEqual(["b", "a"]);
+  });
+
+  it.each([
+    ["a name of 65 characters", "a".repeat(65)],
+    ["a name with a dot", "notes.search"],
+  ])("leaves out a tool with %s and keeps the others", (_case, name) => {
+    const tools = toIntegrationTools([
+      { name: "before", inputSchema },
+      { name, inputSchema },
+      { name: "after", inputSchema },
+    ]);
+    expect(tools.map((tool) => tool.name)).toEqual(["before", "after"]);
+  });
+
+  it("keeps a name of 64 letters, digits, _ and -", () => {
+    const name = `${"a".repeat(60)}_9-Z`;
+    expect(listedToolNamePattern.test(name)).toBe(true);
+    expect(toIntegrationTools([{ name, inputSchema }]).map((tool) => tool.name)).toEqual([name]);
   });
 
   it("refuses a list that repeats a name, naming the tool", () => {

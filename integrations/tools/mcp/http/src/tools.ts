@@ -10,10 +10,24 @@ import {
 } from "./limits.ts";
 
 /**
- * The server's tool list, as Halonic offers it to agents. Refuses the
- * whole list, rather than leaving tools out, when a name repeats or the
- * list is above {@link maxToolListChars}: an agent should see the server's
- * tools as they are, or none of them.
+ * The names Halonic accepts for a listed tool: 1 to 64 letters, digits,
+ * `_` or `-` (`ports.untrusted-tool-listings` in the `halonic` repo, guide
+ * section 6). Narrower than the MCP specification, which also allows `.`
+ * and up to 128 characters. Calls send the name back unfenced, and model
+ * providers accept no other names for tools.
+ */
+export const listedToolNamePattern = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * The server's tool list, as Halonic offers it to agents.
+ *
+ * Leaves out a tool whose name doesn't match {@link listedToolNamePattern},
+ * as Halonic would: offering it would only get it refused there, one tool
+ * at a time. The other tools stay usable.
+ *
+ * Refuses the whole list, rather than leaving tools out, when a name
+ * repeats or the list is above {@link maxToolListChars}: an agent should
+ * see the server's tools as they are, or none of them.
  *
  * A tool's name follows the specification's pattern, so it is safe to
  * show in our messages.
@@ -25,7 +39,7 @@ export function toIntegrationTools(tools: readonly McpTool[]): IntegrationTool[]
   const seen = new Set<string>();
   let listChars = 0;
   const offered: IntegrationTool[] = [];
-  for (const tool of tools) {
+  for (const tool of tools.filter((tool) => listedToolNamePattern.test(tool.name))) {
     if (seen.has(tool.name)) {
       throw new McpToolsError(
         "unexpected-response",
