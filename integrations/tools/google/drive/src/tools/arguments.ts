@@ -20,3 +20,6 @@ export const driveIdSchema = z
 export const fileIdSchema = driveIdSchema.describe(
   "The file's id, from drive_search or drive_tree.",
 );
+
+/** Drive's page tokens are a few hundred characters; this only stops a made-up one from being huge. */
+export const pageTokenSchema = z.string().min(1).max(1_000);

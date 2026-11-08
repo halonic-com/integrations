@@ -2,12 +2,13 @@ import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { DriveClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { getFileTool } from "./tools/get-file.ts";
+import { searchTool } from "./tools/search.ts";
 
 /**
  * The same tools, in the same order, as in integration.yaml. The rest of
  * the sheet's tools follow in the next pull requests.
  */
-const tools: readonly ToolImplementation<DriveClient>[] = [getFileTool];
+const tools: readonly ToolImplementation<DriveClient>[] = [searchTool, getFileTool];
 
 export const drive: Integration = {
   name: "tool-google-drive",

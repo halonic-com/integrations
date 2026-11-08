@@ -1,0 +1,98 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=trashed+%3D+false+and+%28name+contains+%27halonic-test%27+or+fullText+contains+%27halonic-test%27%29&pageSize=2&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "file-plan-01",
+                "mimeType": "application/vnd.google-apps.document",
+                "modifiedTime": "2026-11-02T09:30:00.000Z",
+                "name": "<scrubbed:content>",
+                "owners": [
+                  {
+                    "emailAddress": "<scrubbed:content>"
+                  }
+                ],
+                "parents": [
+                  "folder-projects-01"
+                ],
+                "webViewLink": "https://docs.google.com/document/d/file-plan-01/edit"
+              },
+              {
+                "id": "file-notes-02",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-10-28T16:05:00.000Z",
+                "name": "<scrubbed:content>",
+                "owners": [
+                  {
+                    "emailAddress": "<scrubbed:content>"
+                  }
+                ],
+                "parents": [
+                  "folder-projects-01"
+                ],
+                "size": "2048",
+                "webViewLink": "https://drive.google.com/file/d/file-notes-02/view"
+              }
+            ],
+            "nextPageToken": "scrubbed-secret-1"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "search-text-two-files",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[1].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[1].owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.nextPageToken",
+      "rule": "secret-field"
+    }
+  ]
+}
