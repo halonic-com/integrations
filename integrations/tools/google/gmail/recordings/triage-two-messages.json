@@ -10,7 +10,7 @@
           "authorization": "Bearer <scrubbed:secret>"
         },
         "method": "GET",
-        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is%3Aunread+in%3Ainbox&maxResults=10"
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=10"
       },
       "response": {
         "body": {
@@ -310,6 +310,11 @@
   "scrubReport": [
     {
       "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].request.headers.authorization",
       "rule": "secret-header"
     },
@@ -317,11 +322,6 @@
       "count": 1,
       "path": "exchanges[1].request.headers.authorization",
       "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[1].response.body.snippet",
-      "rule": "user-content"
     },
     {
       "count": 1,
@@ -365,6 +365,11 @@
     },
     {
       "count": 1,
+      "path": "exchanges[1].response.body.payload.parts[0].parts[0].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[1].response.body.payload.parts[0].parts[0].filename",
       "rule": "user-content"
     },
@@ -375,7 +380,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[1].response.body.payload.parts[0].parts[0].body.data",
+      "path": "exchanges[1].response.body.payload.parts[0].parts[1].body.data",
       "rule": "user-content"
     },
     {
@@ -390,8 +395,8 @@
     },
     {
       "count": 1,
-      "path": "exchanges[1].response.body.payload.parts[0].parts[1].body.data",
-      "rule": "user-content"
+      "path": "exchanges[1].response.body.payload.parts[1].body.attachmentId",
+      "rule": "random-token"
     },
     {
       "count": 1,
@@ -407,11 +412,6 @@
       "count": 1,
       "path": "exchanges[1].response.body.payload.parts[1].headers[1].value",
       "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[1].response.body.payload.parts[1].body.attachmentId",
-      "rule": "random-token"
     },
     {
       "count": 1,
@@ -435,13 +435,13 @@
     },
     {
       "count": 1,
-      "path": "exchanges[2].request.headers.authorization",
-      "rule": "secret-header"
+      "path": "exchanges[1].response.body.snippet",
+      "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body.snippet",
-      "rule": "user-content"
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
     },
     {
       "count": 1,
@@ -485,6 +485,11 @@
     },
     {
       "count": 1,
+      "path": "exchanges[2].response.body.payload.parts[0].parts[0].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[2].response.body.payload.parts[0].parts[0].filename",
       "rule": "user-content"
     },
@@ -495,7 +500,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body.payload.parts[0].parts[0].body.data",
+      "path": "exchanges[2].response.body.payload.parts[0].parts[1].body.data",
       "rule": "user-content"
     },
     {
@@ -510,7 +515,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body.payload.parts[0].parts[1].body.data",
+      "path": "exchanges[2].response.body.snippet",
       "rule": "user-content"
     }
   ]
