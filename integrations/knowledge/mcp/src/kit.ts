@@ -3,8 +3,9 @@
  * `@halonicjs/integration-kit` publishes them.
  *
  * Copied from `packages/core/ports/src` in halonic-com/halonic:
- * `knowledge-provider.ts` on `liam/HAL-112-02-ports` (port version 1) and
- * `integration.ts` on `liam/HAL-135-01-port`. Only the parts this
+ * `knowledge-provider.ts` (port version 1, with `untrusted` from
+ * halonic-com/halonic#175) and `integration.ts` on
+ * `liam/HAL-135-01-port`. Only the parts this
  * integration uses are here.
  *
  * To swap: delete this file and import the same names from
@@ -43,6 +44,14 @@ export interface KnowledgeCapabilities {
 export interface KnowledgeProvider {
   readonly id: string;
   readonly capabilities: KnowledgeCapabilities;
+  /**
+   * Whether hits and documents may hold text someone outside the workspace
+   * wrote, such as a remote server's answers. Halonic fences that text off
+   * like an untrusted tool result, so instructions in it aren't followed.
+   * Leaving it out counts as `true`: only a source whose content the
+   * workspace itself wrote, such as its own files, says `false`.
+   */
+  readonly untrusted?: boolean;
   /** The best matches first. */
   search(query: string, options?: { limit?: number }): Promise<KnowledgeHit[]>;
   /** The document, or `null` when there is no such ref. */

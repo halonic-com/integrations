@@ -93,6 +93,25 @@ describe("replay", () => {
     );
   });
 
+  it("expects no key for an optional secret the workspace hasn't set up", async () => {
+    const withoutKey: RecordingFile = {
+      ...recording,
+      exchanges: recording.exchanges.map((exchange) => ({
+        ...exchange,
+        request: { ...exchange.request, headers: {} },
+      })),
+    };
+    const recorded = replay(withoutKey, { unsetSecrets: ["key"] });
+    await recorded.http.fetch(url, { method: "POST", auth: bearer });
+    recorded.assertAllUsed();
+    await expect(
+      replay(recording, { unsetSecrets: ["key"] }).http.fetch(url, {
+        method: "POST",
+        auth: bearer,
+      }),
+    ).rejects.toThrow("a key in the authorization header; the request doesn't ask for one");
+  });
+
   it("refuses a file that isn't a recording", () => {
     expect(() => replay({ format: "halonic.recording/0", exchanges: [] })).toThrow();
   });

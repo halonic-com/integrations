@@ -68,9 +68,10 @@ describe("knowledge-mcp on recordings", () => {
     }
   });
 
-  it("reads a document through the get tool, without the key when the setting says so", async () => {
-    const recording = replay(getWithoutKey);
-    const source = connect(recording, { url, sendKey: false }).createKnowledgeProvider?.({
+  it("reads a document through the get tool from a server whose key isn't set up", async () => {
+    // The key is optional in the sheet, so the kit sends the requests without it.
+    const recording = replay(getWithoutKey, { unsetSecrets: ["mcp-server-key"] });
+    const source = connect(recording).createKnowledgeProvider?.({
       id: "guides",
       config: { searchTool: "search_docs", getTool: "read_doc", refArg: "path" },
     });
@@ -85,7 +86,9 @@ describe("knowledge-mcp on recordings", () => {
     expect(recording.sent[2]?.body).toMatchObject({
       params: { name: "read_doc", arguments: { path: "guides/setup.md" } },
     });
-    expect(recording.sent.every((request) => request.init.auth === undefined)).toBe(true);
+    for (const request of recording.sent) {
+      expect(request.init.auth).toEqual({ secret: "mcp-server-key", as: "bearer" });
+    }
   });
 
   it("reports a tool's own failure without the server's text", async () => {
