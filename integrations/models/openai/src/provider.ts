@@ -1,8 +1,12 @@
+import { EventStream } from "@halonicjs/integration-shared";
 import { errorForResponse, unexpectedResponse } from "./errors.ts";
 import { fromOpenAiResponse, openAiResponseSchema } from "./from-response.ts";
+import { fromOpenAiStream } from "./from-stream.ts";
 import type {
   ChatRequest,
   ChatResponse,
+  ChatStreamEvent,
+  HttpResponse,
   IntegrationHttpClient,
   LlmCapabilities,
   LlmProvider,
@@ -14,14 +18,13 @@ export const chatCompletionsUrl = "https://api.openai.com/v1/chat/completions";
 
 /**
  * Only what the mapping handles. JSON mode is `response_format:
- * json_object`. Images aren't in `ChatMessage` yet, and streaming comes
- * with `stream`.
+ * json_object`. Images aren't in `ChatMessage` yet.
  */
 export const openAiCapabilities: LlmCapabilities = {
   tools: true,
   jsonOutput: true,
   vision: false,
-  streaming: false,
+  streaming: true,
 };
 
 /**
@@ -38,6 +41,7 @@ export function createOpenAiProvider(
     type: "openai",
     capabilities: openAiCapabilities,
     chat: (request) => chat(http, request),
+    stream: (request) => stream(http, request),
   };
 }
 
@@ -52,16 +56,58 @@ async function chat(http: IntegrationHttpClient, request: ChatRequest): Promise<
 }
 
 /**
- * Sends one Chat Completions request and returns the JSON body of a
- * successful answer. The kit's own errors (refused host or secret, timeout,
- * abort) pass through unchanged. Streaming will send the same body with
- * `stream: true` and read the answer as events instead.
+ * The same request as `chat`, with `stream: true`, read as events as the
+ * model writes. Without `include_usage` a streamed answer has no token
+ * counts, and spend needs them. Also one request, never retried. Aborting
+ * the signal ends the stream with the kit's error, and leaving the loop
+ * early closes the connection.
  */
+async function* stream(
+  http: IntegrationHttpClient,
+  request: ChatRequest,
+): AsyncGenerator<ChatStreamEvent> {
+  const body: StreamedOpenAiRequest = {
+    ...toOpenAiRequest(request),
+    stream: true,
+    stream_options: { include_usage: true },
+  };
+  const response = await sendChatCompletion(http, body, request.signal);
+  if (response.body === null || mediaType(response) !== "text/event-stream") {
+    throw unexpectedResponse();
+  }
+  yield* fromOpenAiStream(new EventStream(response.body));
+}
+
+/** The request `stream` sends: `chat`'s, with the switches for streaming. */
+interface StreamedOpenAiRequest extends OpenAiRequest {
+  stream: true;
+  stream_options: { include_usage: true };
+}
+
+/** Sends one Chat Completions request and returns the JSON body of a successful answer. */
 async function postChatCompletion(
   http: IntegrationHttpClient,
   body: OpenAiRequest,
   signal: ChatRequest["signal"],
 ): Promise<unknown> {
+  const response = await sendChatCompletion(http, body, signal);
+  try {
+    return await response.json();
+  } catch {
+    throw unexpectedResponse();
+  }
+}
+
+/**
+ * Sends one Chat Completions request and returns a successful response,
+ * before its body is read. The kit's own errors (refused host or secret,
+ * timeout, abort) pass through unchanged.
+ */
+async function sendChatCompletion(
+  http: IntegrationHttpClient,
+  body: OpenAiRequest | StreamedOpenAiRequest,
+  signal: ChatRequest["signal"],
+): Promise<HttpResponse> {
   const response = await http.fetch(chatCompletionsUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -72,9 +118,10 @@ async function postChatCompletion(
   if (!response.ok) {
     throw await errorForResponse(response);
   }
-  try {
-    return await response.json();
-  } catch {
-    throw unexpectedResponse();
-  }
+  return response;
+}
+
+/** The media type of the response, without parameters such as `charset`. */
+function mediaType(response: HttpResponse): string {
+  return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }

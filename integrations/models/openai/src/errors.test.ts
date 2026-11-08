@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { codeForStatus, errorForResponse } from "./errors.ts";
+import { codeForStatus, errorForResponse, errorForStreamChunk } from "./errors.ts";
 import type { HttpResponse } from "./kit.ts";
 
+const noHeaders = { get: () => null };
+
 function response(status: number, body: unknown): HttpResponse {
-  return { ok: false, status, json: async () => body };
+  return { ok: false, status, headers: noHeaders, body: null, json: async () => body };
 }
 
 describe("codeForStatus", () => {
@@ -70,6 +72,8 @@ describe("errorForResponse", () => {
   it("uses the status alone when the body isn't JSON", async () => {
     const notJson: HttpResponse = {
       ok: false,
+      headers: noHeaders,
+      body: null,
       status: 502,
       json: async () => {
         throw new SyntaxError("Unexpected token '<', \"<html>\" is not valid JSON");
@@ -78,5 +82,30 @@ describe("errorForResponse", () => {
     const error = await errorForResponse(notJson);
     expect(error).toMatchObject({ code: "unavailable", name: "OpenAiError" });
     expect(error.message).not.toContain("html");
+  });
+});
+
+describe("errorForStreamChunk", () => {
+  it("uses the type when the code is one we don't know", () => {
+    const error = errorForStreamChunk({
+      error: { code: "context_length_exceeded", type: "invalid_request_error" },
+    });
+    expect(error.code).toBe("bad-arguments");
+    expect(error.message).toBe("OpenAI refused the request as invalid (context_length_exceeded).");
+  });
+
+  it("prefers a known code to the type", () => {
+    const error = errorForStreamChunk({
+      error: { code: "insufficient_quota", type: "invalid_request_error" },
+    });
+    expect(error.code).toBe("quota-exceeded");
+  });
+
+  it("is unavailable when neither the code nor the type is known", () => {
+    const error = errorForStreamChunk({ error: { code: null, type: "server_error" } });
+    expect(error.code).toBe("unavailable");
+    expect(error.message).toBe(
+      "OpenAI is having trouble right now. Try again later (server_error).",
+    );
   });
 });
