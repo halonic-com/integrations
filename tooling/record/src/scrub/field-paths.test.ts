@@ -42,6 +42,21 @@ describe("FieldPaths", () => {
     expect(paths.cannotEnter(["calls", 0, "name"], ["x"])).toBeUndefined();
   });
 
+  it("lets a body take the paths of its own kind, when the sheet has both", () => {
+    const json = "response.body.result.content[*].text";
+    const stream = "response.body[*].data.result.content[*].text";
+    const paths = new FieldPaths([json, stream], "response");
+    expect(paths.cannotEnter([], { result: {} })).toBeUndefined();
+    expect(paths.cannotEnter([], [{ data: {} }])).toBeUndefined();
+    expect(paths.cannotEnter([], "plain text")).toBe(json);
+  });
+
+  it("still refuses a body that only another kind's paths reach", () => {
+    const stream = "response.body[*].data.result.content[*].text";
+    const paths = new FieldPaths([stream], "response");
+    expect(paths.cannotEnter([], { result: {} })).toBe(stream);
+  });
+
   it("matches lists of lists", () => {
     const paths = new FieldPaths(["request.body.rows[*][*]"], "request");
     expect(paths.match(["rows", 0, 2])).toBeDefined();

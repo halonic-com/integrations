@@ -86,6 +86,18 @@ describe("scrubJson", () => {
     expect(context.matchedUserContent).toEqual(new Set([declared]));
   });
 
+  it("scrubs a JSON answer by its own paths when the sheet also has event-stream paths", () => {
+    const json = "response.body.result.content[*].text";
+    const stream = "response.body[*].data.result.content[*].text";
+    const paths = new FieldPaths([json, stream], "response");
+    const body = { jsonrpc: "2.0", id: 2, result: { content: [{ type: "text", text: "plan" }] } };
+    expect(scrubJson(body, "body", paths, testContext())).toEqual({
+      jsonrpc: "2.0",
+      id: 2,
+      result: { content: [{ type: "text", text: "<scrubbed:content>" }] },
+    });
+  });
+
   it("doesn't guess user content: undeclared text stays", () => {
     const body = { subject: "Dinner on Friday?" };
     expect(scrubJson(body, "body", noUserContent, testContext())).toEqual(body);

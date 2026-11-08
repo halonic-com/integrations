@@ -96,6 +96,13 @@ any depth, in a body and inside a JSON string alike: with
 `...arguments.trip.*`, the arguments `{"trip":["Ghent","Bruges"]}` become
 `{"trip":["<scrubbed:content>","<scrubbed:content>"]}`.
 
+The body itself is the one exception, when another declared path fits it. A
+service that answers either as a JSON object or as an event stream, as an MCP
+server does, declares paths for both: `response.body.result.content[*].text`
+and `response.body[*].data.result.content[*].text`. A JSON answer then takes
+the first, an event stream the second. A body that no declared path fits
+still becomes placeholders as a whole.
+
 Until the recorder reads `integration.yaml`, the same fields are passed as an
 object with `definePolicy({ secretHeaders, secretFields, userContent, allowContentTypes })`.
 
