@@ -1,0 +1,29 @@
+{
+  "name": "@halonicjs/root",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26.12.0",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12.18.0",
+      "onFail": "error"
+    }
+  },
+  "scripts": {
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "turbo": "catalog:"
+  },
+  "halonic": {
+    "layer": "tooling",
+    "owner": "ravi"
+  }
+}

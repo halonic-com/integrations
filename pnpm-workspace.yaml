@@ -1,0 +1,56 @@
+# pnpm 12 reads every setting from this file (only login and registry
+# settings may live in .npmrc). Unknown settings are errors, so typos fail.
+# The settings below match halonic-com/halonic; keep them in step with it.
+
+packages:
+  - integrations/*
+  - tooling/*
+
+# One version line per shared dependency. Packages use "catalog:" and the
+# check fails on any other version for an external dependency (plan 7.4).
+# The versions match halonic-com/halonic, so an integration behaves the same
+# in both repos.
+catalog:
+  "@biomejs/biome": 2.6.5
+  "@types/node": ^26.6.6
+  turbo: ^2.11.10
+  typescript: ^7.0.2
+  vitest: ^5.1.0
+  zod: ^4.6.7
+
+# Our scope always comes from npm, also on a machine with another default
+# registry. A backstop only: owning @halonicjs is the real protection (3.2).
+registries:
+  "@halonicjs": https://registry.npmjs.org/
+
+# Always write the tarball URL, even for the default registry, so the
+# lockfile check can prove every package came from registry.npmjs.org. pnpm
+# leaves it out when it equals the default, so a mirror would look like npm.
+lockfileIncludeTarballUrl: true
+
+# --- Install hardening (plan 10.1) ---
+
+# Install scripts run only for packages listed here; unlisted ones fail.
+allowBuilds:
+  "@biomejs/biome": false
+  esbuild: false
+  turbo: false
+
+# New releases must be 3 days old (minutes). For an urgent security fix, add
+# the package to minimumReleaseAgeExclude in its own pull request.
+minimumReleaseAge: 4320
+minimumReleaseAgeExclude: []
+
+# No git or tarball URLs anywhere in the dependency tree.
+blockExoticSubdeps: true
+
+# Fail when a package loses its trusted-publisher status (a hijack sign).
+trustPolicy: no-downgrade
+
+# One shared copy of the dependencies for every agent worktree.
+enableGlobalVirtualStore: true
+
+# Workspace packages are always linked, never copied, so TypeScript never
+# sits inside node_modules (Node refuses to strip types there).
+linkWorkspacePackages: true
+saveWorkspaceProtocol: rolling

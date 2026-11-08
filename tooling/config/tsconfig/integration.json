@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "For integrations: no Node types and no DOM, so the code also runs in the cloud runtime (workerd). All network access goes through the kit's HttpClient, so fetch, fs or process are compile errors here.",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": [
+      "es2024"
+    ],
+    "types": []
+  }
+}

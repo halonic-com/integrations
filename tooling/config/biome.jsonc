@@ -1,0 +1,78 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "json": {
+    // Expanded like JSON.stringify(value, null, 2), the way pnpm, `pnpm new`
+    // and `pnpm discover --fix` write package.json, so their output is
+    // already formatted.
+    "formatter": {
+      "expand": "always"
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all",
+      "semicolons": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noDefaultExport": "error",
+        "noNonNullAssertion": "error",
+        "useImportType": "error",
+        "useExportType": "error",
+        "useNodejsImportProtocol": "error",
+        "noNestedTernary": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noTsIgnore": "error"
+      },
+      "complexity": {
+        // TypeScript's noPropertyAccessFromIndexSignature (plan 8) requires
+        // record["key"] for index signatures; this rule would undo that.
+        "useLiteralKeys": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 20
+          }
+        }
+      },
+      "correctness": {
+        "useImportExtensions": "error"
+      },
+      "performance": {
+        // Each package has one explicit public index.ts with named re-exports; only `export *` is banned.
+        "noReExportAll": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "**/vitest.config.ts",
+        "**/vite.config.ts",
+        "**/astro.config.mjs"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    }
+  ]
+}
