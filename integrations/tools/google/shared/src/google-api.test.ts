@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { GoogleError } from "./errors.ts";
+import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import { type GoogleApiOptions, googleApi } from "./google-api.ts";
 import type { HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
 import { fakeWait } from "./test/fake-wait.ts";
+import { serviceDisabledBody } from "./test/service-disabled.ts";
 
 const listUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Atest";
 const sendUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
@@ -140,6 +141,15 @@ describe("GoogleApi requests", () => {
     expect((error as GoogleError).message).toBe(
       "Gmail found nothing at gmail.googleapis.com/gmail/v1/users/me/messages (status 404, NOT_FOUND).",
     );
+  });
+
+  it("throws the typed error for a switched-off API and doesn't retry it", async () => {
+    const http = new FakeHttp(response(403, serviceDisabledBody("gmail.googleapis.com")));
+    const { google } = setUp(http);
+    const error = await google.getJson(listUrl, messageSchema).catch((thrown: unknown) => thrown);
+    expect(error).toBeInstanceOf(GoogleApiDisabledError);
+    expect(error).toMatchObject({ code: "api-disabled", api: "gmail.googleapis.com" });
+    expect(http.requests).toHaveLength(1);
   });
 
   it("lets the kit's own errors through unchanged and doesn't retry them", async () => {

@@ -43,7 +43,7 @@ export function googleErrorReason(bodyText: string): string | undefined {
 }
 
 /** The parsed body, or `undefined` for a body that isn't JSON. The parse error quotes the body, so it never escapes. */
-function parseJsonOrUndefined(text: string): unknown {
+export function parseJsonOrUndefined(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
