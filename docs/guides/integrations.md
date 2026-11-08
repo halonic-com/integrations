@@ -502,15 +502,20 @@ rest, fences off the description and the schema's `description` and
 - strip hidden characters;
 - cap a description at 10,000 characters and a schema at 64 KiB as JSON;
 - drop schema keywords you don't need;
-- refuse a tool whose name, or whose property names at any depth, aren't
-  1 to 64 letters, digits, `_` or `-`. Halonic can't fence names, because
-  calls use them.
+- refuse a tool whose name, property names at any depth, `required`
+  strings or `$defs` names aren't 1 to 64 letters, digits, `_` or `-`, and
+  drop an `enum` or `const` with a string that isn't. Halonic can't fence
+  these strings, because calls send them back;
+- drop an `enum` with more than 64 values, and refuse a tool whose
+  unfenced strings add up to more than 2,048 characters.
 
 The full rule is `ports.untrusted-tool-listings` in the `halonic` repo.
 
 > **Not settled yet:** Halonic doesn't fence these texts yet
-> (`ports.untrusted-tool-listings` is a draft). Until it does, say in the
-> README that descriptions reach the model unfenced.
+> (`ports.untrusted-tool-listings` is a draft). Until it does, your checks
+> above are the only ones, and the README must say that descriptions reach
+> the model unfenced. Once it does, it applies the same caps and rules
+> itself, and yours only refuse early.
 
 A knowledge source says `provides: [knowledge]` and implements
 `createKnowledgeProvider(source)`. The same rules apply: one client, Zod
