@@ -31,12 +31,17 @@ tools: []
 needs: []
 
 # Fields that hold the user's own content, for the recorder. Tool arguments
-# go out in the request; the tool's answer comes back as text and
+# go out in the request; the tool's answer comes back as text, embedded
+# resources (a document's text or bytes), image or audio data and
 # structured content, in a JSON answer or in the events of an event stream.
 recording:
   userContent:
     - request.body.params.arguments
     - response.body.result.content[*].text
+    - response.body.result.content[*].resource
+    - response.body.result.content[*].data
     - response.body.result.structuredContent
     - response.body[*].data.result.content[*].text
+    - response.body[*].data.result.content[*].resource
+    - response.body[*].data.result.content[*].data
     - response.body[*].data.result.structuredContent

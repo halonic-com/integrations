@@ -7,11 +7,11 @@
  * parts this integration uses are here.
  *
  * To swap: delete this file and import the same names from
- * `@halonicjs/integration-kit`. The host's HTTP client is the shared
- * library's `HttpClient`, the part of the kit's client our MCP client uses,
- * so the MCP transport accepts this host as it is.
+ * `@halonicjs/integration-kit`. The host's `http` and `wait` are the MCP
+ * client's `McpHost`, the part of the kit's host our MCP client uses, so
+ * the MCP transport accepts this host as it is.
  */
-import type { HttpClient } from "@halonicjs/integration-shared";
+import type { McpHost } from "@halonicjs/integration-mcp";
 
 /** What calling a tool can do. Approvals and the "allow sending" check act on it. */
 export type ToolRisk = "read" | "write" | "send";
@@ -29,9 +29,11 @@ export interface IntegrationTool {
   untrusted: boolean;
 }
 
-/** What an integration is given. This one keeps no tokens, so only `http` and `settings`. */
-export interface IntegrationHost {
-  readonly http: HttpClient;
+/**
+ * What an integration is given: `http`, `wait` for the pause before
+ * resuming an answer stream, and `settings`. This one keeps no tokens.
+ */
+export interface IntegrationHost extends McpHost {
   /** The settings the workspace gives this integration, such as `url`. Never a secret value. */
   readonly settings: Readonly<Record<string, unknown>>;
 }
