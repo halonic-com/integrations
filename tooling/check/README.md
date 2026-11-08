@@ -26,10 +26,13 @@ so both repos check the same things. What differs:
   know this repo's two layers (`integrations`, `tooling`) instead of the
   main repo's table. Integrations may not use Node APIs, because they also
   run in the cloud runtime. They also know the integration groups
-  (`models`, `knowledge`, `tools`), and `packages.ts` flags a
-  `package.json` under `integrations/` that pnpm doesn't see.
+  (`models`, `knowledge`, `tools`). `packages.ts` flags a `package.json`
+  under `integrations/` that pnpm doesn't see, two packages with the same
+  name, and an ungrouped folder that starts with a group's prefix (such as
+  `integrations/model-anthropic`).
 - `src/lib/workspace.ts` reads workspace globs with `*` at any folder
-  level, such as `integrations/tools/*/*`.
+  level, such as `integrations/tools/*/*`, and refuses empty, `.` and `..`
+  folders in a glob.
 - The Studio feature list rule and the Phase 1 slots (`trace`,
   `requirement-guard`, `dco`) are left out: this repo has no Studio, no
   requirements and needs no sign-off line.

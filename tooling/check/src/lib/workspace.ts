@@ -117,7 +117,8 @@ export function listWorkspacePackages(root: string): WorkspacePackage[] {
  * pnpm allows more, but this is all we use, and it keeps the check free of
  * a glob library. Like pnpm, it never looks inside `node_modules`.
  *
- * @throws on any other use of `*`, such as `**` or `llm-*`
+ * @throws on any other use of `*`, such as `**` or `llm-*`, and on empty,
+ * `.` and `..` folders, which would give odd paths
  */
 export function expandWorkspaceGlob(root: string, glob: string): string[] {
   let matches = [""];
@@ -125,6 +126,11 @@ export function expandWorkspaceGlob(root: string, glob: string): string[] {
     if (segment.includes("*") && segment !== "*") {
       throw new Error(
         `Unsupported workspace glob "${glob}". Use "*" only for a whole folder name, as in "integrations/tools/*/*".`,
+      );
+    }
+    if (segment === "" || segment === "." || segment === "..") {
+      throw new Error(
+        `Unsupported workspace glob "${glob}". Write folders from the repo root, without "./", "../", "//" or a "/" at either end.`,
       );
     }
     matches = matches.flatMap((parent) =>

@@ -85,9 +85,21 @@ describe("tooling/check: packages", () => {
     expect(messages[0]).toContain("pnpm doesn't see this package");
   });
 
+  it.each(["models/openai/chat", "tools/google/gmail/labels"])(
+    "flags a package that pnpm doesn't see because integrations/%s is a level too deep",
+    (folders) => {
+      const tooDeep = groupedIntegration(folders, folders.replaceAll("/", "-"));
+      const messages = runChecks([tooDeep]).map((problem) => problem.message);
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("pnpm doesn't see this package");
+    },
+  );
+
   it.each([
-    // matches integrations/*, so pnpm sees it and the place is wrong
+    // match integrations/*, so pnpm sees them and the place is wrong
     ["models", "Packages live only in"],
+    ["knowledge", "Packages live only in"],
+    ["tools", "Packages live only in"],
     // matches no glob, so pnpm doesn't see it
     ["tools/google", "pnpm doesn't see this package"],
   ])("rejects a package in the group folder integrations/%s", (folders, expected) => {
@@ -100,5 +112,31 @@ describe("tooling/check: packages", () => {
     const badProvider = groupedIntegration("tools/Google/gmail", "tool-Google-gmail");
     const messages = runChecks([badProvider]).map((problem) => problem.message);
     expect(messages.some((message) => message.includes('Folder name "Google"'))).toBe(true);
+  });
+
+  it("rejects two packages with the same name", () => {
+    const twins = [
+      groupedIntegration("tools/google-cloud/storage", "tool-google-cloud-storage"),
+      groupedIntegration("tools/google/cloud-storage", "tool-google-cloud-storage"),
+    ];
+    const messages = runChecks(twins).map((problem) => problem.message);
+    expect(messages).toHaveLength(2);
+    for (const folder of ["tools/google-cloud/storage", "tools/google/cloud-storage"]) {
+      expect(
+        messages.some((message) =>
+          message.includes(`is also the name of the package in integrations/${folder}.`),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it.each([
+    ["model-anthropic", "models"],
+    ["tool-google-gmail", "tools"],
+    ["knowledge-mcp", "knowledge"],
+  ])("rejects the ungrouped folder integrations/%s, whose name belongs to %s", (folder, group) => {
+    const messages = runChecks([integration(folder)]).map((problem) => problem.message);
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain(`kept for integrations/${group}/`);
   });
 });

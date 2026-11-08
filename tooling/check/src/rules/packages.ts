@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { type CheckContext, declaredDependencies } from "../lib/context.ts";
-import { folderNamePattern, scope } from "../lib/layout.ts";
+import { folderNamePattern, groupClaiming, scope } from "../lib/layout.ts";
 import { Report } from "../lib/problems.ts";
 import type { WorkspacePackage } from "../lib/workspace.ts";
 
@@ -14,11 +14,12 @@ const places =
  * it is private unless listed as published, it declares its layer and
  * owner, it exposes only public entry points, and every internal
  * dependency uses `workspace:*` (plan 3.2, 4.1, 6.2). Also finds packages
- * under `integrations/` that pnpm doesn't see.
+ * under `integrations/` that pnpm doesn't see, and names used twice.
  */
 export function checkPackages(context: CheckContext): Report {
   const report = new Report("packages");
   checkUnseenPackages(context, report);
+  checkDuplicateNames(context, report);
   for (const pkg of context.packages) {
     checkIdentity(context, pkg, report);
     checkInternalVersions(context, pkg, report);
@@ -34,7 +35,7 @@ function checkIdentity(context: CheckContext, pkg: WorkspacePackage, report: Rep
   const { name, halonic } = pkg.manifest;
   const place = context.placeOf(pkg);
   if (place === undefined) {
-    report.error(file, `Packages live only in ${places}. Move this one. ${guide}`);
+    report.error(file, misplacedMessage(pkg.directory));
     return;
   }
   const folders = pkg.directory === "." ? [] : pkg.directory.split("/");
@@ -65,6 +66,41 @@ function checkIdentity(context: CheckContext, pkg: WorkspacePackage, report: Rep
       file,
       `Name the owner who reviews changes: "halonic": { "owner": "<agent>" } (plan 6.2).`,
     );
+  }
+}
+
+function misplacedMessage(directory: string): string {
+  const [top, folder, ...below] = directory.split("/");
+  const group = folder === undefined ? undefined : groupClaiming(folder);
+  if (top === "integrations" && below.length === 0 && group !== undefined) {
+    return `"${folder}" starts with a name kept for integrations/${group}/, and would clash with a package there. Move it into integrations/${group}/, or rename the folder. ${guide}`;
+  }
+  return `Packages live only in ${places}. Move this one. ${guide}`;
+}
+
+/**
+ * Two folders can give the same name, such as `tools/google-cloud/storage`
+ * and `tools/google/cloud-storage`. pnpm doesn't refuse that, and the rules
+ * that look a package up by name would see only one of them.
+ */
+function checkDuplicateNames(context: CheckContext, report: Report): void {
+  const packagesByName = new Map<string, WorkspacePackage[]>();
+  for (const pkg of context.packages) {
+    const name = pkg.manifest.name;
+    if (name !== undefined) {
+      packagesByName.set(name, [...(packagesByName.get(name) ?? []), pkg]);
+    }
+  }
+  for (const [name, sameName] of packagesByName) {
+    for (const pkg of sameName) {
+      const others = sameName.filter((other) => other !== pkg).map((other) => other.directory);
+      if (others.length > 0) {
+        report.error(
+          pkg.manifestPath,
+          `"${name}" is also the name of the package in ${others.join(" and ")}. Every package needs its own name, so rename one of the folders. ${guide}`,
+        );
+      }
+    }
   }
 }
 

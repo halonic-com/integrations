@@ -50,7 +50,12 @@ invent a name:
 | `tooling/<name>`                          | tooling      | `@halonicjs/tooling-<name>`                        |
 
 `models`, `knowledge` and `tools` are group folders, never packages
-themselves. Every folder name is kebab-case. A `package.json` under
+themselves. An ungrouped folder may not start with `model-`, `tool-` or
+`knowledge-`, because `integrations/model-anthropic` would get the same
+name as `integrations/models/anthropic`. Two folders can still give the
+same name (`tools/google-cloud/storage` and `tools/google/cloud-storage`),
+so the check fails when two packages share a name. Every folder name is
+kebab-case. A `package.json` under
 `integrations/` that matches none of these places fails the check, because
 pnpm wouldn't see it. The groups are explained in
 [integrations.md](integrations.md#2-where-it-goes-and-what-its-called).

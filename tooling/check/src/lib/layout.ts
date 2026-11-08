@@ -1,7 +1,9 @@
 /**
  * Where a package sits in the repo decides its layer and its npm name
  * (plan 3.4 and 4.1). Deriving both from the path means nobody has to
- * invent a name, and two packages can never end up with the same one.
+ * invent a name. Two folders can still give the same name, such as
+ * `tools/google-cloud/storage` and `tools/google/cloud-storage`, so the
+ * packages rule also rejects duplicate names.
  *
  * This repo has two layers: the integrations, and the repo's own tooling.
  * The main repo (halonic-com/halonic) has the full layer table.
@@ -14,6 +16,9 @@
  * | `integrations/knowledge/<source>`         | `knowledge-<source>`           |
  * | `integrations/tools/<provider>/<service>` | `tool-<provider>-<service>`    |
  * | `integrations/<name>`                     | `<name>` (belongs to no group) |
+ *
+ * An ungrouped folder may not start with a group's prefix: `model-anthropic`
+ * would clash with `models/anthropic`.
  */
 
 /** The layers of this repo. */
@@ -87,7 +92,21 @@ function integrationName(folders: readonly string[]): string | undefined {
   }
   const group = integrationGroups.get(first);
   if (group === undefined) {
-    return below.length === 0 ? first : undefined;
+    return below.length === 0 && groupClaiming(first) === undefined ? first : undefined;
   }
   return below.length === group.depth ? [group.prefix, ...below].join("-") : undefined;
+}
+
+/**
+ * The group folder whose prefix an ungrouped folder name starts with, such
+ * as `models` for `model-anthropic`. Such a folder is not a valid place,
+ * because its name could clash with an integration in that group.
+ */
+export function groupClaiming(folder: string): string | undefined {
+  for (const [groupFolder, group] of integrationGroups) {
+    if (folder.startsWith(`${group.prefix}-`)) {
+      return groupFolder;
+    }
+  }
+  return undefined;
 }

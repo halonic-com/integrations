@@ -84,4 +84,11 @@ describe("expandWorkspaceGlob", () => {
     expect(() => expandIn([], "integrations/**")).toThrow(/Unsupported workspace glob/);
     expect(() => expandIn([], "integrations/llm-*")).toThrow(/Unsupported workspace glob/);
   });
+
+  it.each(["integrations/*/", "./integrations/*", "integrations/../x/*", "integrations//*"])(
+    "throws on an empty, . or .. folder in %s",
+    (glob) => {
+      expect(() => expandIn([], glob)).toThrow(/Unsupported workspace glob/);
+    },
+  );
 });

@@ -31,6 +31,10 @@ describe("placeOf", () => {
     "integrations/google/gmail",
     "integrations/models/openai/chat",
     "integrations/tools/google/gmail/labels",
+    // an ungrouped folder may not take a group's prefix
+    "integrations/model-anthropic",
+    "integrations/tool-google-gmail",
+    "integrations/knowledge-mcp",
     // an inherited object key is not a group
     "integrations/constructor/x",
   ])("returns undefined for %s", (directory) => {

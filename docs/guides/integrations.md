@@ -95,7 +95,8 @@ integrations/
   permission sheet, no tools and no `Integration`. Never copy its code into
   a service.
 - An integration that belongs to no group sits directly in
-  `integrations/<name>/`.
+  `integrations/<name>/`. Its name may not start with `model-`, `tool-` or
+  `knowledge-`: those names belong to the groups.
 
 Each service is still its own integration. The user connects a Google
 account once and ticks the services they want, and Halonic asks Google only
