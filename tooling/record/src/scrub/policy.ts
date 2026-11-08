@@ -40,6 +40,21 @@ export interface ScrubPolicy {
   readonly userContent: readonly string[];
 
   /**
+   * Strings in an event stream that are pieces of one JSON text, such as a
+   * streamed tool call's arguments: Anthropic's
+   * `response.body[*].data.delta.partial_json` or OpenAI's
+   * `response.body[*].data.choices[*].delta.tool_calls[*].function.arguments`.
+   * No piece is JSON on its own, so the scrubber joins them first: the whole
+   * text goes into the first piece and the others become empty. The
+   * `userContent` paths and the other rules then see complete JSON.
+   *
+   * Pieces belong together when the objects along their path hold the same
+   * `index` values: the event's `index` for Anthropic, `choices[*].index`
+   * and `tool_calls[*].index` for OpenAI. Paths start at `response.body[*].data`.
+   */
+  readonly streamedJson: readonly string[];
+
+  /**
    * Content types (without parameters, such as `text/plain`) that may be saved
    * as plain text. Text bodies still go through the key, e-mail and phone
    * rules, but have no field names to go by. Any body that isn't empty, JSON,
@@ -69,6 +84,7 @@ export function definePolicy(input: ScrubPolicyInput = {}): ScrubPolicy {
     secretHeaders: (input.secretHeaders ?? []).map((name) => name.toLowerCase()),
     secretFields: input.secretFields ?? [],
     userContent: input.userContent ?? [],
+    streamedJson: input.streamedJson ?? [],
     allowContentTypes: (input.allowContentTypes ?? []).map((type) => type.toLowerCase()),
   };
 }
