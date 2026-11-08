@@ -48,6 +48,8 @@ const tokenCountSchema = z.int().nonnegative().optional();
  * https://aistudio.google.com/api-reference/generate-content
  */
 export const geminiResponseSchema = z.object({
+  /** Used to make up call ids that are unique within a run. */
+  responseId: z.string().optional(),
   candidates: z
     .array(
       z.object({
@@ -91,7 +93,9 @@ export function fromGeminiResponse(body: GeminiResponse): ChatResponse {
   const candidate = body.candidates?.[0];
   const parts = candidate?.content?.parts ?? [];
   const textParts = parts.filter(isTextPart);
-  const toolCalls = parts.filter(isFunctionCallPart).map(toToolCall);
+  const toolCalls = parts
+    .filter(isFunctionCallPart)
+    .map((part, index) => toToolCall(part, body.responseId, index));
   const reasoning = textParts
     .filter((part) => part.thought === true)
     .map((part) => part.text)
@@ -131,10 +135,14 @@ function toUsage(usage: GeminiResponse["usageMetadata"]): Usage {
   };
 }
 
-function toToolCall(part: FunctionCallPart, index: number): ToolCall {
+function toToolCall(
+  part: FunctionCallPart,
+  responseId: string | undefined,
+  index: number,
+): ToolCall {
   const { functionCall, thoughtSignature } = part;
   return {
-    id: functionCall.id ?? generatedCallId(index),
+    id: functionCall.id ?? generatedCallId(responseId, index),
     name: functionCall.name,
     arguments: functionCall.args ?? {},
     ...(thoughtSignature !== undefined ? { signature: thoughtSignature } : {}),

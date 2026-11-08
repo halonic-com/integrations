@@ -41,8 +41,38 @@ describe("toGeminiContents", () => {
             functionCall: { id: "abc123", name: "search", args: { q: "x" } },
             thoughtSignature: "sig-fake-1",
           },
-          { functionCall: { id: "def456", name: "search", args: { q: "y" } } },
+          {
+            functionCall: { id: "def456", name: "search", args: { q: "y" } },
+            thoughtSignature: "skip_thought_signature_validator",
+          },
         ],
+      },
+    ]);
+  });
+
+  it("rebuilds another provider's turn with the placeholder signature and without its ids", () => {
+    const contents = toGeminiContents([
+      {
+        role: "assistant",
+        content: "",
+        toolCalls: [{ id: "toolu_fake1", name: "now", arguments: {} }],
+        replay: { type: "anthropic", data: [{ type: "tool_use" }] },
+      },
+      { role: "tool", toolCallId: "toolu_fake1", name: "now", content: "noon" },
+    ]);
+    expect(contents).toEqual([
+      {
+        role: "model",
+        parts: [
+          {
+            functionCall: { name: "now", args: {} },
+            thoughtSignature: "skip_thought_signature_validator",
+          },
+        ],
+      },
+      {
+        role: "user",
+        parts: [{ functionResponse: { name: "now", response: { output: "noon" } } }],
       },
     ]);
   });
@@ -51,7 +81,12 @@ describe("toGeminiContents", () => {
     const contents = toGeminiContents([
       { role: "assistant", content: "", toolCalls: [{ id: "abc123", name: "now", arguments: {} }] },
     ]);
-    expect(contents[0]?.parts).toEqual([{ functionCall: { id: "abc123", name: "now", args: {} } }]);
+    expect(contents[0]?.parts).toEqual([
+      {
+        functionCall: { id: "abc123", name: "now", args: {} },
+        thoughtSignature: "skip_thought_signature_validator",
+      },
+    ]);
   });
 
   it("sends a Gemini replay back exactly as it came, not the rebuilt turn", () => {
@@ -64,7 +99,7 @@ describe("toGeminiContents", () => {
       {
         role: "assistant",
         content: "rebuilt text",
-        toolCalls: [{ id: generatedCallId(0), name: "search", arguments: { q: "x" } }],
+        toolCalls: [{ id: generatedCallId("resp1", 0), name: "search", arguments: { q: "x" } }],
         replay: { type: "gemini", data: parts },
       },
     ]);
@@ -109,13 +144,21 @@ describe("toGeminiContents", () => {
   });
 
   it("never sends an id Gemini didn't issue", () => {
-    const id = generatedCallId(0);
+    const id = generatedCallId("resp1", 0);
     const contents = toGeminiContents([
       { role: "assistant", content: "", toolCalls: [{ id, name: "now", arguments: {} }] },
       { role: "tool", toolCallId: id, name: "now", content: "noon" },
     ]);
     expect(contents).toEqual([
-      { role: "model", parts: [{ functionCall: { name: "now", args: {} } }] },
+      {
+        role: "model",
+        parts: [
+          {
+            functionCall: { name: "now", args: {} },
+            thoughtSignature: "skip_thought_signature_validator",
+          },
+        ],
+      },
       {
         role: "user",
         parts: [{ functionResponse: { name: "now", response: { output: "noon" } } }],
@@ -152,7 +195,7 @@ describe("toGeminiRequest", () => {
         temperature: 0,
         topP: 0.5,
         stopSequences: ["END"],
-        thinkingConfig: { thinkingLevel: "low" },
+        thinkingConfig: { thinkingLevel: "low", includeThoughts: true },
       },
     });
   });

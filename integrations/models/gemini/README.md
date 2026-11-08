@@ -31,7 +31,7 @@ again.
 | `tools`                       | one `tools` entry with a `functionDeclarations` list (`parametersJsonSchema`) |
 | `maxTokens`                   | `generationConfig.maxOutputTokens` (none sent when not set)                   |
 | `temperature`, `topP`, `stop` | `temperature`, `topP`, `stopSequences`                                        |
-| `reasoningEffort`             | `thinkingConfig.thinkingLevel`                                                |
+| `reasoningEffort`             | `thinkingConfig.thinkingLevel`, with `includeThoughts` for `reasoning`        |
 | `responseFormat: "json"`      | `responseMimeType: application/json`                                          |
 | `meta`, `extra`               | not sent                                                                      |
 
@@ -47,9 +47,17 @@ come back without it
 So every answer carries `replay = { type: "gemini", data: <the candidate's
 parts, in order> }`, and an assistant message with a Gemini `replay` goes
 back exactly as it came. Each tool call's `signature` holds its part's
-signature too, so a message without a replay (another provider's turn after
-a model switch, or older history) is rebuilt from `content` and `toolCalls`
-with the signatures in place.
+signature too, so a message without a replay is rebuilt from `content` and
+`toolCalls` with the signatures in place.
+
+Another provider's turn, after a model switch, has no signatures. Its
+function calls get Google's placeholder `skip_thought_signature_validator`,
+which Gemini 3 accepts for history it didn't write, at some cost in
+quality. Its call ids aren't sent either: only ids Gemini issued go back.
+
+Gemini 2.5 gives function calls no id, so the integration makes one up,
+`gemini-call-<responseId>-<n>`, unique within the run. Made-up ids are
+never sent to Gemini.
 
 ## Limits
 
@@ -59,6 +67,10 @@ with the signatures in place.
 - **Sampling:** `temperature`, `topP` and `stop` are sent as given. Newer
   models refuse some of them, and a workflow that sets them for such a
   model gets `bad-arguments`.
+- **Thinking:** `reasoningEffort` maps to `thinkingLevel`, which only
+  Gemini 3 and later take. Gemini 2.5 takes a `thinkingBudget` instead and
+  will likely refuse `thinkingLevel` with `bad-arguments`, so leave
+  `reasoningEffort` unset for Gemini 2.5 models.
 - **Errors** are `GeminiError` with a short code (`bad-arguments`,
   `not-signed-in`, `not-allowed`, `not-found`, `rate-limited`,
   `unavailable`, `unexpected-response`). Google's own error text is never

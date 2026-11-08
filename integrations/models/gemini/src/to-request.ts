@@ -66,7 +66,7 @@ export interface GeminiGenerationConfig {
   topP?: number;
   stopSequences?: string[];
   responseMimeType?: "application/json";
-  thinkingConfig?: { thinkingLevel: "low" | "medium" | "high" };
+  thinkingConfig?: { thinkingLevel: "low" | "medium" | "high"; includeThoughts: true };
 }
 
 /**
@@ -101,7 +101,8 @@ function toSystemInstruction(messages: readonly ChatMessage[]): GeminiRequest["s
 
 /**
  * A JSON answer is a real mode here (`responseMimeType`), so unlike
- * model-anthropic no instruction is added to the prompt.
+ * model-anthropic no instruction is added to the prompt. Gemini sends its
+ * thought summary, which becomes `reasoning`, only when asked to.
  */
 function toGenerationConfig(
   params: ChatParams,
@@ -114,7 +115,9 @@ function toGenerationConfig(
     ...(params.stop?.length ? { stopSequences: params.stop } : {}),
     ...(responseFormat === "json" ? { responseMimeType: "application/json" as const } : {}),
     ...(params.reasoningEffort !== undefined
-      ? { thinkingConfig: { thinkingLevel: params.reasoningEffort } }
+      ? {
+          thinkingConfig: { thinkingLevel: params.reasoningEffort, includeThoughts: true as const },
+        }
       : {}),
   };
 }
@@ -176,6 +179,10 @@ function replayedParts(message: AssistantMessage): GeminiPart[] | undefined {
 /**
  * Without a replay, the turn is rebuilt: text first, then the function
  * calls, each with the signature it came with.
+ *
+ * The signature of a text-only answer, on its last text part, is lost
+ * here: `ChatMessage` has no place for it. Google only recommends sending
+ * that one back, it doesn't require it.
  */
 function assistantParts(message: AssistantMessage): GeminiPart[] {
   return [...textParts(message.content), ...(message.toolCalls ?? []).map(toFunctionCallPart)];
@@ -186,11 +193,21 @@ function textParts(text: string): GeminiPart[] {
   return text === "" ? [] : [{ text }];
 }
 
+/**
+ * Gemini 3 refuses a function call of the current turn without a
+ * signature, and a call another provider made has none. For history
+ * Gemini didn't write, Google's documented way out is this placeholder,
+ * which skips the check at some cost in quality. It is only used when
+ * there is no real signature.
+ * https://aistudio.google.com/docs/thought-signatures?generate-content=true
+ */
+const skipSignatureCheck = "skip_thought_signature_validator";
+
 function toFunctionCallPart(call: ToolCall): GeminiFunctionCallPart {
   const id = idForGemini(call.id);
   return {
     functionCall: { ...(id !== undefined ? { id } : {}), name: call.name, args: call.arguments },
-    ...(call.signature !== undefined ? { thoughtSignature: call.signature } : {}),
+    thoughtSignature: call.signature ?? skipSignatureCheck,
   };
 }
 

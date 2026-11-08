@@ -47,18 +47,19 @@ describe("fromGeminiResponse", () => {
     expect(response.finishReason).toBe("tool_calls");
   });
 
-  it("makes up an id for a call that came without one", () => {
-    const response = fromGeminiResponse(
-      answer([
-        { text: "Two lookups." },
-        { functionCall: { name: "a", args: {} } },
-        { functionCall: { name: "b", args: {} } },
-      ]),
-    );
-    expect(response.toolCalls.map((call) => call.id)).toEqual([
-      generatedCallId(0),
-      generatedCallId(1),
+  it("makes up ids for calls that came without one, unique to the answer", () => {
+    const parts = [
+      { text: "Two lookups." },
+      { functionCall: { name: "a", args: {} } },
+      { functionCall: { name: "b", args: {} } },
+    ];
+    const first = fromGeminiResponse({ ...answer(parts), responseId: "resp1" });
+    const second = fromGeminiResponse({ ...answer(parts), responseId: "resp2" });
+    expect(first.toolCalls.map((call) => call.id)).toEqual([
+      generatedCallId("resp1", 0),
+      generatedCallId("resp1", 1),
     ]);
+    expect(second.toolCalls[0]?.id).not.toBe(first.toolCalls[0]?.id);
   });
 
   it("replays every part unchanged and in order, including ones it doesn't read", () => {
