@@ -1,0 +1,66 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=trashed+%3D+false+and+%27folder-projects-01%27+in+parents&pageSize=2&orderBy=modifiedTime+desc&pageToken=scrubbed-secret-1&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "file-budget-03",
+                "mimeType": "application/vnd.google-apps.spreadsheet",
+                "modifiedTime": "2026-10-20T11:00:00.000Z",
+                "name": "<scrubbed:content>",
+                "owners": [
+                  {
+                    "emailAddress": "<scrubbed:content>"
+                  }
+                ],
+                "parents": [
+                  "folder-projects-01"
+                ],
+                "webViewLink": "https://docs.google.com/spreadsheets/d/file-budget-03/edit"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "search-folder-next-page",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].owners[0].emailAddress",
+      "rule": "user-content"
+    }
+  ]
+}
