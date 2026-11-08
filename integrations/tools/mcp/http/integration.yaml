@@ -1,0 +1,47 @@
+id: tool-mcp-http
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [connector]
+
+# The one MCP server the workspace chooses: the host of the `url` setting,
+# and nothing else.
+hosts:
+  - fromSetting: url
+
+secrets:
+  mcp-server-key:
+    purpose: >-
+      The key for the MCP server you choose, if it needs one. Sent only to
+      that server, never anywhere else.
+    hosts:
+      - fromSetting: url
+    as: bearer
+    # Many servers need no key: without one set up, the kit sends none.
+    optional: true
+
+tokens: []
+
+# None declared: the server decides its tools, and may change them while
+# connected. The connection lists them with `listTools`. Halonic treats a
+# tool it finds there but not here as `risk: write`, unless the workspace
+# sets a lower one; the server's own hints never lower it. Every result is
+# the server's text, so each listed tool says `untrusted: true`.
+tools: []
+
+needs: []
+
+# Fields that hold the user's own content, for the recorder. Tool arguments
+# go out in the request; the tool's answer comes back as text, embedded
+# resources (a document's text or bytes), image or audio data and
+# structured content, in a JSON answer or in the events of an event stream.
+recording:
+  userContent:
+    - request.body.params.arguments
+    - response.body.result.content[*].text
+    - response.body.result.content[*].resource
+    - response.body.result.content[*].data
+    - response.body.result.structuredContent
+    - response.body[*].data.result.content[*].text
+    - response.body[*].data.result.content[*].resource
+    - response.body[*].data.result.content[*].data
+    - response.body[*].data.result.structuredContent
