@@ -1,6 +1,7 @@
 import type { McpToolResult } from "@halonicjs/integration-mcp";
+import { cutText } from "@halonicjs/integration-shared";
 import type { KnowledgeDoc } from "./kit.ts";
-import { cutText, maxDocumentChars, maxTitleChars } from "./limits.ts";
+import { maxDocumentChars, maxTitleChars } from "./limits.ts";
 import { asJsonObject, parseJson, stringField, textsOf } from "./structured.ts";
 
 /** The field names servers use for a document, in the order we look for them. */
