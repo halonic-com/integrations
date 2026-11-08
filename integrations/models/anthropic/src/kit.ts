@@ -4,8 +4,9 @@
  *
  * Copied from `packages/core/ports/src` in halonic-com/halonic: `chat.ts`
  * and `llm-provider.ts` on `liam/HAL-112-02-ports` (97fbe6c), and
- * `integration.ts` on `liam/HAL-135-01-port` (c27f6f0). Only the parts this
- * integration uses are here.
+ * `integration.ts` on `liam/HAL-135-01-port` (c27f6f0). `ProviderReplay` is
+ * from halonic-com/halonic#42, which adds it to the port. Only the parts
+ * this integration uses are here.
  *
  * To swap: delete this file and import the same names from
  * `@halonicjs/integration-kit`. Two names change: `HttpResponse` becomes the
@@ -29,11 +30,17 @@ export interface ToolCall {
   signature?: string;
 }
 
+/** Provider-owned data that must go back unchanged with this assistant turn. Only the provider of `type` reads it. JSON-safe, because run history is stored. */
+export interface ProviderReplay {
+  type: string;
+  data: unknown;
+}
+
 /** One message of a conversation with a model. */
 export type ChatMessage =
   | { role: "system"; content: string }
   | { role: "user"; content: string }
-  | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
+  | { role: "assistant"; content: string; toolCalls?: ToolCall[]; replay?: ProviderReplay }
   | { role: "tool"; content: string; toolCallId: string; name: string };
 
 /** A tool the model may call. */
@@ -72,6 +79,8 @@ export interface ChatResponse {
   /** The model's own summary of its reasoning, where the provider gives one. */
   reasoning?: string;
   toolCalls: ToolCall[];
+  /** Goes back unchanged on the assistant message for this answer. */
+  replay?: ProviderReplay;
   usage: Usage;
   finishReason: "stop" | "tool_calls" | "length" | "error" | "other";
 }

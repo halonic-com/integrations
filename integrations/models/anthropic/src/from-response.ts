@@ -1,19 +1,25 @@
 import { z } from "zod";
 import type { ChatResponse, ToolCall, Usage } from "./kit.ts";
 
-const textBlockSchema = z.object({ type: z.literal("text"), text: z.string() });
-const toolUseBlockSchema = z.object({
+/**
+ * Every block schema is loose: fields we don't read, such as a thinking
+ * block's `signature`, stay on the block, because the whole content goes
+ * back unchanged as `replay`.
+ */
+const textBlockSchema = z.looseObject({ type: z.literal("text"), text: z.string() });
+const toolUseBlockSchema = z.looseObject({
   type: z.literal("tool_use"),
   id: z.string(),
   name: z.string(),
   input: z.record(z.string(), z.unknown()),
 });
 /**
- * Thinking and any block type added later: skipped, never a crash. A text
- * or tool_use block that doesn't fit its schema must fail, not land here,
- * or a broken tool call would silently disappear.
+ * Thinking and any block type added later: kept for `replay`, otherwise
+ * skipped, never a crash. A text or tool_use block that doesn't fit its
+ * schema must fail, not land here, or a broken tool call would silently
+ * disappear.
  */
-const otherBlockSchema = z.object({
+const otherBlockSchema = z.looseObject({
   type: z.string().refine((type) => type !== "text" && type !== "tool_use"),
 });
 
@@ -46,6 +52,12 @@ const finishReasons: ReadonlyMap<string, ChatResponse["finishReason"]> = new Map
   ["max_tokens", "length"],
 ]);
 
+/**
+ * `replay` holds the whole ordered content, not only the thinking blocks:
+ * thinking can sit between text and tool_use blocks, and Anthropic wants
+ * the turn back exactly as it came, signatures included.
+ * https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking
+ */
 export function fromAnthropicResponse(body: AnthropicResponse): ChatResponse {
   return {
     content: body.content
@@ -53,6 +65,7 @@ export function fromAnthropicResponse(body: AnthropicResponse): ChatResponse {
       .map((block) => block.text)
       .join(""),
     toolCalls: body.content.filter(isToolUseBlock).map(toToolCall),
+    replay: { type: "anthropic", data: body.content },
     usage: toUsage(body.usage),
     finishReason: finishReasons.get(body.stop_reason ?? "") ?? "other",
   };
