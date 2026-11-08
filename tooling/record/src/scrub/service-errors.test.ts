@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CapturedExchange } from "./exchange.ts";
+import type { CapturedExchange, RecordedBody } from "./exchange.ts";
 import { definePolicy } from "./policy.ts";
 import { scrubExchanges } from "./scrubber.ts";
 import { serviceErrorPaths } from "./service-errors.ts";
@@ -37,6 +37,8 @@ function scrubbedBody(exchange: CapturedExchange, userContent: string[] = []): u
   return body?.kind === "json" ? body.value : undefined;
 }
 
+const googleErrorJson: RecordedBody = { kind: "json", value: googleErrorBody };
+
 describe("serviceErrorPaths", () => {
   it("adds Google's error paths for every googleapis.com host", () => {
     for (const url of [
@@ -44,7 +46,7 @@ describe("serviceErrorPaths", () => {
       "https://www.googleapis.com/drive/v3/files",
       "https://GoogleAPIs.com/x",
     ]) {
-      expect(serviceErrorPaths(url)).toEqual([
+      expect(serviceErrorPaths(url, googleErrorJson)).toEqual([
         "response.body.error.message",
         "response.body.error.errors[*].message",
         "response.body.error.details",
@@ -59,7 +61,21 @@ describe("serviceErrorPaths", () => {
       "https://googleapis.com.example.com/x",
       "not a url",
     ]) {
-      expect(serviceErrorPaths(url)).toEqual([]);
+      expect(serviceErrorPaths(url, googleErrorJson)).toEqual([]);
+    }
+  });
+
+  it("adds nothing for a body that isn't in Google's error format", () => {
+    const url = "https://oauth2.googleapis.com/token";
+    const bodies: RecordedBody[] = [
+      { kind: "json", value: { error: "invalid_grant", error_description: "Bad Request" } },
+      { kind: "json", value: { error: null } },
+      { kind: "json", value: { error: [] } },
+      { kind: "json", value: ["error"] },
+      { kind: "empty" },
+    ];
+    for (const body of bodies) {
+      expect(serviceErrorPaths(url, body)).toEqual([]);
     }
   });
 });
@@ -90,6 +106,12 @@ describe("Google error text in a recording", () => {
   it("leaves the same body from another service to the free-text rules", () => {
     const exchange = exchangeWith("https://api.example.com/files", 400, googleErrorBody);
     expect(scrubbedBody(exchange)).toEqual(googleErrorBody);
+  });
+
+  it("keeps the code of an OAuth error, which isn't in Google's error format", () => {
+    const oauthError = { error: "invalid_grant", error_description: "Bad Request" };
+    const exchange = exchangeWith("https://oauth2.googleapis.com/token", 400, oauthError);
+    expect(scrubbedBody(exchange)).toEqual(oauthError);
   });
 
   it("never stops a recording without an error", () => {

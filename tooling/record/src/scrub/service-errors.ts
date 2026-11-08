@@ -1,3 +1,5 @@
+import type { JsonValue, RecordedBody } from "./exchange.ts";
+
 /**
  * User-content paths the recorder adds by itself, for services whose error
  * format is fixed and known. An error's text can repeat what was sent (a
@@ -11,6 +13,11 @@
 interface ServiceErrorFormat {
   /** Whether a request to this host gets the service's error format. */
   readonly servesHost: (host: string) => boolean;
+  /**
+   * Whether the response body is in the error format. A host can answer in
+   * more than one format, so the host alone isn't enough.
+   */
+  readonly isFormatOf: (body: RecordedBody) => boolean;
   readonly userContent: readonly string[];
 }
 
@@ -20,9 +27,15 @@ interface ServiceErrorFormat {
  *
  * `error.code`, `error.status` and `error.errors[*].reason` and `domain`
  * stay: integrations map errors by them, so a replay needs them.
+ *
+ * Only a body whose `error` is an object is in this format. The OAuth
+ * endpoints on `oauth2.googleapis.com` answer in RFC 6749's instead, where
+ * `error` is a code such as `invalid_grant` that the kit maps errors by.
  */
 const googleErrors: ServiceErrorFormat = {
   servesHost: (host) => host === "googleapis.com" || host.endsWith(".googleapis.com"),
+  isFormatOf: (body) =>
+    body.kind === "json" && isObject(body.value) && isObject(body.value["error"]),
   userContent: [
     // The sentence about the error, and the same per error in the older format
     "response.body.error.message",
@@ -34,15 +47,22 @@ const googleErrors: ServiceErrorFormat = {
 
 const serviceErrorFormats: readonly ServiceErrorFormat[] = [googleErrors];
 
-/** The error paths the recorder adds for a request to `url`, or none. */
-export function serviceErrorPaths(url: string): readonly string[] {
+/**
+ * The error paths the recorder adds for a request to `url` that got
+ * `responseBody` back, or none.
+ */
+export function serviceErrorPaths(url: string, responseBody: RecordedBody): readonly string[] {
   const host = hostOf(url);
   if (host === undefined) {
     return [];
   }
   return serviceErrorFormats
-    .filter((format) => format.servesHost(host))
+    .filter((format) => format.servesHost(host) && format.isFormatOf(responseBody))
     .flatMap((format) => format.userContent);
+}
+
+function isObject(value: JsonValue | undefined): value is { [key: string]: JsonValue } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** The URL's host in lower case, or `undefined` when it can't be parsed (the URL rule refuses it). */
