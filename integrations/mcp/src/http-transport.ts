@@ -30,6 +30,16 @@ export interface StreamableHttpOptions {
 export const maxResumesWithoutProgress = 3;
 
 /**
+ * How often one request may resume its answer stream in total, progress or
+ * not. Without it, a server that sends a new id and closes the stream every
+ * time would get a new `GET` from us without end, with no pause in between
+ * (guide, section 4, rule 9, and section 10, rule 9). Ten leaves room for a
+ * long call the server closes on purpose a few times, and keeps the number
+ * of requests in one call small.
+ */
+export const maxResumesPerRequest = 10;
+
+/**
  * The streamable HTTP transport
  * (https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http).
  *
@@ -40,7 +50,8 @@ export const maxResumesWithoutProgress = 3;
  *
  * When an answer stream ends or drops before the answer, and the server
  * gave its events ids, we resume with a `GET` and `Last-Event-ID`, until
- * {@link maxResumesWithoutProgress} resumes in a row brought no new event.
+ * {@link maxResumesWithoutProgress} resumes in a row brought no new event,
+ * and never more than {@link maxResumesPerRequest} times in all.
  * A server that wants a pause first (`retry:`) gets none: the kit has no
  * timer for integrations yet.
  */
@@ -104,6 +115,7 @@ export class StreamableHttpTransport implements McpTransport {
     // The id of the last complete event over all streams of this request.
     let lastEventId = "";
     let resumesWithoutProgress = 0;
+    let resumes = 0;
     while (true) {
       const events = new EventStream(body);
       let drop: { readonly error: unknown } | undefined;
@@ -123,6 +135,7 @@ export class StreamableHttpTransport implements McpTransport {
       const canResume =
         lastEventId !== "" &&
         resumesWithoutProgress < maxResumesWithoutProgress &&
+        resumes < maxResumesPerRequest &&
         signal?.aborted !== true;
       if (!canResume) {
         // Errors from the kit, such as its timeout, pass through unchanged
@@ -132,6 +145,7 @@ export class StreamableHttpTransport implements McpTransport {
         return;
       }
       resumesWithoutProgress += 1;
+      resumes += 1;
       body = await this.#resume(lastEventId, signal);
     }
   }

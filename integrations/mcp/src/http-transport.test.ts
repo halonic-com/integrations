@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { errorForStatus } from "./http-status.ts";
-import { maxResumesWithoutProgress, StreamableHttpTransport } from "./http-transport.ts";
+import {
+  maxResumesPerRequest,
+  maxResumesWithoutProgress,
+  StreamableHttpTransport,
+} from "./http-transport.ts";
 import { McpSession } from "./session.ts";
 import { endpoint, type FakeEvent, type FakeExchange, FakeServer } from "./test/fake-server.ts";
 
@@ -200,6 +204,15 @@ describe("StreamableHttpTransport", () => {
       ];
       const { server, mcp } = await connect([cutCall([{ id: "e1" }], true), ...resumes]);
       await expect(mcp.callTool("echo", {})).rejects.toThrow("connection reset");
+      server.assertAllUsed();
+    });
+
+    it(`stops after ${maxResumesPerRequest} resumes even when each brings a new event`, async () => {
+      const closes = Array.from({ length: maxResumesPerRequest }, (_, index) =>
+        resumeFrom(`e${index}`, [{ id: `e${index + 1}` }]),
+      );
+      const { server, mcp } = await connect([cutCall([{ id: "e0" }], false), ...closes]);
+      await expect(mcp.callTool("echo", {})).rejects.toThrow("stopped before it answered");
       server.assertAllUsed();
     });
 
