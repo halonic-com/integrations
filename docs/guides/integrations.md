@@ -106,7 +106,9 @@ Each service is still its own integration. The user connects a Google
 account once and ticks the services they want, and Halonic asks Google only
 for the ticked services' permissions. The Google sign-in and the token
 refresh belong to Halonic itself, not to any integration: Gmail and Drive
-never see the refresh token or the client secret.
+never see the refresh token or the client secret. Each of them gets its own
+access token, limited to the scopes in its own sheet (`googleScopes` in
+[section 3](#3-the-permission-sheet-comes-first)).
 
 ### Names
 
@@ -173,6 +175,11 @@ secrets:
     hosts: [gmail.googleapis.com]
     as: bearer
 
+# Only for the Google sign-in: the scopes this service's access token gets.
+googleScopes:
+  - https://www.googleapis.com/auth/gmail.readonly
+  - https://www.googleapis.com/auth/gmail.send
+
 # Tokens the integration stores itself. Most integrations need none.
 tokens: []
 
@@ -226,6 +233,17 @@ Rules for each field:
   section 4). A secret may only go to hosts that are also in `hosts`. A
   secret that belongs to Halonic's own sign-in, such as `google-account`,
   goes only to that provider's hosts; never add another host to it.
+- **`googleScopes`**: only in an integration that uses `google-account`.
+  List the full scope URLs, the fewest that make every tool work, and say
+  in a comment why a broader scope is needed when a narrower one exists.
+  Halonic's Google sign-in gives **each integration its own access token**,
+  fetched with only the scopes in that integration's sheet: Google's
+  refresh grant takes a `scope` that is a subset of what the user granted.
+  This matters because the host list doesn't keep Google services apart.
+  `www.googleapis.com` also serves Gmail, Calendar and others, so Drive's
+  `hosts` would let a token reach `/gmail/v1`. The token's scope is what
+  stops it: a Drive token gets a 403 there. So never borrow another
+  service's scope to save a sign-in step.
 - **`tokens`**: only for values the integration itself writes and reads
   back later. Keys the user enters are `secrets`, not `tokens`.
 - **`tools`**: the same tools, in the same order, as the code declares. The
@@ -255,8 +273,9 @@ Rules for each field:
 >   `auth` in the code with the sheet.
 > - The conformance suite doesn't yet compare descriptions or require
 >   `untrusted`. Until it does, a reviewer compares them.
-> - The Google sign-in will add a way to declare each service's Google
->   permissions.
+> - The Google sign-in lives in the host and doesn't read `googleScopes`
+>   yet. Until it does, a reviewer checks that the scopes are the fewest
+>   that work.
 
 ## 4. Talking to the service
 
