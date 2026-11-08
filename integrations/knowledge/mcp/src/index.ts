@@ -13,7 +13,7 @@ export const knowledgeMcp: Integration = {
   tools: [],
   connect(host) {
     // No request here: the server is only called when a source searches or reads.
-    const server = new McpServer(host.http, host.settings);
+    const server = new McpServer(host, host.settings);
     return {
       callTool: async () => {
         throw new KnowledgeMcpError("not-found", "knowledge-mcp has no tools.");

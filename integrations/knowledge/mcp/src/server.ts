@@ -1,10 +1,11 @@
 import {
   McpError,
+  type McpHost,
   McpSession,
   type McpToolResult,
   StreamableHttpTransport,
 } from "@halonicjs/integration-mcp";
-import type { HttpClient, SecretPlacement } from "@halonicjs/integration-shared";
+import type { SecretPlacement } from "@halonicjs/integration-shared";
 import { readSettings } from "./config.ts";
 import { KnowledgeMcpError } from "./errors.ts";
 
@@ -24,13 +25,13 @@ const clientInfo = { name: "halonic-knowledge-mcp", version: "0.1.0" };
  * After `close`, calls are refused, so no session opens that nobody ends.
  */
 export class McpServer {
-  readonly #http: HttpClient;
+  readonly #host: McpHost;
   readonly #settings: Readonly<Record<string, unknown>>;
   #session: Promise<McpSession> | undefined;
   #closed = false;
 
-  constructor(http: HttpClient, settings: Readonly<Record<string, unknown>>) {
-    this.#http = http;
+  constructor(host: McpHost, settings: Readonly<Record<string, unknown>>) {
+    this.#host = host;
     this.#settings = settings;
   }
 
@@ -95,7 +96,7 @@ export class McpServer {
 
   async #start(): Promise<McpSession> {
     const settings = readSettings(this.#settings);
-    const transport = new StreamableHttpTransport(this.#http, {
+    const transport = new StreamableHttpTransport(this.#host, {
       url: settings.url,
       auth: serverKey,
     });

@@ -36,7 +36,8 @@ const byteOrderMark = "\uFEFF";
  * timeout, pass through unchanged, and `lastEventId` stays at the last
  * complete event, so the caller can ask the service to resume.
  *
- * `retry:` fields are ignored: when to reconnect is the caller's choice.
+ * A valid `retry:` field is kept as {@link reconnectionTimeMs}. When and
+ * whether to reconnect stays the caller's choice.
  *
  * @example
  * const events = new EventStream(response.body);
@@ -48,6 +49,7 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
   readonly #body: ByteStream;
   readonly #maxEventBytes: number;
   #lastEventId = "";
+  #reconnectionTimeMs: number | undefined;
   #iterated = false;
 
   // The newest `id:` read. It becomes `lastEventId` only when its event is
@@ -71,6 +73,17 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
    */
   get lastEventId(): string {
     return this.#lastEventId;
+  }
+
+  /**
+   * The pause before reconnecting, in milliseconds, from the last valid
+   * `retry:` field, or `undefined` when the stream sent none. Unlike an id,
+   * it counts as soon as its line is read, also when its event is cut off,
+   * as the rules say. A value that isn't only ASCII digits is ignored. It
+   * isn't capped: the caller decides how long it is willing to wait.
+   */
+  get reconnectionTimeMs(): number | undefined {
+    return this.#reconnectionTimeMs;
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<ServerSentEvent> {
@@ -157,8 +170,14 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
           this.#idBuffer = value;
         }
         break;
+      case "retry":
+        // The rules ignore a value that isn't only ASCII digits, such as `-1` or `1.5`.
+        if (/^[0-9]+$/.test(value)) {
+          this.#reconnectionTimeMs = Number(value);
+        }
+        break;
       default:
-        // `retry` and unknown fields are ignored.
+        // Unknown fields are ignored.
         break;
     }
   }

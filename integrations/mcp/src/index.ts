@@ -1,6 +1,9 @@
 export { McpError, type McpErrorCode } from "./errors.ts";
+export { type McpHost, maxIntegrationWaitMs } from "./host.ts";
 export {
+  maxResumePauseMs,
   maxResumesWithoutProgress,
+  minResumePauseMs,
   type StreamableHttpOptions,
   StreamableHttpTransport,
 } from "./http-transport.ts";

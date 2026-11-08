@@ -5,6 +5,7 @@ import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import searchText from "../recordings/search-text.json" with { type: "json" };
 import searchToolError from "../recordings/search-tool-error.json" with { type: "json" };
 import { KnowledgeMcpError, knowledgeMcp } from "./index.ts";
+import { noWait } from "./test/no-wait.ts";
 
 const url = "https://docs.example.com/mcp";
 
@@ -24,7 +25,7 @@ const searchOnly = {
 };
 
 function connect(recording: Replay, settings: Record<string, unknown> = { url }) {
-  return knowledgeMcp.connect({ http: recording.http, settings });
+  return knowledgeMcp.connect({ http: recording.http, wait: noWait, settings });
 }
 
 function provider(recording: Replay, settings?: Record<string, unknown>) {
