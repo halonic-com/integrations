@@ -87,7 +87,113 @@ describe("replay", () => {
     await expect(recorded.http.fetch(url, { method: "POST" })).rejects.toThrow("Unexpected call 2");
   });
 
+  it("fails when the recording has a key the request doesn't ask for", async () => {
+    await expect(replay(recording).http.fetch(url, { method: "POST" })).rejects.toThrow(
+      "a key in the authorization header; the request doesn't ask for one",
+    );
+  });
+
   it("refuses a file that isn't a recording", () => {
     expect(() => replay({ format: "halonic.recording/0", exchanges: [] })).toThrow();
+  });
+});
+
+describe("replay of a session", () => {
+  const sessionUrl = "https://docs.example.com/mcp";
+  const json = { "content-type": "application/json" };
+  const session = { "mcp-session-id": "scrubbed-secret-1" };
+
+  const sessionRecording: RecordingFile = {
+    format: RECORDING_FORMAT,
+    integration: "example",
+    scenario: "session",
+    exchanges: [
+      {
+        transport: "http",
+        request: { method: "POST", url: sessionUrl, headers: json, body: { kind: "empty" } },
+        response: {
+          status: 200,
+          headers: { ...json, ...session },
+          body: { kind: "json", value: { ready: true } },
+        },
+      },
+      {
+        transport: "http",
+        request: {
+          method: "POST",
+          url: sessionUrl,
+          headers: { ...json, ...session },
+          body: { kind: "empty" },
+        },
+        response: {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+          body: {
+            kind: "sse",
+            value: [
+              { event: "message", data: { text: "<scrubbed:content>" } },
+              { event: "ping", data: "two\nlines" },
+            ],
+          },
+        },
+      },
+      {
+        transport: "http",
+        request: { method: "DELETE", url: sessionUrl, headers: session, body: { kind: "empty" } },
+        response: { status: 200, headers: {}, body: { kind: "empty" } },
+      },
+    ],
+    scrubReport: [],
+  };
+
+  it("gives back headers, text and a byte stream, and passes the session id on", async () => {
+    const recorded = replay(sessionRecording);
+    const first = await recorded.http.fetch(sessionUrl, { method: "POST", headers: json });
+    const sessionId = first.headers.get("MCP-Session-Id");
+    expect(sessionId).toBe("scrubbed-secret-1");
+    expect(await first.text()).toBe('{"ready":true}');
+
+    const second = await recorded.http.fetch(sessionUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Mcp-Session-Id": `${sessionId}` },
+    });
+    const reader = second.body?.getReader();
+    const chunk = await reader?.read();
+    expect(chunk?.done).toBe(false);
+    expect(new TextDecoder().decode(chunk?.value)).toBe(
+      'event: message\ndata: {"text":"<scrubbed:content>"}\n\nevent: ping\ndata: two\ndata: lines\n\n',
+    );
+    expect((await reader?.read())?.done).toBe(true);
+    await expect(second.json()).rejects.toThrow(SyntaxError);
+
+    const third = await recorded.http.fetch(sessionUrl, { method: "DELETE", headers: session });
+    expect(third.body).toBeNull();
+    recorded.assertAllUsed();
+  });
+
+  it("fails a header with another value than the recording", async () => {
+    const headers = { "content-type": "text/plain" };
+    await expect(
+      replay(sessionRecording).http.fetch(sessionUrl, { method: "POST", headers }),
+    ).rejects.toThrow(
+      'The content-type header is "text/plain"; the recording has "application/json".',
+    );
+  });
+
+  it("fails when the request leaves out a session id the recording has", async () => {
+    const recorded = replay(sessionRecording);
+    await recorded.http.fetch(sessionUrl, { method: "POST", headers: json });
+    await expect(
+      recorded.http.fetch(sessionUrl, { method: "POST", headers: json }),
+    ).rejects.toThrow("The request has no mcp-session-id header; the recording has one.");
+  });
+
+  it("lets a header through that the recorder left out", async () => {
+    const headers = { ...json, "idempotency-key": "k1" };
+    const response = await replay(sessionRecording).http.fetch(sessionUrl, {
+      method: "POST",
+      headers,
+    });
+    expect(response.status).toBe(200);
   });
 });

@@ -193,6 +193,40 @@ Zod schema in `src/format.ts` is the contract the conformance suite reads.
 - `scrubReport` names the rule, the place and how often. Never a value.
 - No timestamps or machine details.
 
+## Replaying a recording in tests
+
+`@halonicjs/tooling-record/replay` plays a recording file back as
+`host.http`, the way the conformance suite will, so an integration's tests
+run on the recordings it ships:
+
+```ts
+import { replay } from "@halonicjs/tooling-record/replay";
+import listMessages from "../recordings/list-messages.json" with { type: "json" };
+
+const recording = replay(listMessages);
+// ... call the integration with `recording.http` as its host's HTTP client ...
+expect(recording.sent[0]?.body).toEqual({ q: "is:unread" });
+recording.assertAllUsed();
+```
+
+- Each call must be the next exchange's method and URL. An unexpected call
+  fails, and `assertAllUsed` fails when an exchange wasn't used.
+- The key must be in the header the request asks the kit to put it in, and
+  in no other. A header the integration sets must have the recorded value,
+  when the recording kept it. A stand-in the recording has in a request
+  header, such as a session ID, must be sent back.
+- Request bodies are scrubbed, so they aren't compared. Check what the
+  integration sent through `sent`.
+- The response has `status`, `headers`, `text()`, `json()` and `body` as a
+  byte stream, with an event stream in its wire format.
+- `fakeResponse` answers every call with one status and body, for error
+  paths a recording can't show.
+
+It is for integration tests only. Add `@halonicjs/tooling-record` to
+`devDependencies`, never to `dependencies`, and import it only from test
+files: integrations ship without it. It will be replaced by
+`@halonicjs/testing-integration` once that is published.
+
 ## Still read every recording
 
 The rules catch what they can recognise. A name, an address or a sentence
