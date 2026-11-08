@@ -53,3 +53,8 @@ and writes included) and every output token, and the stop reason as
   `not-signed-in`, `not-allowed`, `not-found`, `rate-limited`,
   `unavailable`, `unexpected-response`). Anthropic's own error text is never
   passed on; at most its error type, such as `(overloaded_error)`.
+- **Recordings** in `recordings/` were written by hand, not recorded:
+  `pnpm record` and an Anthropic test account weren't available yet. They
+  follow Anthropic's documented response shapes in the recorder's format,
+  scrubbed as the recorder would scrub them. Replace them with real
+  recordings once both are available.
