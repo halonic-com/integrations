@@ -1,13 +1,21 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { GmailClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
+import { readMessageTool } from "./tools/read-message.ts";
+import { readThreadTool } from "./tools/read-thread.ts";
 import { searchTool } from "./tools/search.ts";
+import { triageTool } from "./tools/triage.ts";
 
 /**
  * The same tools, in the same order, as in integration.yaml. The rest of
  * the sheet's tools follow in the next pull requests.
  */
-const tools: readonly ToolImplementation<GmailClient>[] = [searchTool];
+const tools: readonly ToolImplementation<GmailClient>[] = [
+  triageTool,
+  searchTool,
+  readMessageTool,
+  readThreadTool,
+];
 
 export const gmail: Integration = {
   name: "tool-google-gmail",

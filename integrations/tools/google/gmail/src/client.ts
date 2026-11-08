@@ -27,6 +27,13 @@ const messageListSchema = withNextPageToken(
 );
 export type MessageList = z.infer<typeof messageListSchema>;
 
+const threadSchema = z.object({
+  id: z.string(),
+  /** Oldest first, as Gmail returns them. */
+  messages: z.array(messageSchema).default([]),
+});
+export type Thread = z.infer<typeof threadSchema>;
+
 /** One page of a search: which messages match. */
 export interface ListMessagesRequest {
   query: string;
@@ -60,5 +67,21 @@ export class GmailClient {
       metadataHeaders: summaryHeaders,
     });
     return await this.#google.getJson(url, messageSchema, signal);
+  }
+
+  /** One request: a whole message, with every MIME part and its body. */
+  async getMessage(messageId: string, signal?: AbortSignal): Promise<Message> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", messageId], {
+      format: "full",
+    });
+    return await this.#google.getJson(url, messageSchema, signal);
+  }
+
+  /** One request: every message of a thread, whole. */
+  async getThread(threadId: string, signal?: AbortSignal): Promise<Thread> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "threads", threadId], {
+      format: "full",
+    });
+    return await this.#google.getJson(url, threadSchema, signal);
   }
 }
