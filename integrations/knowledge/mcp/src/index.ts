@@ -1,7 +1,7 @@
 import { KnowledgeMcpError } from "./errors.ts";
 import type { Integration } from "./kit.ts";
 import { McpKnowledgeProvider } from "./provider.ts";
-import { McpServer } from "./server.ts";
+import { connectToServer } from "./server.ts";
 
 /**
  * A knowledge source on any MCP server: search and get map onto two of the
@@ -13,7 +13,7 @@ export const knowledgeMcp: Integration = {
   tools: [],
   connect(host) {
     // No request here: the server is only called when a source searches or reads.
-    const server = new McpServer(host, host.settings);
+    const server = connectToServer(host, host.settings);
     return {
       callTool: async () => {
         throw new KnowledgeMcpError("not-found", "knowledge-mcp has no tools.");

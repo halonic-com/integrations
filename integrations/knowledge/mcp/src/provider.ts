@@ -1,4 +1,4 @@
-import type { McpToolResult } from "@halonicjs/integration-mcp";
+import type { McpClient, McpToolResult } from "@halonicjs/integration-mcp";
 import { readSourceConfig, type SourceConfig } from "./config.ts";
 import { toDocument } from "./document.ts";
 import { KnowledgeMcpError, withKnowledgeErrors } from "./errors.ts";
@@ -11,7 +11,6 @@ import type {
   KnowledgeSource,
 } from "./kit.ts";
 import { hitLimit, maxQueryChars, maxRefChars } from "./limits.ts";
-import type { McpServer } from "./server.ts";
 
 /**
  * One knowledge source on the connection's MCP server: `search` calls the
@@ -23,11 +22,11 @@ export class McpKnowledgeProvider implements KnowledgeProvider {
   readonly capabilities: KnowledgeCapabilities = { search: true, semantic: false, ingest: false };
   /** Every hit and document is the server's text, so Halonic fences it off. */
   readonly untrusted = true;
-  readonly #server: McpServer;
+  readonly #server: McpClient;
   readonly #config: SourceConfig;
 
   /** @throws {KnowledgeMcpError} `bad-config` when the source's config is wrong */
-  constructor(server: McpServer, source: KnowledgeSource) {
+  constructor(server: McpClient, source: KnowledgeSource) {
     this.id = source.id;
     this.#server = server;
     this.#config = readSourceConfig(source.id, source.config);

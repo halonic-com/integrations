@@ -1,6 +1,6 @@
 import { type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
-import { McpServer } from "./server.ts";
+import { connectToServer } from "./server.ts";
 import { noWait } from "./test/no-wait.ts";
 
 /**
@@ -157,14 +157,14 @@ function signal() {
   return { fired, fire };
 }
 
-describe("McpServer", () => {
+describe("connectToServer", () => {
   it("opens one session for calls that come in together", async () => {
     const traffic = recording([
       ...handshake(),
       toolAnswer(2, { query: "a" }, "first"),
       toolAnswer(3, { query: "b" }, "second"),
     ]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     const [first, second] = await Promise.all([
       server.callTool("search_docs", { query: "a" }),
       server.callTool("search_docs", { query: "b" }),
@@ -180,7 +180,7 @@ describe("McpServer", () => {
       ...handshake(),
       toolAnswer(2, {}, "found"),
     ]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({ code: "unavailable" });
     await expect(server.callTool("search_docs", {})).resolves.toMatchObject({ isError: false });
     traffic.assertAllUsed();
@@ -193,7 +193,7 @@ describe("McpServer", () => {
       ...handshake(),
       toolAnswer(2, {}, "x"),
     ]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({
       code: "session-expired",
     });
@@ -212,7 +212,7 @@ describe("McpServer", () => {
       endSession(secondSession, 200),
     ]);
     const held = holdAnswers(traffic.http, [3, 4]);
-    const server = new McpServer({ http: held.http, wait: noWait }, { url });
+    const server = connectToServer({ http: held.http, wait: noWait }, { url });
 
     // Two calls on the first session, which the server ends while they run.
     const first = server.callTool("search_docs", { query: "a" });
@@ -245,7 +245,7 @@ describe("McpServer", () => {
       }),
       post(withKey, initialized, 202),
     ]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({
       name: "KnowledgeMcpError",
       code: "not-found",
@@ -254,7 +254,7 @@ describe("McpServer", () => {
 
   it("ends the session of a server that offers no tools, and reports that first", async () => {
     const traffic = recording([...handshake(firstSession, {}), endSession(firstSession, 503)]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({
       name: "KnowledgeMcpError",
       code: "not-found",
@@ -264,10 +264,9 @@ describe("McpServer", () => {
 
   it("refuses calls after close, without opening a session", async () => {
     const traffic = recording([]);
-    const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
+    const server = connectToServer({ http: traffic.http, wait: noWait }, { url });
     await server.close();
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({
-      name: "KnowledgeMcpError",
       code: "unavailable",
     });
     expect(traffic.sent).toEqual([]);

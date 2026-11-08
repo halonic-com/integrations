@@ -31,20 +31,3 @@ export function hitLimit(requested: number | undefined): number {
   }
   return Math.min(maxHits, Math.max(1, Math.floor(requested)));
 }
-
-/**
- * Cuts `text` to at most `maxChars` characters, ending with `…` when it
- * was cut. Never splits a character made of two UTF-16 units.
- */
-export function cutText(text: string, maxChars: number): string {
-  if (text.length <= maxChars) {
-    return text;
-  }
-  let end = maxChars - 1;
-  const last = text.charCodeAt(end - 1);
-  // A high surrogate at the end would be half of a character such as an emoji.
-  if (last >= 0xd800 && last <= 0xdbff) {
-    end -= 1;
-  }
-  return `${text.slice(0, end)}…`;
-}
