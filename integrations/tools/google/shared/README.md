@@ -69,34 +69,24 @@ the user's content.
 ## Recordings
 
 Google's error text can repeat what was sent: a recipient, a file name, a
-search term. The recorder only scrubs the fields a sheet declares
-([guide, section 9](../../../../docs/guides/integrations.md#9-tests-and-recordings)),
-so every Google integration lists these paths under
-`recording.userContent` in its `integration.yaml`:
+search term. The recorder removes it by itself for every response from a
+`*.googleapis.com` host whose `error` is an object
+([recorder README](../../../../tooling/record/README.md#what-is-always-removed)),
+so a Google sheet doesn't list these paths under `recording.userContent`:
 
-```yaml
-recording:
-  userContent:
-    # Google's error text can repeat what was sent, such as a recipient
-    - response.body.error.message
-    - response.body.error.errors[*].message
-    # error.details can echo the request too (a field's description, metadata)
-    - response.body.error.details
-```
-
-| Path                      | Why                                                                                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `error.message`           | Google's sentence about the error, which can quote a value from the request                                                          |
-| `error.errors[*].message` | the same sentence in the older format, once per error                                                                                |
-| `error.details`           | the newer format's list: a `BadRequest` describes each refused field in words, and an `ErrorInfo` carries metadata about the request |
+| Path                                    | Why                                                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `error.message`                         | Google's sentence about the error, which can quote a value from the request                                 |
+| `error.errors[*].message`               | the same sentence in the older format, once per error                                                       |
+| the free-text fields of `error.details` | a `BadRequest` describes each refused field in words, and an `ErrorInfo` carries metadata about the request |
 
 The library reads only `error.status` and `error.errors[*].reason`, and
 none of these paths covers them, so a replay maps an error to the same code.
-`error.code`, `error.status` and `error.errors[*].domain` stay readable in
-the file.
+`error.code`, `error.status`, `error.errors[*].domain` and each detail's
+`@type`, `reason`, `domain` and `retryDelay` stay readable in the file.
 
-A scenario without an error matches none of these paths, so it lists all
-three in its `unusedUserContent`.
+OAuth errors from `oauth2.googleapis.com`, where `error` is a code such as
+`invalid_grant`, are left alone. A sheet can't opt out of these paths yet.
 
 ## Keys
 
