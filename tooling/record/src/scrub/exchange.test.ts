@@ -160,12 +160,7 @@ describe("scrubbing a request and its response together", () => {
     expect(JSON.stringify(recorded?.response.body)).toContain("Your key <scrubbed:secret>");
   });
 
-  // Known bug (HAL-690): a `Link` header goes through the free-text rules,
-  // not the URL rules, so a query parameter with a secret name keeps its value
-  // unless it also looks random. The same parameter in the request URL is
-  // replaced, and the safety net doesn't catch it either. Fixed separately;
-  // turn this back into `it` then.
-  it.fails("replaces a secret-named query parameter in a Link header", () => {
+  it("replaces a secret-named query parameter in a Link header", () => {
     const token = "fake-access-token-1234";
     const [recorded] = scrub([
       {
