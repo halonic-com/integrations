@@ -15,6 +15,7 @@ nothing but our code and Zod into the cloud runtime.
 | JSON-RPC 2.0  | `json-rpc.ts`       | the messages, and sorting what the server sends into requests, notifications and answers |
 | MCP results   | `protocol.ts`       | the versions we speak and Zod schemas for `initialize`, `tools/list`, `tools/call`       |
 | The session   | `session.ts`        | the handshake, id matching, paged `tools/list` and `tools/call`                          |
+| The client    | `client.ts`         | one integration's link to one server: a session opened on first use and after it ends    |
 | The transport | `transport.ts`      | how the session sends messages                                                           |
 | HTTP          | `http-transport.ts` | the streamable HTTP transport: `Mcp-Session-Id`, JSON and event-stream answers, resume   |
 | Errors        | `errors.ts`         | `McpError` with a `code`; never the server's own text                                    |
@@ -41,8 +42,20 @@ server's `ping` and refuses every other request from the server.
 - No standing `GET` stream for messages outside a request yet, so a
   `tools/list_changed` notice arrives only during a request.
 
-## Still to come (HAL-134)
+## Using it in an integration
 
-The permission sheet (`integration.yaml`), the `Integration` with
-`listTools`, and the conformance suite follow when the kit is published
-(HAL-135).
+An integration builds one `McpClient` per connection and never sends a
+request in `connect`. The client opens the session on the first call, lets
+calls that come in together share it, and opens a new one after the server
+ended it; the failed call itself is never repeated. `checkAgreement` can
+refuse a server, such as one that offers no tools.
+
+```ts
+const client = new McpClient({
+  clientInfo: { name: "halonic-tool-mcp-http", version: "0.1.0" },
+  openTransport: () => new StreamableHttpTransport(host.http, { url, auth }),
+});
+const tools = await client.listTools(signal);
+```
+
+The conformance suite follows when the kit is published (HAL-135).

@@ -1,8 +1,11 @@
 import type { OutgoingMessage } from "../json-rpc.ts";
 import type { McpTransport } from "../transport.ts";
 
-/** What the fake server sends back to one request: messages, given the request's id. */
-export type ScriptedAnswer = (id: number) => unknown[];
+/**
+ * What the fake server sends back to one request: messages, given the
+ * request's id. A test holds an answer back by returning a promise.
+ */
+export type ScriptedAnswer = (id: number) => unknown[] | Promise<unknown[]>;
 
 /**
  * A transport that answers each request with the next scripted list of
@@ -35,7 +38,7 @@ export class FakeTransport implements McpTransport {
     if (answer === undefined) {
       throw new Error(`No scripted answer for ${message.method}.`);
     }
-    yield* answer(message.id);
+    yield* await answer(message.id);
   }
 
   useProtocolVersion(version: string): void {
