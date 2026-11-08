@@ -14,7 +14,7 @@ import {
  * all; the guide asks for a limit on every list, so they come in pages.
  */
 const readThreadArguments = z.strictObject({
-  threadId: gmailIdSchema,
+  threadId: gmailIdSchema.describe("The thread's id, threadId from gmail_search or gmail_triage."),
   maxBodyChars: z
     .int()
     .min(500)

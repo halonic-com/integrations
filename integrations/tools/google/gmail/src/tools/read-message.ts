@@ -10,7 +10,7 @@ import {
 } from "./arguments.ts";
 
 const readMessageArguments = z.strictObject({
-  messageId: gmailIdSchema,
+  messageId: gmailIdSchema.describe("The message's id, from gmail_search or gmail_triage."),
   maxBodyChars: z
     .int()
     .min(500)

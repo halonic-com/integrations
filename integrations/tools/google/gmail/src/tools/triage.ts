@@ -16,7 +16,7 @@ const triageArguments = z.strictObject({
     .max(2_000)
     .default("is:unread in:inbox")
     .describe("Gmail search query (default: is:unread in:inbox)."),
-  maxMessages: z.int().min(1).max(25).default(10),
+  maxMessages: z.int().min(1).max(25).default(10).describe("Messages to read (default 10)."),
   bodyChars: z
     .int()
     .min(minBodyCharsPerMessage)
