@@ -5,7 +5,7 @@
         "body": {
           "contentType": "multipart/related",
           "kind": "text",
-          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain\r\n\r\nNotes for the next meeting:\nBring the plan.\r\n--halonic-upload-boundary--"
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nNotes for the next meeting:\nBring the plan.\r\n--halonic-upload-boundary--"
         },
         "headers": {
           "accept": "application/json",

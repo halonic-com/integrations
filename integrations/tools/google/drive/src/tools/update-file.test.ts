@@ -28,7 +28,9 @@ describe("drive_update_file", () => {
     const [upload] = replay.sent;
     expect(upload?.init.method).toBe("PATCH");
     expect(upload?.body).toContain("charset=UTF-8\r\n\r\n{}\r\n");
-    expect(upload?.body).toContain("Content-Type: text/plain\r\n\r\nNotes for the next meeting:");
+    expect(upload?.body).toContain(
+      "Content-Type: text/plain; charset=UTF-8\r\n\r\nNotes for the next meeting:",
+    );
   });
 
   it.each([

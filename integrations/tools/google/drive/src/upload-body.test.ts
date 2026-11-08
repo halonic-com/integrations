@@ -16,7 +16,7 @@ describe("multipartUploadBody", () => {
         "",
         '{"name":"notes.md","mimeType":"text/markdown"}',
         "--halonic-upload-boundary",
-        "Content-Type: text/markdown",
+        "Content-Type: text/markdown; charset=UTF-8",
         "",
         "# Notes\n\nFirst line",
         "--halonic-upload-boundary--",
@@ -44,6 +44,18 @@ describe("multipartUploadBody", () => {
 
     expect(upload.body).toContain('{"name":"Café.txt"}');
     expect(upload.body).toContain("\r\n\r\nnaïve 🙂\r\n");
+  });
+
+  it.each(["text/plain", "text/csv", "Text/HTML"])("says the %s content is UTF-8", (type) => {
+    const upload = multipartUploadBody({}, { type, text: "a" });
+
+    expect(upload.body).toContain(`\r\nContent-Type: ${type}; charset=UTF-8\r\n\r\na\r\n`);
+  });
+
+  it("adds no charset to a type that isn't text", () => {
+    const upload = multipartUploadBody({}, { type: "application/vnd.ms-excel", text: "a" });
+
+    expect(upload.body).toContain("\r\nContent-Type: application/vnd.ms-excel\r\n\r\na\r\n");
   });
 
   it("picks the next boundary when the content holds the first", () => {
