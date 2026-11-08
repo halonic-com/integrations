@@ -29,9 +29,11 @@ knowledge:
 
 # Fields that hold the user's own content, for the recorder. The search
 # query and the ref go out as tool arguments; the documents come back as
-# the tool's text.
+# the tool's text, in a JSON answer or in the events of an event stream.
 recording:
   userContent:
     - request.body.params.arguments
     - response.body.result.content[*].text
     - response.body.result.structuredContent
+    - response.body[*].data.result.content[*].text
+    - response.body[*].data.result.structuredContent
