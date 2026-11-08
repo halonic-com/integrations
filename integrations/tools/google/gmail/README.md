@@ -78,6 +78,9 @@ something else:
 - **`gmail_modify_labels` refuses to add `TRASH` or `SPAM`.** Gmail deletes
   trashed mail for good after 30 days, and spam is reported to Google;
   neither is a label change the user expects from this tool.
+- **Reads are retried** after a `429` or a `5xx`, as the guide's rule 10
+  and the Google library ask. The old connector never retried. Nothing that
+  changes the mailbox is retried.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without
@@ -86,3 +89,14 @@ something else:
   Drive, which is a different host and a different service the user may not
   have ticked. Where it goes is still to be decided.
 - **No tool descriptions or results name another integration's tools.**
+
+## Recordings
+
+The files in `recordings/` weren't recorded against Gmail: `pnpm record`
+and a Google test account aren't available yet. They come from the real
+recorder's code (`prepareRecording` from `tooling/record`, HAL-149), fed
+with invented traffic shaped like Gmail's documented answers: invented
+names, `example.com` addresses, and search queries such as
+`subject:halonic-test`. So they are scrubbed exactly as a real recording
+would be, which also checks this sheet's `userContent` paths. Replace them
+with real recordings once both are available.

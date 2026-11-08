@@ -1,0 +1,45 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=15"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "resultSizeEstimate": 0
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "search-no-match",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}

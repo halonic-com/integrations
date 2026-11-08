@@ -1,0 +1,142 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=2&pageToken=scrubbed-secret-1"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "messages": [
+              {
+                "id": "19a0c0ffee000003",
+                "threadId": "19a0c0ffee000003"
+              }
+            ],
+            "resultSizeEstimate": 1
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/19a0c0ffee000003?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject&metadataHeaders=Date"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "historyId": "90210",
+            "id": "19a0c0ffee000003",
+            "internalDate": "1793865600000",
+            "labelIds": [
+              "INBOX",
+              "CATEGORY_UPDATES"
+            ],
+            "payload": {
+              "headers": [
+                {
+                  "name": "From",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "To",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Subject",
+                  "value": "<scrubbed:content>"
+                },
+                {
+                  "name": "Date",
+                  "value": "<scrubbed:content>"
+                }
+              ],
+              "mimeType": "multipart/alternative"
+            },
+            "sizeEstimate": 4123,
+            "snippet": "<scrubbed:content>",
+            "threadId": "19a0c0ffee000003"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "search-next-page",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.url.query.pageToken",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[2].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.payload.headers[3].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.snippet",
+      "rule": "user-content"
+    }
+  ]
+}
