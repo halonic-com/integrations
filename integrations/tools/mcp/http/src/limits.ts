@@ -16,10 +16,15 @@ export const maxDescriptionChars = 2_000;
 export const maxParametersChars = 20_000;
 
 /**
+ * The whole tool list: descriptions plus argument schemas as JSON, about
+ * 50,000 tokens. The list goes into the context on every turn, so a server
+ * whose tools are each within their limits can't add up to millions of
+ * characters. A larger list is refused, as one with too many tools is.
+ */
+export const maxToolListChars = 200_000;
+
+/**
  * A tool's result: about 12,000 tokens. Lower than a knowledge document's
  * limit, because a result stays in the conversation for every later turn.
  */
 export const maxResultChars = 50_000;
-
-/** A name the caller made up is repeated only this far. */
-export const maxEchoedNameChars = 64;

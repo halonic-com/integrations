@@ -18,7 +18,7 @@ export function mcpClientFor(host: IntegrationHost): McpClient {
   return new McpClient({
     clientInfo,
     openTransport: () =>
-      new StreamableHttpTransport(host.http, {
+      new StreamableHttpTransport(host, {
         url: readSettings(host.settings).url,
         auth: serverKey,
       }),

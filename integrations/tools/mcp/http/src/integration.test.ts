@@ -15,8 +15,16 @@ import { McpToolsError, mcpHttp } from "./index.ts";
  */
 const url = "https://tools.example.com/mcp";
 
+/**
+ * The MCP client only waits before resuming an answer stream that broke
+ * off, and none of these recordings has one, so a call here is a bug.
+ */
+async function noWait(): Promise<void> {
+  throw new Error("No answer stream breaks off here, so nothing should wait.");
+}
+
 function connect(http: ReplayHttpClient, settings: Record<string, unknown> = { url }) {
-  return mcpHttp.connect({ http, settings });
+  return mcpHttp.connect({ http, wait: noWait, settings });
 }
 
 /** What the integration sent in request `index`, as JSON. */
@@ -67,7 +75,9 @@ describe("tool-mcp-http on recordings", () => {
     const args = { title: "Garden plan", text: "Plant the tomatoes after the last frost." };
     const result = await connect(recording.http).callTool("add_note", args);
     recording.assertAllUsed();
-    // The answer came as an event stream, after a progress notice.
+    // The answer came as an event stream, after a progress notice the
+    // client never asked for: the made-up server sends one anyway, as some
+    // servers do, and the client passes over notices it doesn't use.
     expect(result).toBe("<scrubbed:content>");
     expect(sentBody(recording, 2)).toEqual({
       jsonrpc: "2.0",
@@ -120,7 +130,8 @@ describe("tool-mcp-http on recordings", () => {
     const controller = new AbortController();
     const abort = new DOMException("This operation was aborted", "AbortError");
     // The kit aborts the request once the caller's signal fires: here, as
-    // soon as the server has the tool call and has sent its progress notice.
+    // soon as the server has the tool call. The progress notice it started
+    // to send is never read.
     const http: ReplayHttpClient = {
       async fetch(fetchUrl, init) {
         const response = await recording.http.fetch(fetchUrl, init);

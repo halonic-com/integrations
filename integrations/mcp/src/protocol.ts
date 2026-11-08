@@ -18,7 +18,7 @@ export const initializeResultSchema = z.object({
 });
 
 /** The spec's rule for tool names, which keeps them safe to show and to match. */
-const toolNamePattern = /^[A-Za-z0-9_.-]{1,128}$/;
+export const toolNamePattern = /^[A-Za-z0-9_.-]{1,128}$/;
 
 export const toolSchema = z.object({
   name: z.string().regex(toolNamePattern),

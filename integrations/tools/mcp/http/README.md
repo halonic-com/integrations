@@ -45,6 +45,17 @@ server's name, description and argument schema, and gets:
 - **`untrusted: true`**: every result is the server's text, and Halonic
   fences it off so instructions in it aren't followed.
 
+The descriptions, the tool's own and those inside its argument schema, are
+the server's text too, but `untrusted` covers results only: Halonic gives
+the model the tool list unfenced. We can't stop a server from writing
+instructions into a description. We take out what a person reading the
+list can't see, so nothing is hidden there: format characters (zero-width
+characters, direction marks, invisible tag letters) and control characters
+other than line breaks and tabs.
+
+A list that repeats a tool's name is refused: the model would see one tool
+while a call reached the other.
+
 ## Results and errors
 
 A tool's result is the text the server returned. A part that isn't text,
@@ -69,15 +80,21 @@ server.
 
 ## Limits
 
-| What                   | Limit                                               |
-| ---------------------- | --------------------------------------------------- |
-| tools per server       | 200, in at most 10 pages; more is refused, not cut  |
-| a tool's description   | 2,000 characters                                    |
-| a tool's argument JSON | 20,000 characters; a larger one is refused, not cut |
-| a tool's result        | 50,000 characters, about 12,000 tokens              |
+| What                            | Limit                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| tools per server                | 200, in at most 10 pages; more is refused, not cut                      |
+| a tool's description            | 2,000 characters                                                        |
+| a tool's argument schema (JSON) | 20,000 characters; a larger one is refused, not cut                     |
+| the whole tool list             | 200,000 characters of descriptions and schemas; a larger one is refused |
+| a tool's result                 | 50,000 characters, about 12,000 tokens                                  |
 
 Text that is cut ends with `…`, never in the middle of a character. A
 refused list names the tool, never the server's text.
+
+One tool over its limit refuses the whole list, as too many tools do, on
+purpose: an agent sees the server's tools as the server offers them, or
+none, and the user sees why. Leaving tools out quietly would make the
+agent miss a tool nobody knows is gone.
 
 ## Recordings
 
