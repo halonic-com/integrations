@@ -1,0 +1,33 @@
+id: model-openai
+version: 0.1.0
+kit: 1
+provides: [llm]
+
+hosts:
+  - api.openai.com
+
+secrets:
+  openai-key:
+    purpose: Your OpenAI API key. Sent to OpenAI with every model call.
+    hosts: [api.openai.com]
+    as: bearer
+
+tokens: []
+tools: []
+needs: []
+
+limits:
+  # Without streaming, Chat Completions sends its response headers only once
+  # the whole answer is done, so a long answer would hit the default 30 s
+  # headers timeout. Allow it the full 10 minutes the kit allows overall.
+  # The field name follows the kit and may still change in the sheet.
+  headersTimeoutMs: 600000
+
+recording:
+  userContent:
+    - request.body.messages[*].content # what the user and the model wrote, and tool results
+    - request.body.messages[*].tool_calls[*].function.arguments # tool arguments sent back
+    - request.body.tools[*].function.description # can describe the user's own setup
+    - response.body.choices[*].message.content
+    - response.body.choices[*].message.refusal
+    - response.body.choices[*].message.tool_calls[*].function.arguments
