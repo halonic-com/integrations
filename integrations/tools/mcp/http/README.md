@@ -45,6 +45,17 @@ server's name, description and argument schema, and gets:
 - **`untrusted: true`**: every result is the server's text, and Halonic
   fences it off so instructions in it aren't followed.
 
+The descriptions, the tool's own and those inside its argument schema, are
+the server's text too, but `untrusted` covers results only: Halonic gives
+the model the tool list unfenced. We can't stop a server from writing
+instructions into a description. We take out what a person reading the
+list can't see, so nothing is hidden there: format characters (zero-width
+characters, direction marks, invisible tag letters) and control characters
+other than line breaks and tabs.
+
+A list that repeats a tool's name is refused: the model would see one tool
+while a call reached the other.
+
 ## Results and errors
 
 A tool's result is the text the server returned. A part that isn't text,
@@ -66,3 +77,30 @@ repeated. Each tool call is one request and each tool list at most ten,
 plus the two of the handshake on the first call. A cancelled call tells
 the server with `notifications/cancelled`. `close` ends the session on the
 server.
+
+## Limits
+
+| What                            | Limit                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| tools per server                | 200, in at most 10 pages; more is refused, not cut                      |
+| a tool's description            | 2,000 characters                                                        |
+| a tool's argument schema (JSON) | 20,000 characters; a larger one is refused, not cut                     |
+| nesting in an argument schema   | 64 levels of objects and arrays; a deeper schema is refused             |
+| the whole tool list             | 200,000 characters of descriptions and schemas; a larger one is refused |
+| a tool's result                 | 50,000 characters, about 12,000 tokens                                  |
+
+Text that is cut ends with `…`, never in the middle of a character. A
+refused list names the tool, never the server's text.
+
+One tool over its limit refuses the whole list, as too many tools do, on
+purpose: an agent sees the server's tools as the server offers them, or
+none, and the user sees why. Leaving tools out quietly would make the
+agent miss a tool nobody knows is gone.
+
+## Recordings
+
+There is no test server yet, so the recordings in `recordings/` are
+invented traffic with a small made-up notes server, fed through the
+recorder's `prepareRecording` with this sheet's `userContent` paths. They
+show listing tools, a call answered as an event stream, a tool error, a
+server that changes its tools, a missing key and a cancelled call.
