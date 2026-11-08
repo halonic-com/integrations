@@ -1,0 +1,24 @@
+{
+  "name": "@halonicjs/tooling-record",
+  "private": true,
+  "type": "module",
+  "description": "pnpm record: records an integration's HTTP traffic and scrubs keys, tokens and personal data before anything is saved.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "tooling",
+    "owner": "tomas"
+  }
+}
