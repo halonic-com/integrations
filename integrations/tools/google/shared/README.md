@@ -5,20 +5,20 @@ Google integration needs, so Gmail and Drive don't repeat it. It is a
 library, not an integration: it has no permission sheet, no tools and no
 `Integration` ([guide, section 2](../../../../docs/guides/integrations.md#2-where-it-goes-and-what-its-called)).
 
-| File                        | What it does                                                  |
-| --------------------------- | ------------------------------------------------------------- |
-| `src/errors.ts`             | `GoogleError`, the one error type of every Google integration |
-| `src/error-for-response.ts` | turns a Google error response into a `GoogleError`            |
-| `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text   |
-| `src/http.ts`               | the small part of the kit's HTTP client this library uses     |
-| `src/google-api.ts`         | `googleApi`: every Google request goes through it             |
-| `src/retry-policy.ts`       | when a request is sent again, and how long to wait first      |
-| `src/urls.ts`               | Google base URLs, URL building and paging                     |
+| File                        | What it does                                                       |
+| --------------------------- | ------------------------------------------------------------------ |
+| `src/errors.ts`             | `GoogleError`, the one error type of every Google integration      |
+| `src/error-for-response.ts` | turns a Google error response into a `GoogleError`                 |
+| `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text        |
+| `src/http.ts`               | the small part of the kit's host this library uses: `http`, `wait` |
+| `src/google-api.ts`         | `googleApi`: every Google request goes through it                  |
+| `src/retry-policy.ts`       | when a request is sent again, and how long to wait first           |
+| `src/urls.ts`               | Google base URLs, URL building and paging                          |
 
 ## Requests
 
 ```ts
-const google = googleApi(host, { secret: "google-account", service: "Gmail", clock });
+const google = googleApi(host, { secret: "google-account", service: "Gmail" });
 const url = googleUrl(googleBaseUrls.gmail, ["users", "me", "messages"], { q: query, pageToken });
 const page = await google.getJson(url, withNextPageToken(messageListSchema), signal);
 ```
@@ -33,13 +33,16 @@ As the guide's rule 10 says
 
 - at most two retries, only after a `429` or a `5xx`. A `403` with a
   rate-limit reason becomes `rate-limited` but isn't retried;
-- after the wait `retry-after` asks for, up to 30 seconds. A longer one
-  ends the call with `rate-limited`. Without `retry-after`: 1 s, then 2 s;
+- after the wait `retry-after` asks for, up to 30 seconds (the host's
+  `maxIntegrationWaitMs`). A longer one ends the call with `rate-limited`.
+  A date is measured against the response's own `date` header, so no clock
+  is needed. Without a `retry-after` it can use: 1 s, then 2 s;
 - only for `GET` and `HEAD`, or a request the caller marks `repeatable`
   because Google makes it safe to repeat. `postJson` is never retried, and
   a `DELETE` never is, even when marked;
-- only with a `clock`. It gives the time and does the waiting, so tests and
-  replays control time. Without one, nothing is retried.
+- waiting with `host.wait` and the call's own `signal`, so cancelling the
+  call also ends the pause. Tests pass a `wait` that records the pause
+  instead of waiting.
 
 The kit's own errors, such as a refused host or a timeout, pass through
 unchanged and are never retried.

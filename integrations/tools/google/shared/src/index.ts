@@ -11,11 +11,10 @@ export {
   googleApi,
 } from "./google-api.ts";
 export type {
+  GoogleHost,
   HttpClient,
-  HttpHost,
   HttpRequestInit,
   HttpResponse,
   SecretPlacement,
 } from "./http.ts";
-export type { RetryClock } from "./retry-policy.ts";
 export { googleBaseUrls, googleUrl, type QueryValue, withNextPageToken } from "./urls.ts";
