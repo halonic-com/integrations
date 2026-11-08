@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { HttpResponse, IntegrationHttpClient, IntegrationRequestInit } from "../kit.ts";
+import type {
+  HttpResponse,
+  IntegrationHttpClient,
+  IntegrationRequestInit,
+  SecretPlacement,
+} from "../kit.ts";
 
 /**
  * Replays a `halonic.recording/1` file as `host.http`, the way the
@@ -84,12 +89,24 @@ function checkMatches(exchange: Exchange, url: string, init: IntegrationRequestI
   }
   // The recorded key header must be where this request asks the kit to put the key.
   for (const placement of [init.auth ?? []].flat()) {
-    if (
-      placement.as === "header" &&
-      exchange.request.headers[placement.header] !== scrubbedSecret
-    ) {
-      throw new Error(`The recording has no key in the ${placement.header} header.`);
+    const expected = recordedKeyHeader(placement);
+    if (expected !== undefined && exchange.request.headers[expected.name] !== expected.value) {
+      throw new Error(`The recording has no key in the ${expected.name} header.`);
     }
+  }
+}
+
+/** The header the recorder saves for a key the kit put in a header. A form field isn't checked. */
+function recordedKeyHeader(
+  placement: SecretPlacement,
+): { name: string; value: string } | undefined {
+  switch (placement.as) {
+    case "bearer":
+      return { name: "authorization", value: `Bearer ${scrubbedSecret}` };
+    case "header":
+      return { name: placement.header, value: `${placement.prefix ?? ""}${scrubbedSecret}` };
+    case "form":
+      return undefined;
   }
 }
 
