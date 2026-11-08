@@ -11,18 +11,26 @@
  * then takes minutes.
  */
 
-/** Any tag, or an unclosed one up to the end. */
-const anyTag = /<[^>]+(?:>|$)/g;
+/**
+ * Any tag, or an unclosed one up to the end. As in a browser, a tag starts
+ * only where `<` comes before a letter, `/`, `!` or `?`; any other `<`, as
+ * in `5 <10 items`, is text.
+ */
+const anyTag = /<[a-z/!?][^>]*(?:>|$)/gi;
 
 /**
- * A link: its attributes, then its text up to `</a>`. The attributes are
- * read as a browser reads them. A quote starts a value only right after
- * `=`; anywhere else, such as inside an unquoted value, it is an ordinary
- * character, so `<a x=a">` ends at its first `>`. A quoted value that never
- * closes runs to the end, and so does the tag.
+ * A tag's attributes, read as a browser reads them. A quote starts a value
+ * only right after `=`; anywhere else, such as inside an unquoted value, it
+ * is an ordinary character, so `<a x=a">` ends at its first `>`. A quoted
+ * value that never closes runs to the end, and so does the tag.
  */
-const link =
-  /<a\b((?:[^>=]|=\s*(?:"[^"]*(?:"|$)|'[^']*(?:'|$)|[^\s>]*))*)(?:>|$)([\s\S]*?)(?:<\/a>|$)/gi;
+const attributesPattern = String.raw`((?:[^>=]|=\s*(?:"[^"]*(?:"|$)|'[^']*(?:'|$)|[^\s>]*))*)`;
+
+/** An opening tag: its name, then its attributes. */
+const openingTag = new RegExp(String.raw`<[a-z][^\s/>]*${attributesPattern}(?:>|$)`, "gi");
+
+/** A link: its attributes, then its text up to `</a>`. */
+const link = new RegExp(String.raw`<a\b${attributesPattern}(?:>|$)([\s\S]*?)(?:<\/a>|$)`, "gi");
 
 /**
  * The entities mail HTML uses most, in the old connector's order. `&amp;`
@@ -81,21 +89,26 @@ function withLinkAddress(_link: string, attributes: string, inner: string): stri
  * The first one counts when a name repeats, as in a browser.
  */
 function attributeValue(attributes: string, wanted: string): string | undefined {
-  const attribute =
-    /\s*([^\s/>][^\s/>=]*)(?:\s*=\s*(?:"([^"]*)(?:"|$)|'([^']*)(?:'|$)|([^\s>]*)))?/y;
-  let position = 0;
-  while (position < attributes.length) {
-    attribute.lastIndex = position;
-    const match = attribute.exec(attributes);
-    if (match === null || match[0] === "") {
-      // A stray `/` or trailing space between attributes: step over it.
-      position += 1;
-      continue;
-    }
-    if (match[1]?.toLowerCase() === wanted) return match[2] ?? match[3] ?? match[4] ?? "";
-    position = attribute.lastIndex;
+  for (const [name, value] of attributesOf(attributes)) {
+    if (name === wanted) return value;
   }
   return undefined;
+}
+
+/**
+ * Each attribute of a tag as its lower-case name and its value, in order.
+ * Spaces and stray `/` between attributes are stepped over, as in a browser.
+ */
+function* attributesOf(attributes: string): Generator<readonly [name: string, value: string]> {
+  const attribute =
+    /[\s/]*([^\s/>][^\s/>=]*)(?:\s*=\s*(?:"([^"]*)(?:"|$)|'([^']*)(?:'|$)|([^\s>]*)))?/y;
+  for (;;) {
+    const match = attribute.exec(attributes);
+    // Only spaces and `/` are left, or nothing.
+    if (match === null) return;
+    const name = match[1] ?? "";
+    yield [name.toLowerCase(), match[2] ?? match[3] ?? match[4] ?? ""];
+  }
 }
 
 const longestShownAddress = 200;
@@ -151,11 +164,16 @@ function withoutComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, "");
 }
 
-/** `<div hidden>`, but not `class="hidden"` or `type="hidden"`. */
+/**
+ * `<div hidden>`, but not `class="hidden"` or `type="hidden"`. The
+ * attributes are read as a browser reads them, so `<div x=a" hidden ">`
+ * also hides its text.
+ */
 function hasHiddenAttribute(html: string): boolean {
-  for (const [tag] of html.matchAll(/<[a-z][^>]*(?:>|$)/gi)) {
-    const attributeNames = tag.replace(/"[^"]*"|'[^']*'/g, '""');
-    if (/\shidden(?=[\s=/>])/i.test(attributeNames)) return true;
+  for (const [, attributes = ""] of html.matchAll(openingTag)) {
+    for (const [name] of attributesOf(attributes)) {
+      if (name === "hidden") return true;
+    }
   }
   return false;
 }

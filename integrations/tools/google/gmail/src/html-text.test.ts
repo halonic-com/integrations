@@ -84,6 +84,11 @@ describe("htmlToText", () => {
     );
     expect(htmlToText('<p>Hi</p><img src="x.png"')).toBe("Hi");
   });
+
+  it("keeps a < that doesn't start a tag, as a browser does", () => {
+    expect(htmlToText("5 <10 items, see you")).toBe("5 <10 items, see you");
+    expect(htmlToText("<p>a < b</p><!-- note --><?xml?>c")).toBe("a < b\nc");
+  });
 });
 
 /**
@@ -105,6 +110,11 @@ const unclosedTags = [
   "<b ",
   '<p style="/*',
   "<style>/*",
+  "<",
+  "< ",
+  "<div ",
+  "<div /",
+  '<div x=a"',
 ];
 
 describe.each(unclosedTags)("a large mail full of %j", (unclosed) => {
@@ -139,6 +149,9 @@ describe("hidesText", () => {
     '<span style="display:/**/none">x</span>',
     "<style>.x{visibility:/* a */hidden}</style>",
     "<p>x</p><style>.x{display:none}",
+    '<div x=a" hidden ">x</div>',
+    '<div x=a=" hidden>x</div>',
+    "<div/hidden>x</div>",
   ])("finds hidden text in %s", (html) => {
     expect(hidesText(html)).toBe(true);
   });
@@ -152,6 +165,8 @@ describe("hidesText", () => {
     '<p class="a hidden b">x</p>',
     '<input type="hidden" name="x">',
     "<style>.x{color:red}/* display:none",
+    "<div title=\"a hidden b\" data-x='hidden'>x</div>",
+    "<p>5 < 10 hidden items</p>",
   ])("leaves visible text alone: %s", (html) => {
     expect(hidesText(html)).toBe(false);
   });
