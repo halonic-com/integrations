@@ -77,15 +77,27 @@ describe("gmail_modify_labels", () => {
   );
 
   it("still removes TRASH and SPAM, which takes mail back out", async () => {
-    const { connection, replay } = connectToRecording("modify-labels");
-    // The recording is for other labels; only the request's body matters here.
+    // Only the request's body matters here, so Gmail's empty 204 is faked
+    // instead of recording modify-labels again with other labels.
+    const sentBodies: string[] = [];
+    const connection = gmail.connect({
+      http: {
+        async fetch(_url, init) {
+          sentBodies.push(init?.body ?? "");
+          return { status: 204, ok: true, headers: { get: () => null }, text: async () => "" };
+        },
+      },
+      wait: async () => {},
+    });
     await expect(
       connection.callTool("gmail_modify_labels", {
         messageIds: ["19a0c0ffee000001"],
         removeLabelIds: ["TRASH", "SPAM"],
       }),
     ).resolves.toBeDefined();
-    expect(replay.sent[0]?.body).toMatchObject({ removeLabelIds: ["TRASH", "SPAM"] });
+    expect(sentBodies.map((body) => JSON.parse(body))).toEqual([
+      expect.objectContaining({ removeLabelIds: ["TRASH", "SPAM"] }),
+    ]);
   });
 
   it("refuses an empty list of messages before any request", async () => {
