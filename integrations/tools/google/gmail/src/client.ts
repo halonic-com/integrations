@@ -44,6 +44,25 @@ export type Label = z.infer<typeof labelListSchema>["labels"][number];
 const draftSchema = z.object({ id: z.string(), message: messageSchema });
 export type Draft = z.infer<typeof draftSchema>;
 
+const sendAsListSchema = z.object({
+  sendAs: z
+    .array(z.object({ isPrimary: z.boolean().optional(), signature: z.string().optional() }))
+    .default([]),
+});
+
+/** What Gmail answers when it has sent a message. */
+const sentMessageSchema = z.object({ id: z.string(), threadId: z.string() });
+export type SentMessage = z.infer<typeof sentMessageSchema>;
+
+const createdDraftSchema = z.object({ id: z.string(), message: sentMessageSchema });
+export type CreatedDraft = z.infer<typeof createdDraftSchema>;
+
+/** A whole message for Gmail: `raw` from `encodeRaw`, and the thread a reply belongs to. */
+export interface RawMessage {
+  raw: string;
+  threadId?: string | undefined;
+}
+
 /** Label changes for a set of messages. */
 export interface LabelChange {
   messageIds: readonly string[];
@@ -134,5 +153,22 @@ export class GmailClient {
       format: "full",
     });
     return await this.#google.getJson(url, draftSchema, signal);
+  }
+
+  /**
+   * One request: the signature of the account's primary address, as HTML,
+   * or "" when it has none. Gmail sends from that address when a message
+   * has no `From` header.
+   */
+  async getSignature(signal?: AbortSignal): Promise<string> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "settings", "sendAs"]);
+    const { sendAs } = await this.#google.getJson(url, sendAsListSchema, signal);
+    return sendAs.find((address) => address.isPrimary)?.signature?.trim() ?? "";
+  }
+
+  /** One request: saves a draft. Not retried, like every request that changes something. */
+  async createDraft(message: RawMessage, signal?: AbortSignal): Promise<CreatedDraft> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts"]);
+    return await this.#google.postJson(url, { message }, createdDraftSchema, signal);
   }
 }

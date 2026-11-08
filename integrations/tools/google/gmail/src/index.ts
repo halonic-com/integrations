@@ -1,6 +1,7 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { GmailClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
+import { createDraftTool } from "./tools/create-draft.ts";
 import { getDraftTool } from "./tools/get-draft.ts";
 import { listLabelsTool } from "./tools/list-labels.ts";
 import { modifyLabelsTool } from "./tools/modify-labels.ts";
@@ -10,8 +11,8 @@ import { searchTool } from "./tools/search.ts";
 import { triageTool } from "./tools/triage.ts";
 
 /**
- * The same tools, in the same order, as in integration.yaml. The rest of
- * the sheet's tools follow in the next pull requests.
+ * The same tools, in the same order, as in integration.yaml. The two send
+ * tools follow in the next pull request.
  */
 const tools: readonly ToolImplementation<GmailClient>[] = [
   triageTool,
@@ -21,6 +22,7 @@ const tools: readonly ToolImplementation<GmailClient>[] = [
   listLabelsTool,
   getDraftTool,
   modifyLabelsTool,
+  createDraftTool,
 ];
 
 export const gmail: Integration = {
