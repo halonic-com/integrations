@@ -19,12 +19,27 @@
 const anyTag = /<[a-z/!?][^>]*(?:>|$)/gi;
 
 /**
- * A tag's attributes, read as a browser reads them. A quote starts a value
- * only right after `=`; anywhere else, such as inside an unquoted value, it
- * is an ordinary character, so `<a x=a">` ends at its first `>`. A quoted
- * value that never closes runs to the end, and so does the tag.
+ * An attribute's name. As in a browser, it may start with `=`: an `=` where
+ * a name should start belongs to the name, so `<div ="x>` is a whole tag.
  */
-const attributesPattern = String.raw`((?:[^>=]|=\s*(?:"[^"]*(?:"|$)|'[^']*(?:'|$)|[^\s>]*))*)`;
+const attributeName = String.raw`[^\s/>][^\s/>=]*`;
+
+/**
+ * `=` after a name, and the value. A quote starts a value only here; anywhere
+ * else, such as inside an unquoted value, it is an ordinary character, so
+ * `<a x=a">` ends at its first `>`. A quoted value that never closes runs to
+ * the end, and so does the tag.
+ */
+const equalsAndValue = String.raw`\s*=\s*(?:"[^"]*(?:"|$)|'[^']*(?:'|$)|[^\s>]*)`;
+
+/** A name with no value ends here: no more name, and no `=` after it. */
+const nameWithoutValueEnds = String.raw`(?![^\s/>=]|\s*=)`;
+
+/**
+ * A tag's attributes, read by the same rules as `attributesOf`. Each piece
+ * can be read only one way, so the pattern stays linear.
+ */
+const attributesPattern = String.raw`((?:[\s/]|${attributeName}(?:${equalsAndValue}|${nameWithoutValueEnds}))*)`;
 
 /** An opening tag: its name, then its attributes. */
 const openingTag = new RegExp(String.raw`<[a-z][^\s/>]*${attributesPattern}(?:>|$)`, "gi");

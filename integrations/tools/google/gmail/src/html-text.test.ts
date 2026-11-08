@@ -65,6 +65,12 @@ describe("htmlToText", () => {
     expect(htmlToText('<p>Hi</p><a href="https://bank.example>Your bank</a> more')).toBe("Hi");
   });
 
+  it("reads an = where a name should start as part of the name, as a browser does", () => {
+    expect(htmlToText('<a ="x>Hi</a> and <a href="https://example.com">more</a>')).toBe(
+      "Hi and more <https://example.com>",
+    );
+  });
+
   it("cuts a long link address", () => {
     const address = `https://example.com/${"a".repeat(300)}`;
     expect(htmlToText(`<a href="${address}">Open</a>`)).toBe(`Open <${address.slice(0, 200)}…>`);
@@ -115,6 +121,7 @@ const unclosedTags = [
   "<div ",
   "<div /",
   '<div x=a"',
+  '<div ="',
 ];
 
 describe.each(unclosedTags)("a large mail full of %j", (unclosed) => {
@@ -152,6 +159,8 @@ describe("hidesText", () => {
     '<div x=a" hidden ">x</div>',
     '<div x=a=" hidden>x</div>',
     "<div/hidden>x</div>",
+    '<div ="x><span hidden>x</span>',
+    '<p ="x>a</p><p hidden>b</p>',
   ])("finds hidden text in %s", (html) => {
     expect(hidesText(html)).toBe(true);
   });
