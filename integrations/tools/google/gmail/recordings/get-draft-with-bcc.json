@@ -1,0 +1,243 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/drafts/r-5550001234567890123?format=full"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "r-5550001234567890123",
+            "message": {
+              "historyId": "90211",
+              "id": "19a0c0ffee000201",
+              "internalDate": "1793865600000",
+              "labelIds": [
+                "DRAFT"
+              ],
+              "payload": {
+                "body": {
+                  "size": 0
+                },
+                "filename": "<scrubbed:content>",
+                "headers": [
+                  {
+                    "name": "To",
+                    "value": "<scrubbed:content>"
+                  },
+                  {
+                    "name": "Cc",
+                    "value": "<scrubbed:content>"
+                  },
+                  {
+                    "name": "Bcc",
+                    "value": "<scrubbed:content>"
+                  },
+                  {
+                    "name": "Subject",
+                    "value": "<scrubbed:content>"
+                  },
+                  {
+                    "name": "Message-ID",
+                    "value": "<scrubbed:content>"
+                  }
+                ],
+                "mimeType": "multipart/mixed",
+                "partId": "",
+                "parts": [
+                  {
+                    "body": {
+                      "size": 0
+                    },
+                    "filename": "<scrubbed:content>",
+                    "headers": [
+                      {
+                        "name": "Content-Type",
+                        "value": "<scrubbed:content>"
+                      }
+                    ],
+                    "mimeType": "multipart/alternative",
+                    "partId": "0",
+                    "parts": [
+                      {
+                        "body": {
+                          "data": "<scrubbed:content>",
+                          "size": 32
+                        },
+                        "filename": "<scrubbed:content>",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "<scrubbed:content>"
+                          }
+                        ],
+                        "mimeType": "text/plain",
+                        "partId": "0.0"
+                      },
+                      {
+                        "body": {
+                          "data": "<scrubbed:content>",
+                          "size": 43
+                        },
+                        "filename": "<scrubbed:content>",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "<scrubbed:content>"
+                          }
+                        ],
+                        "mimeType": "text/html",
+                        "partId": "0.1"
+                      }
+                    ]
+                  },
+                  {
+                    "body": {
+                      "attachmentId": "scrubbed-secret-1",
+                      "size": 48213
+                    },
+                    "filename": "<scrubbed:content>",
+                    "headers": [
+                      {
+                        "name": "Content-Type",
+                        "value": "<scrubbed:content>"
+                      },
+                      {
+                        "name": "Content-Disposition",
+                        "value": "<scrubbed:content>"
+                      }
+                    ],
+                    "mimeType": "application/pdf",
+                    "partId": "1"
+                  }
+                ]
+              },
+              "sizeEstimate": 20480,
+              "snippet": "<scrubbed:content>",
+              "threadId": "19a0c0ffee000201"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "get-draft-with-bcc",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.snippet",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.headers[2].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.headers[3].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.headers[4].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[0].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[0].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[0].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[1].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[1].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[0].parts[1].body.data",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[1].filename",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[1].headers[0].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[1].headers[1].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.message.payload.parts[1].body.attachmentId",
+      "rule": "random-token"
+    }
+  ]
+}

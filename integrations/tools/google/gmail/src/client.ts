@@ -34,6 +34,23 @@ const threadSchema = z.object({
 });
 export type Thread = z.infer<typeof threadSchema>;
 
+const labelListSchema = z.object({
+  labels: z
+    .array(z.object({ id: z.string(), name: z.string(), type: z.string().optional() }))
+    .default([]),
+});
+export type Label = z.infer<typeof labelListSchema>["labels"][number];
+
+const draftSchema = z.object({ id: z.string(), message: messageSchema });
+export type Draft = z.infer<typeof draftSchema>;
+
+/** Label changes for a set of messages. */
+export interface LabelChange {
+  messageIds: readonly string[];
+  addLabelIds: readonly string[];
+  removeLabelIds: readonly string[];
+}
+
 /** One page of a search: which messages match. */
 export interface ListMessagesRequest {
   query: string;
@@ -83,5 +100,39 @@ export class GmailClient {
       format: "full",
     });
     return await this.#google.getJson(url, threadSchema, signal);
+  }
+
+  /** One request: every label of the mailbox, the system ones included. */
+  async listLabels(signal?: AbortSignal): Promise<Label[]> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "labels"]);
+    return (await this.#google.getJson(url, labelListSchema, signal)).labels;
+  }
+
+  /**
+   * One request: adds and removes labels on up to 1,000 messages. Gmail
+   * answers with an empty body, so `send` is used instead of `postJson`.
+   * Not retried, like every request that changes something.
+   */
+  async modifyLabels(change: LabelChange, signal?: AbortSignal): Promise<void> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", "batchModify"]);
+    await this.#google.send({
+      method: "POST",
+      url,
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify({
+        ids: change.messageIds,
+        addLabelIds: change.addLabelIds,
+        removeLabelIds: change.removeLabelIds,
+      }),
+      signal,
+    });
+  }
+
+  /** One request: a draft with its whole message, the Bcc header included. */
+  async getDraft(draftId: string, signal?: AbortSignal): Promise<Draft> {
+    const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts", draftId], {
+      format: "full",
+    });
+    return await this.#google.getJson(url, draftSchema, signal);
   }
 }
