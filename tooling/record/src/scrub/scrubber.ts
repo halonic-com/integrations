@@ -7,6 +7,7 @@ import { scrubHeaders } from "./headers.ts";
 import { KnownSecrets } from "./known-secrets.ts";
 import type { ScrubPolicy } from "./policy.ts";
 import { ReportBuilder, type ScrubReport } from "./report.ts";
+import { serviceErrorPaths } from "./service-errors.ts";
 import { scrubUrl } from "./url.ts";
 
 export interface ScrubOptions {
@@ -45,13 +46,14 @@ export function scrubExchanges(
     report: new ReportBuilder(),
     matchedUserContent: new Set(),
   };
-  const userContent: UserContentPaths = {
-    request: new FieldPaths(policy.userContent, "request"),
-    response: new FieldPaths(policy.userContent, "response"),
-  };
-  const scrubbed = exchanges.map((exchange, index) =>
-    scrubExchange(exchange, `exchanges[${index}]`, userContent, context),
-  );
+  const requestUserContent = new FieldPaths(policy.userContent, "request");
+  const scrubbed = exchanges.map((exchange, index) => {
+    const userContent: UserContentPaths = {
+      request: requestUserContent,
+      response: responseUserContent(policy, exchange.request.url),
+    };
+    return scrubExchange(exchange, `exchanges[${index}]`, userContent, context);
+  });
   const unmatched = [...new Set(policy.userContent)].filter(
     (path) => !context.matchedUserContent.has(path),
   );
@@ -61,6 +63,15 @@ export function scrubExchanges(
 interface UserContentPaths {
   readonly request: FieldPaths;
   readonly response: FieldPaths;
+}
+
+/**
+ * The policy's response paths, then the error paths the recorder adds for
+ * this service. The policy's come first, so a path the sheet declares
+ * itself is the one that matches and counts as used.
+ */
+function responseUserContent(policy: ScrubPolicy, url: string): FieldPaths {
+  return new FieldPaths([...policy.userContent, ...serviceErrorPaths(url)], "response");
 }
 
 function scrubExchange(

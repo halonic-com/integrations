@@ -24,6 +24,7 @@ shared kit for "Offer to Halonic" (I6) unchanged.
 | E-mail addresses anywhere                                                                                                                                                                                                        | `person<n>@example.com`                                                                                            |
 | Phone numbers anywhere                                                                                                                                                                                                           | `+447700900<nnn>`                                                                                                  |
 | Base64 text anywhere                                                                                                                                                                                                             | Decoded, scrubbed with the rules above and encoded again, so it still decodes                                      |
+| Google's error text in a response from a `*.googleapis.com` host: `error.message`, `error.errors[*].message` and all of `error.details`. It can repeat what was sent. `code`, `status`, `reason` and `domain` stay               | The user-content placeholder, as if the sheet declared the paths                                                   |
 | Headers that change on every run or no longer fit the saved body (`date`, request and trace IDs, rate limits, `content-length`, `content-encoding`, ...)                                                                         | Left out of the file                                                                                               |
 
 `<scrubbed:secret>` marks the integration's own key: on replay, the
@@ -36,7 +37,10 @@ escaping in a URL.
 ## What an integration declares
 
 The scrubber never guesses which fields hold the user's own content, so
-each integration says so itself, in `integration.yaml`:
+each integration says so itself, in `integration.yaml`. The one exception
+is a service error format the recorder knows: Google's error text is
+removed for every Google integration (see the table above), so its sheets
+don't list those paths.
 
 - **Secret headers** come from the permission sheet's `secrets` /
   `auth: { as }` declarations. They aren't listed a second time.
@@ -97,6 +101,7 @@ replaced. A `userContent` path that matched nothing stops the recording:
 that's usually a typo, and it means content you meant to remove is still
 there. When a scenario really doesn't touch a path (a read-only scenario and
 `request.body.raw`), list the path in the scenario's `unusedUserContent`.
+The error paths the recorder adds by itself never stop a recording this way.
 
 ## When the recorder refuses to save
 
