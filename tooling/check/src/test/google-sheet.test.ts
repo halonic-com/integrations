@@ -103,6 +103,36 @@ googleCheck: { method: GET, url: https://mail.googleapis.com/mail/v1/users/me/pr
     ]);
   });
 
+  it("accepts restricted: true on a scope and nothing else", () => {
+    const restricted = `${scopes}    restricted: true\n`;
+    const flow = `googleScopes:
+  - { scope: openid, reason: Tells Halonic which account you connected., restricted: true }
+`;
+    expect(messagesFor(sheet(googleSecret, restricted, apis))).toEqual([]);
+    expect(messagesFor(sheet(googleSecret, flow, apis))).toEqual([]);
+
+    const message =
+      "googleScopes entry 1: restricted is true, for a scope Google calls restricted. Leave it out otherwise.";
+    for (const value of ["false", "yes", "ture", '""']) {
+      const odd = `${scopes}    restricted: ${value}\n`;
+      expect(messagesFor(sheet(googleSecret, odd, apis)), value).toEqual([message]);
+    }
+    const onApi = apis.replace(
+      "name: Example Mail API",
+      "name: Example Mail API\n    restricted: true",
+    );
+    expect(messagesFor(sheet(googleSecret, scopes, onApi))).toEqual([
+      "googleApis entry 1 has restricted; an entry holds only { api, name }.",
+    ]);
+  });
+
+  it("names the optional key when a scope has an unknown one", () => {
+    const odd = `${scopes}    sensitive: true\n`;
+    expect(messagesFor(sheet(googleSecret, odd, apis))).toEqual([
+      "googleScopes entry 1 has sensitive; an entry holds only { scope, reason } and optionally restricted.",
+    ]);
+  });
+
   it("needs googleApis whenever googleScopes is set", () => {
     expect(messagesFor(sheet(googleSecret, scopes))).toEqual([
       "A sheet with googleScopes also lists googleApis: { api, name } for each API the user switches on, such as { api: gmail.googleapis.com, name: Gmail API }.",

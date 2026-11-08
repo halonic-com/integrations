@@ -183,6 +183,7 @@ secrets:
 googleScopes:
   - scope: https://www.googleapis.com/auth/gmail.readonly
     reason: Reads your mail so the assistant can search and summarise it.
+    restricted: true
   - scope: https://www.googleapis.com/auth/gmail.send
     reason: Sends mail you or the assistant wrote, from your address.
 googleApis:
@@ -259,6 +260,9 @@ Rules for each field:
   sign-in scopes `openid`, `email` and `profile`; list the fewest that make
   every tool work. `reason` is one
   short sentence for the user, saying why the integration needs the scope.
+  Add `restricted: true` to a scope Google lists as restricted, such as
+  `gmail.modify` or `drive`, so Studio can tag it in the setup; leave the key
+  out for any other scope.
   Why a broader scope is needed when a narrower one exists goes in a
   comment, for the reviewer.
   Halonic's Google sign-in gives **each integration its own access token**,

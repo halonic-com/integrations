@@ -23,6 +23,7 @@ googleScopes:
     reason: >-
       Reads, labels, drafts and sends your mail; it can't delete mail for
       good.
+    restricted: true
 googleApis:
   - api: gmail.googleapis.com
     name: Gmail API

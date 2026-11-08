@@ -25,6 +25,7 @@ googleScopes:
     reason: >-
       Finds, reads, creates, updates and moves your Drive files; it never
       shares or deletes them.
+    restricted: true
 googleApis:
   - api: drive.googleapis.com
     name: Google Drive API
