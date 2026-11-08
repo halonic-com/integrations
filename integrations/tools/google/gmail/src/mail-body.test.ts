@@ -37,18 +37,21 @@ const plainOriginal = original(
     headers: [{ name: "From", value: "Billing <billing@example.com>" }],
     body: { data: Buffer.from("Invoice attached.\r\n\r\nThanks", "utf8").toString("base64url") },
   },
-  // 2 Nov 2026, 09:00 UTC: 10:00 in Amsterdam.
+  // 2 Nov 2026, 09:00 UTC.
   "1793610000000",
 );
 
 describe("attributionLine", () => {
-  it("names the original's date in the fixed time zone and its sender", () => {
+  it("names the original's date in UTC and its sender", () => {
     expect(attributionLine(plainOriginal)).toBe(
-      "On 2 Nov 2026, 10:00, Billing <billing@example.com> wrote:",
+      "On 2026-11-02 09:00 UTC, Billing <billing@example.com> wrote:",
     );
   });
 
-  it("names only the sender when Gmail sends no date", () => {
+  it("names only the sender when Gmail sends no date or one out of range", () => {
+    expect(attributionLine({ ...plainOriginal, internalDate: "9".repeat(20) })).toBe(
+      "Billing <billing@example.com> wrote:",
+    );
     expect(
       attributionLine(original({ headers: [{ name: "From", value: "kim@example.com" }] })),
     ).toBe("kim@example.com wrote:");
@@ -59,7 +62,7 @@ describe("withQuote", () => {
   it("quotes the plain original line by line, and as a blockquote in HTML", () => {
     const quoted = withQuote({ body: "Paid today." }, plainOriginal);
     expect(quoted.body).toBe(
-      "Paid today.\n\nOn 2 Nov 2026, 10:00, Billing <billing@example.com> wrote:\n> Invoice attached.\n>\n> Thanks",
+      "Paid today.\n\nOn 2026-11-02 09:00 UTC, Billing <billing@example.com> wrote:\n> Invoice attached.\n>\n> Thanks",
     );
     expect(quoted.html).toMatch(/^<div dir="ltr">Paid today\.<\/div><br><div class="gmail_quote">/);
     expect(quoted.html).toContain("Billing &lt;billing@example.com&gt; wrote:");

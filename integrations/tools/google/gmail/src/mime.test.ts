@@ -1,6 +1,13 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
-import { buildMime, encodeHeaderText, encodeRaw, type OutgoingMail } from "./mime.ts";
+import {
+  base64LineLength,
+  buildMime,
+  encodeAddress,
+  encodeHeaderText,
+  encodeRaw,
+  type OutgoingMail,
+} from "./mime.ts";
 
 const mail: OutgoingMail = {
   to: ["Robin <robin@example.com>"],
@@ -12,8 +19,8 @@ const mail: OutgoingMail = {
 
 /** The base64 body that follows a part's headers, decoded. */
 const decodedParts = (mime: string) =>
-  [...mime.matchAll(/Content-Transfer-Encoding: base64\r\n\r\n([A-Za-z0-9+/=]+)/g)].map((match) =>
-    Buffer.from(match[1] ?? "", "base64").toString("utf8"),
+  [...mime.matchAll(/Content-Transfer-Encoding: base64\r\n\r\n([A-Za-z0-9+/=\r\n]+)/g)].map(
+    (match) => Buffer.from(match[1] ?? "", "base64").toString("utf8"),
   );
 
 describe("buildMime", () => {
@@ -46,6 +53,14 @@ describe("buildMime", () => {
     );
     expect(decodedParts(mime)).toEqual(["See you then.", "<p>See you then.</p>"]);
     expect(mime.endsWith("\r\n--halonic_alternative_part--")).toBe(true);
+  });
+
+  it("cuts long bodies into base64 lines of 76 characters (RFC 2045)", () => {
+    const body = "A long reply. ".repeat(10_000);
+    const mime = buildMime({ ...mail, body, html: `<p>${body}</p>` });
+    const lines = mime.split("\r\n");
+    expect(Math.max(...lines.map((line) => line.length))).toBe(base64LineLength);
+    expect(decodedParts(mime)).toEqual([body, `<p>${body}</p>`]);
   });
 
   it("refers to the original in a reply", () => {
@@ -81,6 +96,23 @@ describe("encodeHeaderText", () => {
     expect(encodeHeaderText("Grüße")).toBe(
       `=?UTF-8?B?${Buffer.from("Grüße").toString("base64")}?=`,
     );
+  });
+});
+
+describe("encodeAddress", () => {
+  it("encodes a display name outside ASCII and keeps the address as it is", () => {
+    expect(encodeAddress("Zoë <zoe@example.com>")).toBe(
+      `=?UTF-8?B?${Buffer.from("Zoë").toString("base64")}?= <zoe@example.com>`,
+    );
+    expect(encodeAddress('"Zoë" <zoe@example.com>')).toBe(encodeAddress("Zoë <zoe@example.com>"));
+  });
+
+  it("leaves ASCII names and bare addresses as they are", () => {
+    expect(encodeAddress("Robin <robin@example.com>")).toBe("Robin <robin@example.com>");
+    expect(encodeAddress('"Robin, Sales" <robin@example.com>')).toBe(
+      '"Robin, Sales" <robin@example.com>',
+    );
+    expect(encodeAddress("robin@example.com")).toBe("robin@example.com");
   });
 });
 

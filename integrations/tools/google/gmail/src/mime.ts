@@ -36,15 +36,34 @@ export function headerSafe(value: string): string {
   return value.replace(/[\r\n]+/g, " ").trim();
 }
 
+const isPrintableAscii = (value: string) => /^[\x20-\x7E]*$/.test(value);
+
 /** RFC 2047: anything outside printable ASCII goes as UTF-8 in base64. */
 export function encodeHeaderText(value: string): string {
-  return /^[\x20-\x7E]*$/.test(value) ? value : `=?UTF-8?B?${encodeBase64(encodeUtf8(value))}?=`;
+  return isPrintableAscii(value) ? value : `=?UTF-8?B?${encodeBase64(encodeUtf8(value))}?=`;
 }
 
+/**
+ * One recipient for a header. A display name outside printable ASCII
+ * ("Zoë <zoe@example.com>") is encoded as RFC 2047 asks; the address itself
+ * stays as it is.
+ */
+export function encodeAddress(value: string): string {
+  const safe = headerSafe(value);
+  const named = /^(.*?)\s*<([^<>]*)>$/.exec(safe);
+  if (isPrintableAscii(safe) || named === null) return safe;
+  // An encoded word can't sit inside quotes, so the name loses them.
+  const name = (named[1] ?? "").replace(/^"(.*)"$/, "$1");
+  return `${encodeHeaderText(name)} <${named[2] ?? ""}>`;
+}
+
+/** A header's list of recipients, separated by commas. */
+const addressList = (addresses: readonly string[]) => addresses.map(encodeAddress).join(", ");
+
 function headerLines(mail: OutgoingMail): string[] {
-  const lines = [`To: ${mail.to.map(headerSafe).join(", ")}`];
-  if (mail.cc.length > 0) lines.push(`Cc: ${mail.cc.map(headerSafe).join(", ")}`);
-  if (mail.bcc.length > 0) lines.push(`Bcc: ${mail.bcc.map(headerSafe).join(", ")}`);
+  const lines = [`To: ${addressList(mail.to)}`];
+  if (mail.cc.length > 0) lines.push(`Cc: ${addressList(mail.cc)}`);
+  if (mail.bcc.length > 0) lines.push(`Bcc: ${addressList(mail.bcc)}`);
   lines.push(`Subject: ${encodeHeaderText(headerSafe(mail.subject))}`);
   if (mail.inReplyTo) {
     const inReplyTo = headerSafe(mail.inReplyTo);
@@ -55,13 +74,29 @@ function headerLines(mail: OutgoingMail): string[] {
   return lines;
 }
 
+/**
+ * RFC 2045, section 6.8: base64 bodies in lines of at most 76 characters.
+ * One long line would break RFC 5322's limit of 998 characters per line,
+ * and a receiving server may refuse or cut it.
+ */
+export const base64LineLength = 76;
+
+/** Base64 text cut into lines of `base64LineLength`; an empty body is one empty line. */
+function base64Lines(base64: string): string[] {
+  const lines: string[] = [];
+  for (let start = 0; start < base64.length; start += base64LineLength) {
+    lines.push(base64.slice(start, start + base64LineLength));
+  }
+  return lines.length > 0 ? lines : [""];
+}
+
 /** One text part's headers and body, in base64 so no line of it can look like a boundary. */
 function textPart(type: "plain" | "html", text: string): string[] {
   return [
     `Content-Type: text/${type}; charset="UTF-8"`,
     "Content-Transfer-Encoding: base64",
     "",
-    encodeBase64(encodeUtf8(text)),
+    ...base64Lines(encodeBase64(encodeUtf8(text))),
   ];
 }
 

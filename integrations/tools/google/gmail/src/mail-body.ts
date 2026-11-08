@@ -61,24 +61,26 @@ export function withSignature(mail: MailBodies, signatureHtml: string): MailBodi
 }
 
 /**
- * How the quote's attribution line shows the original's date, as the old
- * connector wrote it. The integration doesn't know the user's time zone,
- * so it is fixed: the same in tests and in use.
+ * How the quote's attribution line shows the original's date: "2026-11-02
+ * 09:00 UTC". The integration doesn't know the user's time zone, so it says
+ * UTC. Built by hand rather than with `Intl`, whose output depends on the
+ * runtime's locale data: this is the same in every runtime and in tests.
  */
-const quoteDate = new Intl.DateTimeFormat("en-GB", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "Europe/Amsterdam",
-});
+function utcDateTime(date: Date): string {
+  const iso = date.toISOString(); // "2026-11-02T09:00:00.000Z"
+  return `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
+}
 
-/** "On 2 Nov 2026, 10:00, Billing <billing@example.com> wrote:" */
+/** "On 2026-11-02 09:00 UTC, Billing <billing@example.com> wrote:" */
 export function attributionLine(original: Message): string {
   const from = headerValue(original.payload?.headers, "From") ?? "";
-  // Gmail always sends internalDate; without one, the line says only who wrote.
-  const sent = original.internalDate === undefined ? Number.NaN : Number(original.internalDate);
-  return Number.isFinite(sent)
-    ? `On ${quoteDate.format(new Date(sent))}, ${from} wrote:`
-    : `${from} wrote:`;
+  // Gmail always sends internalDate; without a valid one, the line says only who wrote.
+  const sent = new Date(
+    original.internalDate === undefined ? Number.NaN : Number(original.internalDate),
+  );
+  return Number.isNaN(sent.getTime())
+    ? `${from} wrote:`
+    : `On ${utcDateTime(sent)}, ${from} wrote:`;
 }
 
 /** The inside of `<body>` when the HTML is a whole document, without its head or styles. */
