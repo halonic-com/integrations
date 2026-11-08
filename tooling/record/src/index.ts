@@ -3,13 +3,17 @@
 // "Offer to Halonic" (I6) without a rewrite.
 
 export {
-  type PreparedRecording,
-  prepareRecording,
+  formatRecording,
   RECORDING_FORMAT,
   type RecordingFile,
+  recordingFileSchema,
+} from "./format.ts";
+export {
+  type PreparedRecording,
+  prepareRecording,
   type RecordingInput,
 } from "./recording/prepare-recording.ts";
-export { findLeaks, type Leak, type LeakKind } from "./safety-net/find-leaks.ts";
+export { findLeaks, type Leak, type LeakKind } from "./safety-net.ts";
 export { RecordingRefused } from "./scrub/context.ts";
 export type {
   CapturedExchange,
@@ -19,12 +23,16 @@ export type {
   JsonValue,
   RecordedBody,
   RecordedExchange,
+  RecordedHeaders,
   RecordedRequest,
   RecordedResponse,
+  StreamEvent,
 } from "./scrub/exchange.ts";
 export { definePolicy, type ScrubPolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
 export {
   type Replacement,
+  type ReportEntry,
+  reportEntries,
   type ScrubReport,
   type ScrubRule,
   summarizeReport,

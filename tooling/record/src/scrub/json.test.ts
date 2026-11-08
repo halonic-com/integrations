@@ -4,7 +4,7 @@ import { encodeBase64 } from "./base64.ts";
 import { FieldPaths } from "./field-paths.ts";
 import { scrubJson } from "./json.ts";
 
-const noUserContent = new FieldPaths([]);
+const noUserContent = new FieldPaths([], "response");
 
 describe("scrubJson", () => {
   it.each(["access_token", "refresh_token", "client_secret", "password", "idToken", "apiKey"])(
@@ -56,20 +56,21 @@ describe("scrubJson", () => {
       ],
       attachment: { size: 120, inline: true, parts: ["a", "b"], meta: { name: "x.txt" } },
     };
-    const paths = new FieldPaths(["messages[].snippet", "attachment"]);
+    const declared = ["response.body.messages[*].snippet", "response.body.attachment"];
+    const paths = new FieldPaths(declared, "response");
     expect(scrubJson(body, "body", paths, context)).toEqual({
       messages: [
-        { id: "m1", snippet: "scrubbed user content", labels: ["INBOX"] },
-        { id: "m2", snippet: "scrubbed user content", labels: ["INBOX"] },
+        { id: "m1", snippet: "<scrubbed:content>", labels: ["INBOX"] },
+        { id: "m2", snippet: "<scrubbed:content>", labels: ["INBOX"] },
       ],
       attachment: {
         "field-1": 0,
         "field-2": false,
-        "field-3": ["scrubbed user content", "scrubbed user content"],
-        "field-4": { "field-1": "scrubbed user content" },
+        "field-3": ["<scrubbed:content>", "<scrubbed:content>"],
+        "field-4": { "field-1": "<scrubbed:content>" },
       },
     });
-    expect(context.matchedUserContent).toEqual(new Set(["messages[].snippet", "attachment"]));
+    expect(context.matchedUserContent).toEqual(new Set(declared));
   });
 
   it("doesn't guess user content: undeclared text stays", () => {
@@ -80,7 +81,22 @@ describe("scrubJson", () => {
   it("replaces e-mail addresses used as field names", () => {
     expect(
       scrubJson({ [FAKE.email]: { role: "owner" } }, "body", noUserContent, testContext()),
-    ).toEqual({ "person-1@example.com": { role: "owner" } });
+    ).toEqual({ "person1@example.com": { role: "owner" } });
+  });
+
+  it("puts the scrubbed key, not the address, in the report", () => {
+    const context = testContext();
+    scrubJson({ [FAKE.email]: { token: "abc" } }, "body", noUserContent, context);
+    const report = JSON.stringify(context.report.build([]));
+    expect(report).not.toContain(FAKE.email);
+    expect(report).toContain("body.person1@example.com.token");
+  });
+
+  it("uses the fixed stand-in when a secret field holds one of the integration's keys", () => {
+    const context = testContext({}, [FAKE.plainKey]);
+    expect(scrubJson({ api_key: FAKE.plainKey }, "body", noUserContent, context)).toEqual({
+      api_key: "<scrubbed:secret>",
+    });
   });
 
   it("scrubs JSON nested inside a string", () => {

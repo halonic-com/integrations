@@ -7,7 +7,7 @@ describe("scrubText", () => {
   it("replaces known key values", () => {
     const context = testContext({}, [FAKE.plainKey]);
     expect(scrubText(`key is ${FAKE.plainKey}.`, "here", context)).toBe(
-      "key is scrubbed-secret-1.",
+      "key is <scrubbed:secret>.",
     );
     expect(rulesUsed(context)).toEqual(["known-secret"]);
   });
@@ -41,14 +41,14 @@ describe("scrubText", () => {
     const context = testContext();
     const text = `${FAKE.email}, ${FAKE.otherEmail}, ${FAKE.email.toUpperCase()}`;
     expect(scrubText(text, "here", context)).toBe(
-      "person-1@example.com, person-2@example.com, person-1@example.com",
+      "person1@example.com, person2@example.com, person1@example.com",
     );
   });
 
   it("replaces an e-mail address inside HTML", () => {
     const html = `<p>Write to <a href="mailto:${FAKE.email}">${FAKE.email}</a></p>`;
     expect(scrubText(html, "here", testContext())).toBe(
-      '<p>Write to <a href="mailto:person-1@example.com">person-1@example.com</a></p>',
+      '<p>Write to <a href="mailto:person1@example.com">person1@example.com</a></p>',
     );
   });
 
@@ -81,7 +81,7 @@ describe("scrubText", () => {
         char.charCodeAt(0),
       ),
     );
-    expect(decoded).toBe("From: person-1@example.com\r\n\r\nHello");
+    expect(decoded).toBe("From: person1@example.com\r\n\r\nHello");
   });
 
   it("does not touch its own stand-ins when run again", () => {

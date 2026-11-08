@@ -1,26 +1,29 @@
-import type { ScrubContext } from "./context.ts";
+import { type ScrubContext, secretStandIn } from "./context.ts";
 import type { JsonValue } from "./exchange.ts";
-import { USER_CONTENT_TEXT } from "./fakes.ts";
+import { USER_CONTENT } from "./fakes.ts";
 import { type FieldPaths, formatPath, type ValuePath } from "./field-paths.ts";
 import { PLACEHOLDER } from "./patterns.ts";
 import { isSecretName } from "./secret-names.ts";
 import { scrubText } from "./text.ts";
 
 /**
- * Scrubs a parsed JSON body. Walks every value and applies, in order:
+ * Scrubs a parsed JSON value. Walks every value and applies, in order:
  * 1. declared user-content paths: the whole value becomes a placeholder of the same type
  * 2. secret-like field names: a string value becomes a secret stand-in
  *    (numbers stay, so `max_tokens: 1024` survives)
  * 3. the free-text rules on every other string, and on field names too
  *    (some APIs key maps by e-mail address)
+ *
+ * @param at - where the value sits in the body; a stream event's data starts at `[n, "data"]`
  */
 export function scrubJson(
   value: JsonValue,
   where: string,
   userContent: FieldPaths,
   context: ScrubContext,
+  at: ValuePath = [],
 ): JsonValue {
-  return new JsonWalk(where, userContent, context).visit(value, []);
+  return new JsonWalk(where, userContent, context).visit(value, at);
 }
 
 class JsonWalk {
@@ -56,8 +59,10 @@ class JsonWalk {
   private visitObject(value: { [key: string]: JsonValue }, path: ValuePath): JsonValue {
     const result: { [key: string]: JsonValue } = {};
     for (const [key, child] of Object.entries(value)) {
-      const childPath = [...path, key];
-      const scrubbedKey = scrubText(key, this.locate(childPath), this.context);
+      // The key is scrubbed first and the path uses the scrubbed key, so the
+      // report in the file never holds an address that was used as a key.
+      const scrubbedKey = scrubText(key, this.locate(path), this.context);
+      const childPath = [...path, scrubbedKey];
       result[scrubbedKey] =
         typeof child === "string" && this.isSecretField(key, child, childPath)
           ? this.replaceSecret(child, childPath)
@@ -76,7 +81,7 @@ class JsonWalk {
 
   private replaceSecret(value: string, path: ValuePath): string {
     this.context.report.add("secret-field", this.locate(path));
-    return this.context.fakes.secret(value);
+    return secretStandIn(value, this.context);
   }
 
   /**
@@ -102,16 +107,16 @@ class JsonWalk {
   }
 }
 
-/** The same shape with every leaf replaced: text, zero, false, null. */
+/** The same shape with every leaf replaced by a fixed value of its type. */
 function asUserContent(value: JsonValue): JsonValue {
   if (typeof value === "string") {
-    return USER_CONTENT_TEXT;
+    return USER_CONTENT.text;
   }
   if (typeof value === "number") {
-    return 0;
+    return USER_CONTENT.number;
   }
   if (typeof value === "boolean") {
-    return false;
+    return USER_CONTENT.boolean;
   }
   if (Array.isArray(value)) {
     return value.map(asUserContent);

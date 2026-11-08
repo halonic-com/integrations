@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { encodeBase64 } from "../scrub/base64.ts";
-import { FAKE } from "../test/fakes.ts";
-import { findLeaks } from "./find-leaks.ts";
+import { findLeaks } from "./safety-net.ts";
+import { encodeBase64 } from "./scrub/base64.ts";
+import { FAKE } from "./test/fakes.ts";
 
 function kinds(text: string, knownSecrets: readonly string[] = []): string[] {
   return findLeaks(text, knownSecrets).map((leak) => leak.kind);
@@ -46,11 +46,14 @@ describe("findLeaks", () => {
 
   it("accepts the scrubber's own stand-ins", () => {
     const scrubbed = JSON.stringify({
-      authorization: "Bearer scrubbed-secret-1",
-      cookie: "scrubbed",
-      from: "person-1@example.com",
+      authorization: "Bearer <scrubbed:secret>",
+      cookie: "<scrubbed:secret>",
+      nextPageToken: "scrubbed-secret-1",
+      url: "https://api.example.com/?key=%3Cscrubbed%3Asecret%3E",
+      replyTo: "support@mail.example.com",
+      from: "person1@example.com",
       phone: "+447700900001",
-      text: "scrubbed user content",
+      text: "<scrubbed:content>",
     });
     expect(findLeaks(scrubbed, [FAKE.plainKey])).toEqual([]);
   });
