@@ -93,9 +93,19 @@ const scrubbedSecret = "<scrubbed:secret>";
 /** The numbered stand-in the recorder writes for a token the service issued, such as a session id. */
 const standIn = /scrubbed-secret-\d+/;
 
+export interface ReplayOptions {
+  /**
+   * Optional secrets the workspace hasn't set up. The kit leaves them out
+   * of the request even where the integration names them, so the recording
+   * must not have them either.
+   */
+  readonly unsetSecrets?: readonly string[];
+}
+
 /** Reads `recording` with the recording file schema, so a file the suite would refuse fails here too. */
-export function replay(recording: unknown): Replay {
+export function replay(recording: unknown, options: ReplayOptions = {}): Replay {
   const { exchanges } = recordingFileSchema.parse(recording);
+  const unset = new Set(options.unsetSecrets ?? []);
   const sent: SentRequest[] = [];
   const http: ReplayHttpClient = {
     async fetch(url, init = {}) {
@@ -104,7 +114,7 @@ export function replay(recording: unknown): Replay {
       if (exchange === undefined) {
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
-      checkMatches(exchange, url, init);
+      checkMatches(exchange, url, init, unset);
       return toResponse(exchange.response);
     },
   };
@@ -119,14 +129,20 @@ export function replay(recording: unknown): Replay {
   };
 }
 
-function checkMatches(exchange: Exchange, url: string, init: ReplayRequestInit): void {
+function checkMatches(
+  exchange: Exchange,
+  url: string,
+  init: ReplayRequestInit,
+  unset: ReadonlySet<string>,
+): void {
   const method = init.method ?? "GET";
   if (exchange.request.method !== method || exchange.request.url !== url) {
     throw new Error(
       `Expected ${exchange.request.method} ${exchange.request.url}, got ${method} ${url}`,
     );
   }
-  checkKey(exchange.request.headers, init.auth);
+  const placed = [init.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
+  checkKey(exchange.request.headers, placed);
   checkHeaders(exchange.request.headers, init.headers ?? {});
 }
 

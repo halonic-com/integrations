@@ -16,16 +16,12 @@ secrets:
     hosts:
       - fromSetting: url
     as: bearer
+    # Many servers need no key: without one set up, the kit sends none.
+    optional: true
 
 tokens: []
 tools: [] # a knowledge source only: agents search it, they don't call tools
 needs: []
-
-# Not settled yet: the knowledge port has no `untrusted` field, so the sheet
-# says it here. Every hit and every document is the server's text, so
-# Halonic must fence it off like the result of an untrusted tool.
-knowledge:
-  untrusted: true
 
 # Fields that hold the user's own content, for the recorder. The search
 # query and the ref go out as tool arguments; the documents come back as

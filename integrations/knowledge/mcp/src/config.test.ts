@@ -2,15 +2,16 @@ import { describe, expect, it } from "vitest";
 import { readSettings, readSourceConfig } from "./config.ts";
 
 describe("readSettings", () => {
-  it("reads the url and sends the key by default", () => {
+  it("reads the url", () => {
     expect(readSettings({ url: "https://docs.example.com/mcp" })).toEqual({
       url: "https://docs.example.com/mcp",
-      sendKey: true,
     });
   });
 
-  it("can leave the key out", () => {
-    expect(readSettings({ url: "http://localhost:8080/mcp", sendKey: false }).sendKey).toBe(false);
+  it("ignores the old sendKey setting: the kit decides by whether the key is set up", () => {
+    expect(readSettings({ url: "http://localhost:8080/mcp", sendKey: false })).toEqual({
+      url: "http://localhost:8080/mcp",
+    });
   });
 
   it.each([{}, { url: "docs.example.com" }, { url: "ftp://docs.example.com" }])(

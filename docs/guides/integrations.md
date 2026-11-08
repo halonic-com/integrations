@@ -232,7 +232,11 @@ Rules for each field:
   works, and where the kit puts it (`as`, plus `header` or `field`; see
   section 4). A secret may only go to hosts that are also in `hosts`. A
   secret that belongs to Halonic's own sign-in, such as `google-account`,
-  goes only to that provider's hosts; never add another host to it.
+  goes only to that provider's hosts; never add another host to it. Add
+  `optional: true` only when the service works without the secret, such
+  as a self-hosted server that may need no key: the kit then sends the
+  request without it when the workspace hasn't set it up. Don't add a
+  setting that switches a secret on or off.
 - **`googleScopes`**: only in an integration that uses `google-account`.
   List the full scope URLs, the fewest that make every tool work, and say
   in a comment why a broader scope is needed when a narrower one exists.
@@ -300,7 +304,7 @@ Rules for each field:
    sends back, such as a name, a search query or a message. The kit refuses
    a secret the sheet doesn't declare (`secret-not-declared`), one sent to
    a host the sheet doesn't allow it for, and one the workspace hasn't set
-   up yet (`secret-not-configured`).
+   up yet (`secret-not-configured`), unless the sheet marks it `optional`.
 3. **Keep all calls in one place.** `src/client.ts` holds the base URL, the
    `auth` placement, the request helpers and the response checks. Tools and
    providers call the client and never build requests themselves.
@@ -455,7 +459,10 @@ other integration declares its tools once, in `tools`.
 
 A knowledge source says `provides: [knowledge]` and implements
 `createKnowledgeProvider(source)`. The same rules apply: one client, Zod
-checks, limits on every result, and `untrusted` content marked as such.
+checks and limits on every result. Its provider sets `untrusted`, with the
+same meaning as on a tool: `true` when hits and documents hold text from
+outside the account, such as a remote server's answers. Halonic fences
+them off when it is `true` or missing, so always set it.
 
 > **Not settled yet:** streaming answers arrive with the first provider
 > that streams. Write `chat` so that adding a streaming method later

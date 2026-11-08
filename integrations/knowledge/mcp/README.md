@@ -11,16 +11,14 @@ Zod into the cloud runtime.
 
 ## Connecting it
 
-The workspace gives the connection two settings:
-
-| Setting   | What                                                                                |
-| --------- | ----------------------------------------------------------------------------------- |
-| `url`     | the server's MCP endpoint, such as `https://docs.example.com/mcp`. Required         |
-| `sendKey` | `false` for a server that needs no key. Default `true`: the key goes with each call |
+The workspace gives the connection one setting, `url`: the server's MCP
+endpoint, such as `https://docs.example.com/mcp`.
 
 The sheet allows the host of `url` and nothing else, and the key
 (`mcp-server-key`) goes only to that host, as `Authorization: Bearer`.
-The integration names the key and never sees it.
+The integration names the key and never sees it. The key is optional in
+the sheet: for a server that needs none, leave it unset, and the kit sends
+the requests without it.
 
 Each knowledge source names the server's tools in its `config`:
 
@@ -44,8 +42,8 @@ The old `packages/knowledge/mcp` took shortcuts this version doesn't:
   result, best first. Plain text still becomes one hit, cut to a limit.
 - **Limits on everything** the server sends: the number of hits, the
   length of each snippet and title, and the size of a document.
-- **Untrusted.** Every hit and document is the server's text; the sheet
-  says so, and Halonic fences it off.
+- **Untrusted.** Every hit and document is the server's text; the
+  provider says so with `untrusted: true`, and Halonic fences it off.
 - **One host, from a setting.** The key goes only to the server the
   workspace chose. Arbitrary `headers` from config are no longer sent.
 - **Honest capabilities.** `semantic` is `false`: the source can't know

@@ -21,10 +21,7 @@ export class McpKnowledgeProvider implements KnowledgeProvider {
   readonly id: string;
   /** `semantic` is `false`: we can't know how the server searches. */
   readonly capabilities: KnowledgeCapabilities = { search: true, semantic: false, ingest: false };
-  /**
-   * Every hit and document is the server's text. The port has no field for
-   * this yet; the sheet says it under `knowledge.untrusted`.
-   */
+  /** Every hit and document is the server's text, so Halonic fences it off. */
   readonly untrusted = true;
   readonly #server: McpServer;
   readonly #config: SourceConfig;

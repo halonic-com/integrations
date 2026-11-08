@@ -97,7 +97,7 @@ export class McpServer {
     const settings = readSettings(this.#settings);
     const transport = new StreamableHttpTransport(this.#http, {
       url: settings.url,
-      ...(settings.sendKey ? { auth: serverKey } : {}),
+      auth: serverKey,
     });
     const session = new McpSession(transport, { clientInfo });
     try {

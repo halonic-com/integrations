@@ -7,12 +7,13 @@ import { KnowledgeMcpError } from "./errors.ts";
  * the message names the field, never its value.
  */
 
-/** The connection's settings: which server, and whether it needs the key. */
+/**
+ * The connection's settings: which server. Whether it gets a key is not a
+ * setting: the kit adds `mcp-server-key` when the workspace has set it up.
+ */
 export interface ServerSettings {
   /** The server's MCP endpoint. The sheet allows its host and nothing else. */
   readonly url: string;
-  /** Whether the kit adds `mcp-server-key` to every request. */
-  readonly sendKey: boolean;
 }
 
 /** One source's names for the server's tools and their arguments. */
@@ -31,7 +32,6 @@ const settingsSchema = z.object({
     .string()
     .max(2_048)
     .regex(/^https?:\/\/[^\s/?#]+[^\s]*$/i),
-  sendKey: z.boolean().default(true),
 });
 
 /** The MCP specification's rule for tool names. */
