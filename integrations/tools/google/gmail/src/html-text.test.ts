@@ -124,6 +124,13 @@ const unclosedTags = [
   '<div ="',
 ];
 
+/**
+ * How long one large mail may take. These tests catch a quadratic blow-up,
+ * which takes seconds to minutes at this size. They don't measure speed, so
+ * the limit is loose enough that a busy CI runner never trips it.
+ */
+const quadraticBlowUpLimitMs = 5_000;
+
 describe.each(unclosedTags)("a large mail full of %j", (unclosed) => {
   const html = unclosed.repeat(Math.ceil(2_000_000 / unclosed.length));
 
@@ -134,7 +141,7 @@ describe.each(unclosedTags)("a large mail full of %j", (unclosed) => {
     const started = performance.now();
     read(html);
     const elapsed = performance.now() - started;
-    expect(elapsed).toBeLessThan(1_000);
+    expect(elapsed).toBeLessThan(quadraticBlowUpLimitMs);
   });
 });
 
