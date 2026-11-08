@@ -95,7 +95,8 @@ integrations/
   permission sheet, no tools and no `Integration`. Never copy its code into
   a service.
 - An integration that belongs to no group sits directly in
-  `integrations/<name>/`.
+  `integrations/<name>/`. Its name may not start with `model-`, `tool-` or
+  `knowledge-`: those names belong to the groups.
 
 Each service is still its own integration. The user connects a Google
 account once and ticks the services they want, and Halonic asks Google only
@@ -121,9 +122,9 @@ connects many integrations, and workspaces refer to them in their `allow`
 and `approve` lists. **Never rename a tool that has shipped.** Add a new
 one and keep the old one working until a release note retires it.
 
-> **Not settled yet:** `pnpm check` still expects one folder level,
-> `integrations/<name>`. The change that teaches it the grouped layout and
-> these names follows in its own pull request.
+`pnpm check` derives these names from the folder and fails when a package
+uses another name, sits in a group folder itself, or is missing a folder
+level (pnpm wouldn't see it).
 
 ### What is in an integration's folder
 

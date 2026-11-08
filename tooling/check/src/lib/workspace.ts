@@ -52,7 +52,7 @@ export function findRepoRoot(start: string = process.cwd()): string {
 
 /**
  * Reads the `packages:` globs from `pnpm-workspace.yaml`. We only use plain
- * folders and `folder/*` in a block list, so a line reader is enough and
+ * folders and `*` for whole folder names in a block list, so a line reader is enough and
  * keeps the check free of a YAML library. Anything else in `packages:`
  * throws: reading too few globs would hide packages from every rule.
  *
@@ -62,7 +62,7 @@ export function readWorkspaceGlobs(root: string): string[] {
   const lines = readFileSync(join(root, "pnpm-workspace.yaml"), "utf8").split("\n");
   const fail = (reason: string): never => {
     throw new Error(
-      `pnpm-workspace.yaml: ${reason} Write "packages:" as a block list of "- folder" or "- folder/*" lines.`,
+      `pnpm-workspace.yaml: ${reason} Write "packages:" as a block list of "- folder" or "- folder/*" lines, where "*" stands for one folder name.`,
     );
   };
   const globs: string[] = [];
@@ -98,22 +98,7 @@ export function readWorkspaceGlobs(root: string): string[] {
 export function listWorkspacePackages(root: string): WorkspacePackage[] {
   const directories = ["."];
   for (const glob of readWorkspaceGlobs(root)) {
-    if (glob.includes("*") && !glob.endsWith("/*")) {
-      throw new Error(`Unsupported workspace glob "${glob}". Use "folder" or "folder/*".`);
-    }
-    if (!glob.endsWith("/*")) {
-      directories.push(glob);
-      continue;
-    }
-    const parent = glob.slice(0, -2);
-    if (!existsSync(join(root, parent))) {
-      continue;
-    }
-    for (const entry of readdirSync(join(root, parent), { withFileTypes: true })) {
-      if (entry.isDirectory()) {
-        directories.push(`${parent}/${entry.name}`);
-      }
-    }
+    directories.push(...expandWorkspaceGlob(root, glob));
   }
   const packages: WorkspacePackage[] = [];
   for (const directory of directories.sort(byRootFirst)) {
@@ -123,6 +108,51 @@ export function listWorkspacePackages(root: string): WorkspacePackage[] {
     }
   }
   return packages;
+}
+
+/**
+ * Expands a workspace glob in which `*` stands for one whole folder name:
+ * `integrations/*` finds `integrations/mcp`, and a `*` for each of the two
+ * folders below `integrations/tools` finds `integrations/tools/google/gmail`.
+ * pnpm allows more, but this is all we use, and it keeps the check free of
+ * a glob library. Like pnpm, it never looks inside `node_modules`.
+ *
+ * @throws on any other use of `*`, such as `**` or `llm-*`, and on empty,
+ * `.` and `..` folders, which would give odd paths
+ */
+export function expandWorkspaceGlob(root: string, glob: string): string[] {
+  let matches = [""];
+  for (const segment of glob.split("/")) {
+    if (segment.includes("*") && segment !== "*") {
+      throw new Error(
+        `Unsupported workspace glob "${glob}". Use "*" only for a whole folder name, as in "integrations/tools/*/*".`,
+      );
+    }
+    if (segment === "" || segment === "." || segment === "..") {
+      throw new Error(
+        `Unsupported workspace glob "${glob}". Write folders from the repo root, without "./", "../", "//" or a "/" at either end.`,
+      );
+    }
+    matches = matches.flatMap((parent) =>
+      segment === "*"
+        ? subfolders(root, parent).map((name) => joinPath(parent, name))
+        : [joinPath(parent, segment)],
+    );
+  }
+  return matches;
+}
+
+function subfolders(root: string, directory: string): string[] {
+  if (!existsSync(join(root, directory))) {
+    return [];
+  }
+  return readdirSync(join(root, directory), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== "node_modules")
+    .map((entry) => entry.name);
+}
+
+function joinPath(parent: string, name: string): string {
+  return parent === "" ? name : `${parent}/${name}`;
 }
 
 function byRootFirst(left: string, right: string): number {

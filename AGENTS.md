@@ -40,8 +40,14 @@ published permanently.
 
 ## Where things go
 
-| Folder                | What                                                  |
-| --------------------- | ----------------------------------------------------- |
-| `integrations/<name>` | one integration, its permission sheet, its recordings |
-| `tooling/<name>`      | the repo's own tools: `check`, `config`, `record`     |
-| `docs/guides`         | how we work here                                      |
+| Folder                                    | What                                                 |
+| ----------------------------------------- | ---------------------------------------------------- |
+| `integrations/models/<provider>`          | one model provider                                   |
+| `integrations/knowledge/<source>`         | one knowledge source, such as `knowledge/mcp`        |
+| `integrations/tools/<provider>/<service>` | one service with tools, such as `tools/google/gmail` |
+| `integrations/<name>`                     | an integration in no group, such as `mcp`            |
+| `tooling/<name>`                          | the repo's own tools: `check`, `config`, `record`    |
+| `docs/guides`                             | how we work here                                     |
+
+Each integration folder holds its permission sheet and its recordings.
+Section 2 of the integrations guide has the details and the names.

@@ -9,10 +9,16 @@ the shared conformance suite.
 
 This repository is being set up. More soon.
 
-| Folder                | What                                                             |
-| --------------------- | ---------------------------------------------------------------- |
-| `integrations/<name>` | one integration, its permission sheet and its recorded responses |
-| `tooling/<name>`      | the repo's own tools, such as `pnpm record`                      |
+| Folder                                    | What                                              |
+| ----------------------------------------- | ------------------------------------------------- |
+| `integrations/models/<provider>`          | model providers, such as Anthropic and OpenAI     |
+| `integrations/knowledge/<source>`         | knowledge sources, such as `knowledge/mcp`        |
+| `integrations/tools/<provider>/<service>` | services with tools, such as `tools/google/gmail` |
+| `integrations/<name>`                     | integrations in no group, such as our MCP client  |
+| `tooling/<name>`                          | the repo's own tools, such as `pnpm record`       |
+
+Each integration has its own permission sheet and recorded responses. See
+[docs/guides/integrations.md](docs/guides/integrations.md) for the details.
 
 The tooling, checks and settings match the main repo's. Change them there
 first, then here.

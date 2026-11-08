@@ -41,10 +41,24 @@ checked it by hand.
 A package's layer and npm name follow from its folder, so nobody has to
 invent a name:
 
-| Folder                | Layer        | Name                            |
-| --------------------- | ------------ | ------------------------------- |
-| `integrations/<name>` | integrations | `@halonicjs/integration-<name>` |
-| `tooling/<name>`      | tooling      | `@halonicjs/tooling-<name>`     |
+| Folder                                    | Layer        | Name                                               |
+| ----------------------------------------- | ------------ | -------------------------------------------------- |
+| `integrations/models/<provider>`          | integrations | `@halonicjs/integration-model-<provider>`          |
+| `integrations/knowledge/<source>`         | integrations | `@halonicjs/integration-knowledge-<source>`        |
+| `integrations/tools/<provider>/<service>` | integrations | `@halonicjs/integration-tool-<provider>-<service>` |
+| `integrations/<name>` (no group)          | integrations | `@halonicjs/integration-<name>`                    |
+| `tooling/<name>`                          | tooling      | `@halonicjs/tooling-<name>`                        |
+
+`models`, `knowledge` and `tools` are group folders, never packages
+themselves. An ungrouped folder may not start with `model-`, `tool-` or
+`knowledge-`, because `integrations/model-anthropic` would get the same
+name as `integrations/models/anthropic`. Two folders can still give the
+same name (`tools/google-cloud/storage` and `tools/google/cloud-storage`),
+so the check fails when two packages share a name. Every folder name is
+kebab-case. A `package.json` under
+`integrations/` that matches none of these places fails the check, because
+pnpm wouldn't see it. The groups are explained in
+[integrations.md](integrations.md#2-where-it-goes-and-what-its-called).
 
 Who may use what:
 
