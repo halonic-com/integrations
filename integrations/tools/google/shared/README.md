@@ -11,8 +11,38 @@ library, not an integration: it has no permission sheet, no tools and no
 | `src/error-for-response.ts` | turns a Google error response into a `GoogleError`            |
 | `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text   |
 | `src/http.ts`               | the small part of the kit's HTTP client this library uses     |
+| `src/google-api.ts`         | `googleApi`: every Google request goes through it             |
 | `src/retry-policy.ts`       | when a request is sent again, and how long to wait first      |
 | `src/urls.ts`               | Google base URLs, URL building and paging                     |
+
+## Requests
+
+```ts
+const google = googleApi(host, { secret: "google-account", service: "Gmail", clock });
+const url = googleUrl(googleBaseUrls.gmail, ["users", "me", "messages"], { q: query, pageToken });
+const page = await google.getJson(url, withNextPageToken(messageListSchema), signal);
+```
+
+`getJson`, `getText`, `postJson` and `delete` cover most calls; `send`
+takes any method. Each call sends at most three requests.
+
+## Retries
+
+As the guide's rule 10 says
+([section 4](../../../../docs/guides/integrations.md#4-talking-to-the-service)):
+
+- at most two retries, only after a `429` or a `5xx`. A `403` with a
+  rate-limit reason becomes `rate-limited` but isn't retried;
+- after the wait `retry-after` asks for, up to 30 seconds. A longer one
+  ends the call with `rate-limited`. Without `retry-after`: 1 s, then 2 s;
+- only for `GET` and `HEAD`, or a request the caller marks `repeatable`
+  because Google makes it safe to repeat. `postJson` is never retried, and
+  a `DELETE` never is, even when marked;
+- only with a `clock`. It gives the time and does the waiting, so tests and
+  replays control time. Without one, nothing is retried.
+
+The kit's own errors, such as a refused host or a timeout, pass through
+unchanged and are never retried.
 
 ## Errors
 
