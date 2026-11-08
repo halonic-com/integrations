@@ -68,6 +68,27 @@ is the list of events, so `response.body[*].data` is each event's data.
 `request.body` alone means the whole body. A path the recorder can't read
 stops the recording.
 
+Some APIs send JSON inside a string, such as OpenAI's tool arguments
+(`"arguments": "{\"city\":\"Ghent\"}"`). A placeholder there would no
+longer parse on replay, so the recorder keeps such a string valid JSON:
+
+- Declare the string itself (`...function.arguments`) and every value inside
+  it becomes a placeholder, with the field names numbered:
+  `{"field-1":"<scrubbed:content>"}`.
+- Let the path go on inside the string (`...function.arguments.*`) to keep
+  the field names: `{"city":"<scrubbed:content>"}`. Use this when the names
+  come from the integration, like a tool's parameters.
+
+When a path goes on inside a string that isn't JSON (arguments cut off at the
+token limit), the whole string becomes `"<scrubbed:content>"`.
+
+When a path meets a value of another shape than it expects (a list where `.*`
+wants fields, or fields where `[*]` wants a list), every value from there on
+becomes a placeholder, as if that value itself were declared. This holds at
+any depth, in a body and inside a JSON string alike: with
+`...arguments.trip.*`, the arguments `{"trip":["Ghent","Bruges"]}` become
+`{"trip":["<scrubbed:content>","<scrubbed:content>"]}`.
+
 Until the recorder reads `integration.yaml`, the same fields are passed as an
 object with `definePolicy({ secretHeaders, secretFields, userContent, allowContentTypes })`.
 

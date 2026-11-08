@@ -1,4 +1,5 @@
 import { RecordingRefused } from "./context.ts";
+import type { JsonValue } from "./exchange.ts";
 
 /**
  * The paths an integration uses to point at user-content fields, such as
@@ -7,6 +8,10 @@ import { RecordingRefused } from "./context.ts";
  * Our own small syntax, no library: a side (`request.body` or
  * `response.body`), then `.name` for a field, `.*` for any field name, `[*]`
  * for every item of a list and `[n]` for one item.
+ *
+ * A path may go on inside a string that holds JSON, such as OpenAI's tool
+ * arguments: `response.body.choices[*].message.tool_calls[*].function.arguments.*`.
+ * The steps after the string are matched against the JSON in it.
  */
 
 /** Where a value sits inside a body: field names and list positions. */
@@ -47,6 +52,35 @@ export class FieldPaths {
   /** The declared path that points exactly at `path`, if any. */
   match(path: ValuePath): string | undefined {
     return this.patterns.find((pattern) => matchesSteps(pattern.steps, path))?.source;
+  }
+
+  /**
+   * The declared path that goes on past `path`, if any. For a string, that
+   * means the path expects JSON inside it.
+   */
+  reachesInside(path: ValuePath): string | undefined {
+    return this.reachingInside(path)[0]?.source;
+  }
+
+  /**
+   * The declared path that goes on past `path` but can't take its next step
+   * into `value`: a field step meets something that isn't an object, or a
+   * list step meets something that isn't a list. Whatever `value` holds
+   * would then be missed by that path.
+   */
+  cannotEnter(path: ValuePath, value: JsonValue): string | undefined {
+    return this.reachingInside(path).find((pattern) => {
+      const next = pattern.steps[path.length];
+      return next !== undefined && !canEnter(next, value);
+    })?.source;
+  }
+
+  private reachingInside(path: ValuePath): readonly FieldPattern[] {
+    return this.patterns.filter(
+      (pattern) =>
+        pattern.steps.length > path.length &&
+        matchesSteps(pattern.steps.slice(0, path.length), path),
+    );
   }
 }
 
@@ -106,6 +140,19 @@ function matchesSteps(steps: readonly Step[], path: ValuePath): boolean {
   return (
     steps.length === path.length && steps.every((step, index) => matchesStep(step, path[index]))
   );
+}
+
+function canEnter(step: Step, value: JsonValue): boolean {
+  const isList = Array.isArray(value);
+  const isObject = value !== null && typeof value === "object" && !isList;
+  switch (step.kind) {
+    case "field":
+    case "any-field":
+      return isObject;
+    case "each-item":
+    case "item":
+      return isList;
+  }
 }
 
 function matchesStep(step: Step, actual: string | number | undefined): boolean {

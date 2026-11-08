@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FAKE, rulesUsed, testContext } from "../test/fakes.ts";
 import { encodeBase64 } from "./base64.ts";
+import type { JsonValue } from "./exchange.ts";
 import { FieldPaths } from "./field-paths.ts";
 import { scrubJson } from "./json.ts";
 
@@ -73,6 +74,18 @@ describe("scrubJson", () => {
     expect(context.matchedUserContent).toEqual(new Set(declared));
   });
 
+  it("replaces all of a value whose shape the declared path can't follow", () => {
+    const declared = "response.body.rows[*]";
+    const context = testContext();
+    const paths = new FieldPaths([declared], "response");
+    const body = { rows: { a: "secret plan" }, total: 1 };
+    expect(scrubJson(body, "body", paths, context)).toEqual({
+      rows: { "field-1": "<scrubbed:content>" },
+      total: 1,
+    });
+    expect(context.matchedUserContent).toEqual(new Set([declared]));
+  });
+
   it("doesn't guess user content: undeclared text stays", () => {
     const body = { subject: "Dinner on Friday?" };
     expect(scrubJson(body, "body", noUserContent, testContext())).toEqual(body);
@@ -103,6 +116,88 @@ describe("scrubJson", () => {
     const body = { payload: JSON.stringify({ refresh_token: "abc", n: 1 }) };
     expect(scrubJson(body, "body", noUserContent, testContext())).toEqual({
       payload: '{"refresh_token":"scrubbed-secret-1","n":1}',
+    });
+  });
+
+  describe("JSON inside a string, such as OpenAI's tool arguments", () => {
+    const toolCall = (args: string) => ({
+      tool_calls: [{ function: { name: "weather_forecast", arguments: args } }],
+    });
+    const argumentsOf = (body: JsonValue) =>
+      (body as ReturnType<typeof toolCall>).tool_calls[0]?.function.arguments;
+
+    it("keeps a declared string valid JSON, with placeholders inside", () => {
+      const context = testContext();
+      const paths = new FieldPaths(["response.body.tool_calls[*].function.arguments"], "response");
+      const args = JSON.stringify({ city: "Ghent", days: 3, units: { metric: true } });
+      const scrubbed = scrubJson(toolCall(args), "body", paths, context);
+      expect(JSON.parse(argumentsOf(scrubbed) ?? "")).toEqual({
+        "field-1": "<scrubbed:content>",
+        "field-2": 0,
+        "field-3": { "field-1": false },
+      });
+      expect(rulesUsed(context)).toEqual(["user-content"]);
+    });
+
+    it("keeps the field names when the path goes on inside the string", () => {
+      const declared = "response.body.tool_calls[*].function.arguments.*";
+      const context = testContext();
+      const paths = new FieldPaths([declared], "response");
+      const args = JSON.stringify({ city: "Ghent", where: { lat: 51.05 } });
+      const scrubbed = scrubJson(toolCall(args), "body", paths, context);
+      expect(argumentsOf(scrubbed)).toBe('{"city":"<scrubbed:content>","where":{"field-1":0}}');
+      expect(context.matchedUserContent).toEqual(new Set([declared]));
+      expect(context.report.build([]).replacements).toEqual([
+        { rule: "user-content", where: "body.tool_calls[0].function.arguments.city" },
+        { rule: "user-content", where: "body.tool_calls[0].function.arguments.where" },
+      ]);
+    });
+
+    it("replaces the whole string when the path goes on inside it but it isn't JSON", () => {
+      const declared = "response.body.tool_calls[*].function.arguments.*";
+      const context = testContext();
+      const paths = new FieldPaths([declared], "response");
+      const cutOff = '{"city":"Gh';
+      expect(argumentsOf(scrubJson(toolCall(cutOff), "body", paths, context))).toBe(
+        "<scrubbed:content>",
+      );
+      expect(context.matchedUserContent).toEqual(new Set([declared]));
+    });
+
+    it("replaces all of it when the path expects fields but the string holds a list", () => {
+      const declared = "response.body.tool_calls[*].function.arguments.*";
+      const context = testContext();
+      const paths = new FieldPaths([declared], "response");
+      const list = JSON.stringify(["Ghent", "secret plan"]);
+      const scrubbed = argumentsOf(scrubJson(toolCall(list), "body", paths, context));
+      expect(scrubbed).toBe('["<scrubbed:content>","<scrubbed:content>"]');
+      expect(context.matchedUserContent).toEqual(new Set([declared]));
+    });
+
+    it("replaces all of it when the path expects a list but the string holds fields", () => {
+      const paths = new FieldPaths(
+        ["response.body.tool_calls[*].function.arguments[*]"],
+        "response",
+      );
+      const fields = JSON.stringify({ city: "Ghent" });
+      const scrubbed = argumentsOf(scrubJson(toolCall(fields), "body", paths, testContext()));
+      expect(scrubbed).toBe('{"field-1":"<scrubbed:content>"}');
+    });
+
+    it("replaces all of it when the other shape sits deeper inside the string", () => {
+      const declared = "response.body.tool_calls[*].function.arguments.trip.*";
+      const context = testContext();
+      const paths = new FieldPaths([declared], "response");
+      const args = JSON.stringify({ trip: ["Ghent", "secret plan"], days: 3 });
+      const scrubbed = argumentsOf(scrubJson(toolCall(args), "body", paths, context));
+      expect(scrubbed).toBe('{"trip":["<scrubbed:content>","<scrubbed:content>"],"days":3}');
+      expect(context.matchedUserContent).toEqual(new Set([declared]));
+    });
+
+    it("replaces a declared string that only looks like JSON", () => {
+      const paths = new FieldPaths(["response.body.tool_calls[*].function.arguments"], "response");
+      const scrubbed = scrubJson(toolCall("[draft] Ghent"), "body", paths, testContext());
+      expect(argumentsOf(scrubbed)).toBe("<scrubbed:content>");
     });
   });
 
