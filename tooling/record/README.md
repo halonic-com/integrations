@@ -111,6 +111,9 @@ replaced. A `userContent` path that matched nothing stops the recording:
 that's usually a typo, and it means content you meant to remove is still
 there. When a scenario really doesn't touch a path (a read-only scenario and
 `request.body.raw`), list the path in the scenario's `unusedUserContent`.
+With paths for both kinds of answer, a scenario that only gets JSON answers
+lists the event-stream paths there, and the other way round: a path of the
+other kind can't match anything in its bodies.
 The error paths the recorder adds by itself never stop a recording this way.
 
 ## When the recorder refuses to save
