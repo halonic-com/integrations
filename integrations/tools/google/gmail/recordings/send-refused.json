@@ -21,8 +21,8 @@
                 "displayName": "<scrubbed:content>",
                 "isDefault": true,
                 "isPrimary": true,
-                "replyToAddress": "",
-                "sendAsEmail": "sam@example.com",
+                "replyToAddress": "<scrubbed:content>",
+                "sendAsEmail": "<scrubbed:content>",
                 "signature": "<scrubbed:content>",
                 "treatAsAlias": false,
                 "verificationStatus": "accepted"
@@ -30,7 +30,7 @@
               {
                 "displayName": "<scrubbed:content>",
                 "isDefault": false,
-                "sendAsEmail": "finance@example.com",
+                "sendAsEmail": "<scrubbed:content>",
                 "signature": "<scrubbed:content>",
                 "treatAsAlias": true,
                 "verificationStatus": "accepted"
@@ -98,12 +98,27 @@
     },
     {
       "count": 1,
+      "path": "exchanges[0].response.body.sendAs[0].sendAsEmail",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].response.body.sendAs[0].displayName",
       "rule": "user-content"
     },
     {
       "count": 1,
+      "path": "exchanges[0].response.body.sendAs[0].replyToAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].response.body.sendAs[0].signature",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.sendAs[1].sendAsEmail",
       "rule": "user-content"
     },
     {
