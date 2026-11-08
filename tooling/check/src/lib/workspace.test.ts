@@ -1,8 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { readWorkspaceGlobs } from "./workspace.ts";
+import { expandWorkspaceGlob, readWorkspaceGlobs } from "./workspace.ts";
 
 function globsOf(yaml: string): string[] {
   const root = mkdtempSync(join(tmpdir(), "halonic-workspace-"));
@@ -39,5 +39,49 @@ describe("readWorkspaceGlobs", () => {
   it("throws when packages is missing or empty", () => {
     expect(() => globsOf("packages:\n\ncatalog: {}\n")).toThrow(/lists no folders/);
     expect(() => globsOf("catalog: {}\n")).toThrow(/is missing/);
+  });
+});
+
+describe("expandWorkspaceGlob", () => {
+  function expandIn(folders: readonly string[], glob: string): string[] {
+    const root = mkdtempSync(join(tmpdir(), "halonic-workspace-"));
+    try {
+      for (const folder of folders) {
+        mkdirSync(join(root, folder), { recursive: true });
+      }
+      return expandWorkspaceGlob(root, glob).sort();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+
+  const folders = [
+    "integrations/mcp/node_modules/zod",
+    "integrations/tools/google/gmail",
+    "integrations/tools/google/drive",
+    "integrations/tools/google/node_modules",
+    "integrations/tools/microsoft/outlook",
+  ];
+
+  it("lets each * stand for one folder name", () => {
+    expect(expandIn(folders, "integrations/tools/*/*")).toEqual([
+      "integrations/tools/google/drive",
+      "integrations/tools/google/gmail",
+      "integrations/tools/microsoft/outlook",
+    ]);
+  });
+
+  it("keeps a plain folder and finds nothing below a missing one", () => {
+    expect(expandIn(folders, "integrations/mcp")).toEqual(["integrations/mcp"]);
+    expect(expandIn(folders, "integrations/models/*")).toEqual([]);
+  });
+
+  it("never looks inside node_modules", () => {
+    expect(expandIn(folders, "integrations/*/*")).not.toContain("integrations/mcp/node_modules");
+  });
+
+  it("throws on ** and on * inside a folder name", () => {
+    expect(() => expandIn([], "integrations/**")).toThrow(/Unsupported workspace glob/);
+    expect(() => expandIn([], "integrations/llm-*")).toThrow(/Unsupported workspace glob/);
   });
 });
