@@ -70,12 +70,24 @@ export class FieldPaths {
    * into `value`: a field step meets something that isn't an object, or a
    * list step meets something that isn't a list. Whatever `value` holds
    * would then be missed by that path.
+   *
+   * The body itself is the exception, when another declared path can enter
+   * it. One service can answer as a JSON object or as an event stream (a
+   * list of events), as an MCP server does, so its sheet has paths for
+   * both: `response.body.result` and `response.body[*].data.result`. Each
+   * body takes one kind, and the other kind's paths have nothing to miss.
    */
   cannotEnter(path: ValuePath, value: JsonValue): string | undefined {
-    return this.reachingInside(path).find((pattern) => {
+    const reaching = this.reachingInside(path);
+    const blocked = reaching.filter((pattern) => {
       const next = pattern.steps[path.length];
       return next !== undefined && !canEnter(next, value);
-    })?.source;
+    });
+    const isBody = path.length === 0;
+    if (isBody && blocked.length < reaching.length) {
+      return undefined;
+    }
+    return blocked[0]?.source;
   }
 
   private reachingInside(path: ValuePath): readonly FieldPattern[] {
