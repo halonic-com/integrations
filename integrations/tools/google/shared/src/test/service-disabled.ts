@@ -105,3 +105,33 @@ export function recordedServiceDisabledBody(): string {
     },
   });
 }
+
+/**
+ * A good `ErrorInfo` next to an `errors` list with one odd entry: its
+ * `reason` is an object holding free text instead of a string. The odd
+ * entry must be skipped on its own, so the API still counts as switched off.
+ */
+export function oddEntryServiceDisabledBody(): string {
+  return JSON.stringify({
+    error: {
+      code: 403,
+      message: "Holiday plans for alex@example.com",
+      errors: [
+        { domain: "global", reason: "forbidden", message: "Holiday plans for alex@example.com" },
+        { domain: "global", reason: { message: "Holiday plans for alex@example.com" } },
+      ],
+      status: "PERMISSION_DENIED",
+      details: [
+        {
+          "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+          reason: "SERVICE_DISABLED",
+          domain: "googleapis.com",
+          metadata: {
+            service: "drive.googleapis.com",
+            consumer: `projects/${fakeProjectNumber}`,
+          },
+        },
+      ],
+    },
+  });
+}

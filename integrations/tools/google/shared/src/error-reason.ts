@@ -14,11 +14,24 @@ import { z } from "zod";
  * ```
  */
 
+/**
+ * One entry of Google's older `errors` list, of which only `reason` is read.
+ * An entry we can't read, such as one whose `reason` isn't a string, reads
+ * as having no reason, so it doesn't make us refuse the whole body.
+ */
+const errorEntrySchema = z.object({ reason: z.string().optional() }).catch({ reason: undefined });
+
+/**
+ * Google's older `errors` list, read entry by entry. A list that isn't a
+ * list reads as missing.
+ */
+export const errorEntriesSchema = z.array(errorEntrySchema).optional().catch(undefined);
+
 /** Only the fields we read. Every other field, `message` included, is ignored. */
 const errorBodySchema = z.object({
   error: z.object({
     status: z.string().optional(),
-    errors: z.array(z.object({ reason: z.string().optional() })).optional(),
+    errors: errorEntriesSchema,
   }),
 });
 

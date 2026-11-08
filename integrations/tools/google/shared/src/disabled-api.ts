@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseJsonOrUndefined } from "./error-reason.ts";
+import { errorEntriesSchema, parseJsonOrUndefined } from "./error-reason.ts";
 
 /**
  * Reads whether a Google `403` means the API is switched off in the user's
@@ -33,11 +33,15 @@ export interface DisabledApi {
 
 const errorInfoType = "type.googleapis.com/google.rpc.ErrorInfo";
 
-/** Only the fields we read. A detail of another type is skipped, not refused. */
+/**
+ * Only the fields we read. Each `errors` entry and each detail is read on
+ * its own: one we can't read, or a detail of another type, is skipped, so
+ * the others still count.
+ */
 const errorBodySchema = z.object({
   error: z.object({
-    errors: z.array(z.object({ reason: z.string().optional() })).optional(),
-    details: z.array(z.unknown()).optional(),
+    errors: errorEntriesSchema,
+    details: z.array(z.unknown()).optional().catch(undefined),
   }),
 });
 
