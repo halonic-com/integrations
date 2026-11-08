@@ -1,6 +1,6 @@
 import { htmlToText } from "./html-text.ts";
 import { headerValue, type Message } from "./message.ts";
-import { readContent } from "./message-content.ts";
+import { bodyText, readContent } from "./message-content.ts";
 
 /**
  * The body of an outgoing mail as Gmail on the web lays it out: the
@@ -83,28 +83,24 @@ export function attributionLine(original: Message): string {
     : `On ${utcDateTime(sent)}, ${from} wrote:`;
 }
 
-/** The inside of `<body>` when the HTML is a whole document, without its head or styles. */
-function htmlFragment(html: string): string {
-  const inner = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html)?.[1] ?? html;
-  return inner
-    .replace(/<head[\s\S]*?<\/head>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<!doctype[^>]*>|<\/?html[^>]*>/gi, "")
-    .trim();
-}
-
-/** Quotes the original below the mail: "> " lines in the plain body, a blockquote in the HTML one. */
+/**
+ * Quotes the original below the mail: "> " lines in the plain body, a
+ * blockquote in the HTML one.
+ *
+ * Both are made from the same text: the original's body as the reading
+ * tools show it. The original's own HTML is never copied in. Someone else
+ * wrote it, so it could close the blockquote and put words below it, under
+ * the user's name, that the plain part (which `gmail_get_draft` shows)
+ * doesn't have. The quote loses the original's formatting for that.
+ */
 export function withQuote(mail: MailBodies, original: Message): Required<MailBodies> {
-  const content = readContent(original.payload);
   const attribution = attributionLine(original);
-  const text = (content.text || htmlToText(content.html)).replace(/\r\n/g, "\n").trimEnd();
+  const text = bodyText(readContent(original.payload)).replace(/\r\n/g, "\n").trimEnd();
   const quotedText = text
     .split("\n")
     .map((line) => (line ? `> ${line}` : ">"))
     .join("\n");
-  const inner = content.html
-    ? htmlFragment(content.html)
-    : `<div dir="ltr">${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+  const inner = `<div dir="ltr">${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
   const quote =
     '<br><div class="gmail_quote">' +
     `<div dir="ltr" class="gmail_attr">${escapeHtml(attribution)}<br></div>` +

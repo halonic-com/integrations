@@ -90,6 +90,13 @@ something else:
   whenever there is some, and also catches `<style>` rules, unquoted
   `style` attributes, CSS comments, the `hidden` attribute and
   `mso-hide:all`. It's a heuristic: it warns, it never refuses.
+- **The quoted original of a reply is text, in both parts.** The old
+  connector copied the original's HTML into the reply. Someone else wrote
+  that HTML, so it could close the quote and put words below it, under the
+  user's name, that the plain part doesn't have. Now both parts quote the
+  same text, the body as the reading tools show it, so `gmail_get_draft`
+  shows exactly what recipients get. The quote loses the original's
+  formatting.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without

@@ -6,6 +6,8 @@ import {
   encodeAddress,
   encodeHeaderText,
   encodeRaw,
+  foldHeader,
+  headerLineLength,
   type OutgoingMail,
 } from "./mime.ts";
 
@@ -88,6 +90,40 @@ describe("buildMime", () => {
     expect(headerNames).not.toContain("Bcc");
     expect(mime).toContain("To: robin@example.com Bcc: someone@example.com\r\n");
   });
+
+  it("folds long headers, such as References in a long thread, and unfolds to the same values", () => {
+    const ids = Array.from({ length: 40 }, (_, n) => `<${n}.thread@mail.example.com>`);
+    const recipients = Array.from({ length: 30 }, (_, n) => `person${n}@example.com`);
+    const mime = buildMime({
+      ...mail,
+      to: recipients,
+      subject: "Grüße ".repeat(40).trim(),
+      inReplyTo: "<40.thread@mail.example.com>",
+      references: ids.join(" "),
+    });
+    const headers = mime.split("\r\n\r\n")[0] ?? "";
+    for (const line of headers.split("\r\n")) {
+      expect(line.length).toBeLessThanOrEqual(headerLineLength);
+    }
+    const unfolded = headers.replace(/\r\n /g, " ");
+    expect(unfolded).toContain(`\r\nReferences: ${ids.join(" ")} <40.thread@mail.example.com>\r\n`);
+    expect(unfolded).toContain(`To: ${recipients.join(", ")}\r\n`);
+  });
+});
+
+describe("foldHeader", () => {
+  it("leaves a short header alone, folds a long one at its only space, and can't fold one with none", () => {
+    expect(foldHeader("Subject: Thursday")).toBe("Subject: Thursday");
+    const long = `Subject: ${"x".repeat(100)}`;
+    expect(foldHeader(long)).toBe(`Subject: ${"x".repeat(100)}`.replace(" ", "\r\n "));
+    expect(foldHeader(`Subject:${"x".repeat(100)}`)).toBe(`Subject:${"x".repeat(100)}`);
+  });
+
+  it("never folds where a line would hold only spaces", () => {
+    const folded = foldHeader(`Subject: a${" ".repeat(90)}b c`);
+    expect(folded.split("\r\n").every((line) => line.trim() !== "")).toBe(true);
+    expect(folded.replace(/\r\n/g, "")).toBe(`Subject: a${" ".repeat(90)}b c`);
+  });
 });
 
 describe("encodeHeaderText", () => {
@@ -96,6 +132,18 @@ describe("encodeHeaderText", () => {
     expect(encodeHeaderText("Grüße")).toBe(
       `=?UTF-8?B?${Buffer.from("Grüße").toString("base64")}?=`,
     );
+  });
+
+  it("splits long text into words of at most 75 characters, never inside a character", () => {
+    const text = "Zoë 😀 ".repeat(30);
+    const words = encodeHeaderText(text).split(" ");
+    expect(words.length).toBeGreaterThan(1);
+    for (const word of words) expect(word.length).toBeLessThanOrEqual(75);
+    const decoded = words
+      .map((word) => Buffer.from(word.slice(10, -2), "base64").toString("utf8"))
+      .join("");
+    expect(decoded).toBe(text);
+    expect(decoded).not.toContain("�");
   });
 });
 

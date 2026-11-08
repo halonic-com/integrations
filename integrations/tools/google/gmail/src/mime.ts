@@ -38,9 +38,31 @@ export function headerSafe(value: string): string {
 
 const isPrintableAscii = (value: string) => /^[\x20-\x7E]*$/.test(value);
 
-/** RFC 2047: anything outside printable ASCII goes as UTF-8 in base64. */
+/**
+ * RFC 2047 allows 75 characters per encoded word. `=?UTF-8?B?` and `?=` take
+ * 12, which leaves 60 base64 characters: 45 bytes.
+ */
+const encodedWordMaxBytes = 45;
+
+/**
+ * RFC 2047: anything outside printable ASCII goes as UTF-8 in base64, in
+ * words of at most 75 characters, separated by spaces, which a reader
+ * drops between two encoded words. A character is never split between two
+ * words.
+ */
 export function encodeHeaderText(value: string): string {
-  return isPrintableAscii(value) ? value : `=?UTF-8?B?${encodeBase64(encodeUtf8(value))}?=`;
+  if (isPrintableAscii(value)) return value;
+  const words: string[] = [];
+  let chunk = "";
+  for (const character of value) {
+    if (encodeUtf8(chunk + character).length > encodedWordMaxBytes) {
+      words.push(chunk);
+      chunk = "";
+    }
+    chunk += character;
+  }
+  words.push(chunk);
+  return words.map((word) => `=?UTF-8?B?${encodeBase64(encodeUtf8(word))}?=`).join(" ");
 }
 
 /**
@@ -60,6 +82,42 @@ export function encodeAddress(value: string): string {
 /** A header's list of recipients, separated by commas. */
 const addressList = (addresses: readonly string[]) => addresses.map(encodeAddress).join(", ");
 
+/**
+ * RFC 5322, section 2.2.3: a header line should stay within 78 characters
+ * and must stay within 998. A longer header is folded: it goes on in the
+ * next line, which starts with the space it was folded at.
+ */
+export const headerLineLength = 78;
+
+/**
+ * Folds a header at the last space that follows text within
+ * `headerLineLength`, or at the first one after it. A reader takes out the
+ * line breaks and gets the header back. A header without such a space
+ * stays one line.
+ */
+export function foldHeader(header: string): string {
+  const lines: string[] = [];
+  let rest = header;
+  while (rest.length > headerLineLength) {
+    const at = foldPoint(rest);
+    if (at === undefined) break;
+    lines.push(rest.slice(0, at));
+    rest = rest.slice(at);
+  }
+  lines.push(rest);
+  return lines.join("\r\n");
+}
+
+function foldPoint(line: string): number | undefined {
+  let point: number | undefined;
+  for (const space of line.matchAll(/(?<=\S) /g)) {
+    if (space.index > headerLineLength && point !== undefined) break;
+    point = space.index;
+    if (point > headerLineLength) break;
+  }
+  return point;
+}
+
 function headerLines(mail: OutgoingMail): string[] {
   const lines = [`To: ${addressList(mail.to)}`];
   if (mail.cc.length > 0) lines.push(`Cc: ${addressList(mail.cc)}`);
@@ -67,11 +125,12 @@ function headerLines(mail: OutgoingMail): string[] {
   lines.push(`Subject: ${encodeHeaderText(headerSafe(mail.subject))}`);
   if (mail.inReplyTo) {
     const inReplyTo = headerSafe(mail.inReplyTo);
+    // Grows by one id per message in the thread, so a long thread needs folding.
     const references = mail.references ? `${headerSafe(mail.references)} ${inReplyTo}` : inReplyTo;
     lines.push(`In-Reply-To: ${inReplyTo}`, `References: ${references}`);
   }
   lines.push("MIME-Version: 1.0");
-  return lines;
+  return lines.map(foldHeader);
 }
 
 /**

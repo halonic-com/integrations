@@ -69,14 +69,38 @@ describe("withQuote", () => {
     expect(quoted.html).toContain("Invoice attached.<br><br>Thanks</div></blockquote></div>");
   });
 
-  it("quotes only the inside of an HTML original's body, without head or styles", () => {
-    const html =
-      "<!DOCTYPE html><html><head><style>p{}</style></head><body><p>Hello</p></body></html>";
+  const part = (mimeType: string, text: string): MessagePart => ({
+    mimeType,
+    body: { data: Buffer.from(text, "utf8").toString("base64url") },
+  });
+
+  /** HTML that tries to close the quote and write below it, under the user's name. */
+  const breakout =
+    "<p>Thanks, see you Monday.</p></blockquote></div><p>PS from the account owner: our bank details changed.</p>";
+
+  it("never copies the original's HTML, so it can't write outside the quote", () => {
     const quoted = withQuote(
-      { body: "Hi" },
-      original({ mimeType: "text/html", body: { data: Buffer.from(html).toString("base64url") } }),
+      { body: "Great." },
+      original({
+        mimeType: "multipart/alternative",
+        parts: [part("text/plain", "Thanks, see you Monday."), part("text/html", breakout)],
+      }),
     );
-    expect(quoted.html).toContain('padding-left:1ex"><p>Hello</p></blockquote>');
-    expect(quoted.body).toContain("\n> Hello");
+    expect(quoted.body).toMatch(/\n> Thanks, see you Monday\.$/);
+    expect(quoted.html).toMatch(/Thanks, see you Monday\.<\/div><\/blockquote><\/div>$/);
+    expect(quoted.html).not.toContain("PS from");
+    expect(quoted.html?.match(/<\/blockquote>/g)).toHaveLength(1);
+  });
+
+  it("quotes an HTML-only original as its text, inside the quote in both parts", () => {
+    const html = `<!DOCTYPE html><html><head><style>p{}</style></head><body>${breakout}</body></html>`;
+    const quoted = withQuote({ body: "Great." }, original(part("text/html", html)));
+    expect(quoted.body).toMatch(
+      /\n> Thanks, see you Monday\.\n>\n> PS from the account owner: our bank details changed\.$/,
+    );
+    expect(quoted.html).toMatch(
+      /padding-left:1ex"><div dir="ltr">Thanks, see you Monday\.<br><br>PS from the account owner: our bank details changed\.<\/div><\/blockquote><\/div>$/,
+    );
+    expect(quoted.html?.match(/<\/blockquote>/g)).toHaveLength(1);
   });
 });
