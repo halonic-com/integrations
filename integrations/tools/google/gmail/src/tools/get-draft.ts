@@ -6,7 +6,7 @@ import { bodyText, readContent } from "../message-content.ts";
 import { bodyOffsetSchema, gmailIdSchema, maxBodyCharsLimit } from "./arguments.ts";
 
 const getDraftArguments = z.strictObject({
-  draftId: gmailIdSchema,
+  draftId: gmailIdSchema.describe("The draft's id, from gmail_create_draft."),
   maxBodyChars: z
     .int()
     .min(500)

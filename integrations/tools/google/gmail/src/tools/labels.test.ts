@@ -60,6 +60,32 @@ describe("gmail_modify_labels", () => {
     expect(tool).toMatchObject({ risk: "write", untrusted: false });
   });
 
+  it.each(["TRASH", "SPAM", "trash"])(
+    "refuses to add %s before any request: no deleting, no spam reports",
+    async (labelId) => {
+      const { connection, replay } = connectToRecording("modify-labels");
+      await expect(
+        connection.callTool("gmail_modify_labels", {
+          messageIds: ["19a0c0ffee000001"],
+          addLabelIds: ["STARRED", labelId],
+        }),
+      ).rejects.toMatchObject({ code: "bad-arguments" });
+      expect(replay.sent).toHaveLength(0);
+    },
+  );
+
+  it("still removes TRASH and SPAM, which takes mail back out", async () => {
+    const { connection, replay } = connectToRecording("modify-labels");
+    // The recording is for other labels; only the request's body matters here.
+    await expect(
+      connection.callTool("gmail_modify_labels", {
+        messageIds: ["19a0c0ffee000001"],
+        removeLabelIds: ["TRASH", "SPAM"],
+      }),
+    ).resolves.toBeDefined();
+    expect(replay.sent[0]?.body).toMatchObject({ removeLabelIds: ["TRASH", "SPAM"] });
+  });
+
   it("refuses an empty list of messages before any request", async () => {
     const { connection, replay } = connectToRecording("modify-labels");
     await expect(
