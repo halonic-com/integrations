@@ -66,3 +66,23 @@ repeated. Each tool call is one request and each tool list at most ten,
 plus the two of the handshake on the first call. A cancelled call tells
 the server with `notifications/cancelled`. `close` ends the session on the
 server.
+
+## Limits
+
+| What                   | Limit                                               |
+| ---------------------- | --------------------------------------------------- |
+| tools per server       | 200, in at most 10 pages; more is refused, not cut  |
+| a tool's description   | 2,000 characters                                    |
+| a tool's argument JSON | 20,000 characters; a larger one is refused, not cut |
+| a tool's result        | 50,000 characters, about 12,000 tokens              |
+
+Text that is cut ends with `…`, never in the middle of a character. A
+refused list names the tool, never the server's text.
+
+## Recordings
+
+There is no test server yet, so the recordings in `recordings/` are
+invented traffic with a small made-up notes server, fed through the
+recorder's `prepareRecording` with this sheet's `userContent` paths. They
+show listing tools, a call answered as an event stream, a tool error, a
+server that changes its tools, a missing key and a cancelled call.
