@@ -15,12 +15,22 @@ import { gmailIdSchema } from "./tools/arguments.ts";
 const addressSchema = z.string().min(1).max(400);
 
 export const composeArguments = z.strictObject({
+  // At least one: a mail with only Bcc recipients would go out with an empty To.
   to: z
     .array(addressSchema)
+    .min(1)
     .max(50)
     .describe('Recipient addresses, e.g. "Name <someone@example.com>".'),
-  cc: z.array(addressSchema).max(50).default([]),
-  bcc: z.array(addressSchema).max(50).default([]),
+  cc: z
+    .array(addressSchema)
+    .max(50)
+    .default([])
+    .describe("Copy recipients; every recipient sees them."),
+  bcc: z
+    .array(addressSchema)
+    .max(50)
+    .default([])
+    .describe("Hidden recipients: they get the mail, and the other recipients don't see them."),
   // 998 characters is the longest line RFC 5322 allows.
   subject: z
     .string()

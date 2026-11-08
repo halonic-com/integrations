@@ -21,11 +21,11 @@
               "errors": [
                 {
                   "domain": "global",
-                  "message": "Requested entity was not found.",
+                  "message": "<scrubbed:content>",
                   "reason": "notFound"
                 }
               ],
-              "message": "Requested entity was not found.",
+              "message": "<scrubbed:content>",
               "status": "NOT_FOUND"
             }
           }
@@ -46,6 +46,16 @@
       "count": 1,
       "path": "exchanges[0].request.headers.authorization",
       "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.errors[0].message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
     }
   ]
 }

@@ -50,7 +50,9 @@ function fakeGmail(answers: Record<string, { status: number; body: unknown }>) {
 const compose = (args: Record<string, unknown>) => composeArguments.parse(args);
 const mimeOf = (raw: string) => Buffer.from(raw, "base64url").toString("utf8");
 const plainBodyOf = (mime: string) =>
-  Buffer.from(/base64\r\n\r\n([A-Za-z0-9+/=]+)/.exec(mime)?.[1] ?? "", "base64").toString("utf8");
+  Buffer.from(/base64\r\n\r\n([A-Za-z0-9+/=\r\n]+)/.exec(mime)?.[1] ?? "", "base64").toString(
+    "utf8",
+  );
 
 describe("composeMail", () => {
   it("appends the primary address's signature to a new mail, without threadId", async () => {
@@ -80,7 +82,7 @@ describe("composeMail", () => {
       "In-Reply-To: <2@mail.example.com>\r\nReferences: <1@mail.example.com> <2@mail.example.com>\r\n",
     );
     expect(plainBodyOf(mime)).toBe(
-      "Paid.\n\nSam\n\nOn 2 Nov 2026, 10:00, Billing <billing@example.com> wrote:\n> Invoice attached.",
+      "Paid.\n\nSam\n\nOn 2026-11-02 09:00 UTC, Billing <billing@example.com> wrote:\n> Invoice attached.",
     );
   });
 
@@ -116,6 +118,12 @@ describe("composeMail", () => {
     const headers = mime.split("\r\n\r\n")[0] ?? "";
     expect(headers.match(/@example\.com/g)).toHaveLength(2);
     expect(headers).not.toMatch(/^(From|Cc):/m);
+  });
+
+  it("needs at least one recipient in to", () => {
+    expect(composeArguments.safeParse({ to: [], bcc: ["b@example.com"], body: "x" }).success).toBe(
+      false,
+    );
   });
 
   it("stops before anything is saved or sent when the signature can't be read", async () => {
