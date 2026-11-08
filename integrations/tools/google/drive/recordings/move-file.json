@@ -1,0 +1,94 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-notes-02?fields=id%2Cparents&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-notes-02",
+            "parents": [
+              "folder-projects-01"
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "name": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "method": "PATCH",
+        "url": "https://www.googleapis.com/drive/v3/files/file-notes-02?addParents=folder-archive-08&removeParents=folder-projects-01&fields=id%2Cname%2CmimeType%2Cparents%2CwebViewLink&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-notes-02",
+            "mimeType": "text/plain",
+            "name": "<scrubbed:content>",
+            "parents": [
+              "folder-archive-08"
+            ],
+            "webViewLink": "https://drive.google.com/file/d/file-notes-02/view"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "move-file",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.name",
+      "rule": "user-content"
+    }
+  ]
+}

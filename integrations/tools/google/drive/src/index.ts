@@ -2,16 +2,15 @@ import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { DriveClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { createFileTool } from "./tools/create-file.ts";
+import { createFolderTool } from "./tools/create-folder.ts";
 import { getFileTool } from "./tools/get-file.ts";
+import { moveFileTool } from "./tools/move-file.ts";
 import { readFileTool } from "./tools/read-file.ts";
 import { searchTool } from "./tools/search.ts";
 import { treeTool } from "./tools/tree.ts";
 import { updateFileTool } from "./tools/update-file.ts";
 
-/**
- * The same tools, in the same order, as in integration.yaml. The rest of
- * the sheet's tools follow in the next pull requests.
- */
+/** The same tools, in the same order, as in integration.yaml. */
 const tools: readonly ToolImplementation<DriveClient>[] = [
   treeTool,
   searchTool,
@@ -19,6 +18,8 @@ const tools: readonly ToolImplementation<DriveClient>[] = [
   readFileTool,
   createFileTool,
   updateFileTool,
+  createFolderTool,
+  moveFileTool,
 ];
 
 export const drive: Integration = {

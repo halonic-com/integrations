@@ -6,7 +6,13 @@ import {
   withNextPageToken,
 } from "@halonicjs/integration-tool-google-shared";
 import { z } from "zod";
-import { type DriveFile, driveFileSchema, fileFields, listedFileFields } from "./file.ts";
+import {
+  type DriveFile,
+  driveFileSchema,
+  fileFields,
+  folderType,
+  listedFileFields,
+} from "./file.ts";
 import type { IntegrationHost } from "./kit.ts";
 import type { NewFileMetadata } from "./new-file-metadata.ts";
 import { multipartUploadBody, type UploadContent, type UploadMetadata } from "./upload-body.ts";
@@ -115,6 +121,63 @@ export class DriveClient {
     return await this.#upload("PATCH", url, {}, content, signal);
   }
 
+  /**
+   * One request: creates a folder at the top of My Drive or inside
+   * `parentId`. Never retried, so a timeout can't leave two folders.
+   */
+  async createFolder(
+    name: string,
+    parentId: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<DriveFile> {
+    const url = googleUrl(googleBaseUrls.drive, ["files"], {
+      fields: writtenFileFields,
+      supportsAllDrives: true,
+    });
+    const metadata =
+      parentId === undefined
+        ? { name, mimeType: folderType }
+        : { name, mimeType: folderType, parents: [parentId] };
+    return await this.#google.postJson(url, metadata, driveFileSchema, signal);
+  }
+
+  /**
+   * One read, retried where the Google library allows: the folders a file
+   * is in now, which a move has to name to take it out of them.
+   */
+  async getParents(fileId: string, signal?: AbortSignal): Promise<readonly string[]> {
+    const url = googleUrl(googleBaseUrls.drive, ["files", fileId], {
+      fields: "id,parents",
+      supportsAllDrives: true,
+    });
+    const file = await this.#google.getJson(url, driveFileSchema, signal);
+    return file.parents ?? [];
+  }
+
+  /**
+   * One request, never retried: moves a file out of `fromParents` into
+   * `toFolderId`, and renames it when `newName` is given. Drive's
+   * `addParents` and `removeParents` do the move in one `PATCH`.
+   * https://developers.google.com/workspace/drive/api/guides/folder#move-files
+   */
+  async moveFile(move: FileMove, signal?: AbortSignal): Promise<DriveFile> {
+    const url = googleUrl(googleBaseUrls.drive, ["files", move.fileId], {
+      addParents: move.toFolderId,
+      // A file shared with the account may be in none of its folders.
+      removeParents: move.fromParents.length > 0 ? move.fromParents.join(",") : undefined,
+      fields: writtenFileFields,
+      supportsAllDrives: true,
+    });
+    const request = {
+      method: "PATCH",
+      url,
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify(move.newName === undefined ? {} : { name: move.newName }),
+      signal,
+    } as const;
+    return await this.#google.sendJson(request, driveFileSchema);
+  }
+
   async #upload(
     method: "POST" | "PATCH",
     url: string,
@@ -144,3 +207,12 @@ const uploadQuery = {
   fields: writtenFileFields,
   supportsAllDrives: true,
 } as const;
+
+/** One move, as `drive_move_file` asks for it. */
+export interface FileMove {
+  readonly fileId: string;
+  /** The folders the file is in now, from {@link DriveClient.getParents}. */
+  readonly fromParents: readonly string[];
+  readonly toFolderId: string;
+  readonly newName?: string | undefined;
+}
