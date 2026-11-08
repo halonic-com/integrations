@@ -96,6 +96,17 @@ export function integration(
   };
 }
 
+/**
+ * An empty integration in a group folder, such as `tools/google/gmail`.
+ * The test gives the name, so it checks the naming rule instead of copying it.
+ */
+export function groupedIntegration(folders: string, name: string): FixturePackage {
+  return {
+    directory: `integrations/${folders}`,
+    manifest: manifestFor(`@halonicjs/integration-${name}`, "integrations"),
+  };
+}
+
 /** An empty tooling package. */
 export function tool(name: string, extra: Record<string, unknown> = {}): FixturePackage {
   return {

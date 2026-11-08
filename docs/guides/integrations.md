@@ -121,9 +121,9 @@ connects many integrations, and workspaces refer to them in their `allow`
 and `approve` lists. **Never rename a tool that has shipped.** Add a new
 one and keep the old one working until a release note retires it.
 
-> **Not settled yet:** `pnpm check` still expects one folder level,
-> `integrations/<name>`. The change that teaches it the grouped layout and
-> these names follows in its own pull request.
+`pnpm check` derives these names from the folder and fails when a package
+uses another name, sits in a group folder itself, or is missing a folder
+level (pnpm wouldn't see it).
 
 ### What is in an integration's folder
 

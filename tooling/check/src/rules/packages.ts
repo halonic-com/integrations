@@ -6,15 +6,19 @@ import { Report } from "../lib/problems.ts";
 import type { WorkspacePackage } from "../lib/workspace.ts";
 
 const guide = "See docs/guides/checks.md.";
+const places =
+  "integrations/<name>, integrations/models/<provider>, integrations/knowledge/<source>, integrations/tools/<provider>/<service> and tooling/<name>";
 
 /**
  * Checks each package's `package.json`: its name follows from its folder,
  * it is private unless listed as published, it declares its layer and
  * owner, it exposes only public entry points, and every internal
- * dependency uses `workspace:*` (plan 3.2, 4.1, 6.2).
+ * dependency uses `workspace:*` (plan 3.2, 4.1, 6.2). Also finds packages
+ * under `integrations/` that pnpm doesn't see.
  */
 export function checkPackages(context: CheckContext): Report {
   const report = new Report("packages");
+  checkUnseenPackages(context, report);
   for (const pkg of context.packages) {
     checkIdentity(context, pkg, report);
     checkInternalVersions(context, pkg, report);
@@ -30,14 +34,11 @@ function checkIdentity(context: CheckContext, pkg: WorkspacePackage, report: Rep
   const { name, halonic } = pkg.manifest;
   const place = context.placeOf(pkg);
   if (place === undefined) {
-    report.error(
-      file,
-      `Packages live only in integrations/<name> and tooling/<name>. Move this one. ${guide}`,
-    );
+    report.error(file, `Packages live only in ${places}. Move this one. ${guide}`);
     return;
   }
-  const folder = pkg.directory.split("/").at(-1) ?? "";
-  if (pkg.directory !== "." && !folderNamePattern.test(folder)) {
+  const folders = pkg.directory === "." ? [] : pkg.directory.split("/");
+  for (const folder of folders.filter((folder) => !folderNamePattern.test(folder))) {
     report.error(file, `Folder name "${folder}" must be kebab-case, such as "llm-openai".`);
   }
   if (name !== place.expectedName) {
@@ -64,6 +65,24 @@ function checkIdentity(context: CheckContext, pkg: WorkspacePackage, report: Rep
       file,
       `Name the owner who reviews changes: "halonic": { "owner": "<agent>" } (plan 6.2).`,
     );
+  }
+}
+
+/**
+ * A `package.json` under `integrations/` that matches no workspace glob is
+ * invisible to pnpm, so nothing would build, test or check it. That happens
+ * when a folder level is missing or extra, such as `integrations/google/gmail`
+ * instead of `integrations/tools/google/gmail`.
+ */
+function checkUnseenPackages(context: CheckContext, report: Report): void {
+  const seen = new Set(context.packages.map((pkg) => pkg.manifestPath));
+  for (const file of context.files) {
+    if (file.startsWith("integrations/") && file.endsWith("/package.json") && !seen.has(file)) {
+      report.error(
+        file,
+        `pnpm doesn't see this package, because its folder matches no line under "packages:" in pnpm-workspace.yaml. Move it to one of ${places}. ${guide}`,
+      );
+    }
   }
 }
 

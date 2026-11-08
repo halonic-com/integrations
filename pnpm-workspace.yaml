@@ -2,8 +2,13 @@
 # settings may live in .npmrc). Unknown settings are errors, so typos fail.
 # The settings below match halonic-com/halonic; keep them in step with it.
 
+# Integrations are grouped by kind (docs/guides/integrations.md, section 2).
+# Keep these in step with integrationGroups in tooling/check/src/lib/layout.ts.
 packages:
   - integrations/*
+  - integrations/models/*
+  - integrations/knowledge/*
+  - integrations/tools/*/*
   - tooling/*
 
 # One version line per shared dependency. Packages use "catalog:" and the
