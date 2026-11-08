@@ -1,3 +1,5 @@
+import type { ByteStream } from "@halonicjs/integration-shared";
+
 /**
  * The interface types this integration is built against, kept here until
  * `@halonicjs/integration-kit` publishes them.
@@ -5,8 +7,10 @@
  * Copied from `packages/core/ports/src` in halonic-com/halonic: `chat.ts`
  * and `llm-provider.ts` on `liam/HAL-112-02-ports` (97fbe6c), and
  * `integration.ts` on `liam/HAL-135-01-port` (c27f6f0). `ProviderReplay` is
- * from halonic-com/halonic#42, which adds it to the port. Only the parts
- * this integration uses are here. The same copy as model-anthropic's.
+ * from halonic-com/halonic#42, which adds it to the port, and
+ * `ChatStreamEvent` and `LlmProvider.stream` from halonic-com/halonic#232.
+ * Only the parts this integration uses are here. The same copy as
+ * model-anthropic's.
  *
  * To swap: delete this file and import the same names from
  * `@halonicjs/integration-kit`. Two names change: `HttpResponse` becomes the
@@ -85,6 +89,18 @@ export interface ChatResponse {
   finishReason: "stop" | "tool_calls" | "length" | "error" | "other";
 }
 
+/**
+ * One piece of a streamed answer. The stream ends with exactly one `done`,
+ * whose `response` is what `chat()` would have returned. The `text` deltas
+ * joined equal its `content`; the `arguments` pieces of each tool call
+ * joined parse to that call's `arguments`. `index` counts tool calls, from 0.
+ */
+export type ChatStreamEvent =
+  | { type: "text"; delta: string }
+  | { type: "reasoning"; delta: string }
+  | { type: "tool-call"; index: number; id?: string; name?: string; arguments: string }
+  | { type: "done"; response: ChatResponse };
+
 /** What a provider's models can do. */
 export interface LlmCapabilities {
   tools: boolean;
@@ -99,6 +115,8 @@ export interface LlmProvider {
   readonly type: string;
   readonly capabilities: LlmCapabilities;
   chat(request: ChatRequest): Promise<ChatResponse>;
+  /** Present only when `capabilities.streaming` is true. */
+  stream?(request: ChatRequest): AsyncIterable<ChatStreamEvent>;
 }
 
 /** A provider as the workspace's YAML configures it. */
@@ -136,6 +154,9 @@ export interface IntegrationRequestInit {
 export interface HttpResponse {
   readonly ok: boolean;
   readonly status: number;
+  readonly headers: { get(name: string): string | null };
+  /** The body as a stream of bytes, for a streamed answer; `null` when there is none. */
+  readonly body: ByteStream | null;
   json(): Promise<unknown>;
 }
 

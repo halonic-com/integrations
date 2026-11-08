@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { codeForStatus, errorForResponse } from "./errors.ts";
+import { codeForStatus, errorForResponse, errorForStreamChunk } from "./errors.ts";
 import type { HttpResponse } from "./kit.ts";
 
+const noHeaders = { get: () => null };
+
 function response(status: number, body: unknown): HttpResponse {
-  return { ok: false, status, json: async () => body };
+  return { ok: false, status, headers: noHeaders, body: null, json: async () => body };
 }
 
 describe("codeForStatus", () => {
@@ -93,6 +95,8 @@ describe("errorForResponse", () => {
     const notJson: HttpResponse = {
       ok: false,
       status: 502,
+      headers: noHeaders,
+      body: null,
       json: async () => {
         throw new SyntaxError("Unexpected token '<', \"<html>\" is not valid JSON");
       },
@@ -100,5 +104,47 @@ describe("errorForResponse", () => {
     const error = await errorForResponse(notJson);
     expect(error).toMatchObject({ code: "unavailable", name: "GeminiError" });
     expect(error.message).not.toContain("html");
+  });
+});
+
+describe("errorForStreamChunk", () => {
+  it("maps by Google's status name first, never repeating its message", () => {
+    const error = errorForStreamChunk({
+      error: { code: 500, message: "my private text", status: "INVALID_ARGUMENT" },
+    });
+    expect(error.code).toBe("bad-arguments");
+    expect(error.message).toBe("Gemini refused the request as invalid (INVALID_ARGUMENT).");
+  });
+
+  it("maps a refused key by its reason, before the status name", () => {
+    const error = errorForStreamChunk({
+      error: {
+        code: 400,
+        status: "INVALID_ARGUMENT",
+        details: [{ reason: "API_KEY_EXPIRED" }],
+      },
+    });
+    expect(error.code).toBe("not-signed-in");
+  });
+
+  it("falls back to the HTTP status in code when the status name isn't known", () => {
+    const error = errorForStreamChunk({ error: { code: 429, status: "SOME_NEW_STATUS" } });
+    expect(error.code).toBe("rate-limited");
+    expect(error.message).toContain("(SOME_NEW_STATUS)");
+  });
+
+  it("maps an overloaded model to unavailable", () => {
+    const error = errorForStreamChunk({ error: { code: 503, status: "UNAVAILABLE" } });
+    expect(error).toMatchObject({ code: "unavailable", name: "GeminiError" });
+  });
+
+  it("is unavailable when neither the status name nor the code is known", () => {
+    expect(errorForStreamChunk({ error: {} }).code).toBe("unavailable");
+  });
+
+  it("refuses an error that isn't Google's error shape", () => {
+    expect(errorForStreamChunk({ error: "my private text" })).toMatchObject({
+      code: "unexpected-response",
+    });
   });
 });
