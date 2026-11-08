@@ -51,8 +51,7 @@ export class GoogleApi {
     schema: Schema,
     signal?: AbortSignal,
   ): Promise<z.infer<Schema>> {
-    const response = await this.send({ method: "GET", url, headers: acceptJson, signal });
-    return await this.#readJson(response, url, schema);
+    return await this.sendJson({ method: "GET", url, signal }, schema);
   }
 
   /** Reads a body as text with a `GET`, such as a Drive download or export. */
@@ -71,14 +70,31 @@ export class GoogleApi {
     schema: Schema,
     signal?: AbortSignal,
   ): Promise<z.infer<Schema>> {
-    const response = await this.send({
+    const request: GoogleRequest = {
       method: "POST",
       url,
-      headers: { ...acceptJson, "content-type": "application/json; charset=utf-8" },
+      headers: { "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify(body),
       signal,
+    };
+    return await this.sendJson(request, schema);
+  }
+
+  /**
+   * Sends any request and reads the JSON answer, checked against `schema`.
+   * For the requests the other methods don't cover, such as a `PATCH` or
+   * Drive's multipart upload. Retried only where {@link send} would retry
+   * it.
+   */
+  async sendJson<Schema extends z.ZodType>(
+    request: GoogleRequest,
+    schema: Schema,
+  ): Promise<z.infer<Schema>> {
+    const response = await this.send({
+      ...request,
+      headers: { ...acceptJson, ...request.headers },
     });
-    return await this.#readJson(response, url, schema);
+    return await this.#readJson(response, request.url, schema);
   }
 
   /** Sends a `DELETE`. Never retried. Google answers it with an empty body. */

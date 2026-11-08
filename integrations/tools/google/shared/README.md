@@ -23,8 +23,10 @@ const url = googleUrl(googleBaseUrls.gmail, ["users", "me", "messages"], { q: qu
 const page = await google.getJson(url, withNextPageToken(messageListSchema), signal);
 ```
 
-`getJson`, `getText`, `postJson` and `delete` cover most calls; `send`
-takes any method. Each call sends at most three requests.
+`getJson`, `getText`, `postJson` and `delete` cover most calls. `sendJson`
+takes any request and reads its JSON answer, such as a `PATCH` or Drive's
+multipart upload; `send` takes any request and returns the response. Each
+call sends at most three requests.
 
 ## Retries
 

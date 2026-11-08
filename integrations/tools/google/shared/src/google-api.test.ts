@@ -7,6 +7,7 @@ import { fakeWait } from "./test/fake-wait.ts";
 
 const listUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Atest";
 const sendUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
+const uploadUrl = "https://www.googleapis.com/upload/drive/v3/files/f1?uploadType=multipart";
 const messageSchema = z.object({ id: z.string() });
 
 /** A response the fake client hands back. */
@@ -90,6 +91,33 @@ describe("GoogleApi requests", () => {
       body: '{"raw":"UmF3"}',
       headers: { "content-type": "application/json; charset=utf-8" },
     });
+  });
+
+  it("sends any request with its own headers and body, and reads the JSON answer", async () => {
+    const http = new FakeHttp(response(200, '{"id":"f1","name":"a.txt"}'));
+    const { google } = setUp(http);
+    const file = await google.sendJson(
+      {
+        method: "PATCH",
+        url: uploadUrl,
+        headers: { "content-type": "multipart/related; boundary=b" },
+        body: "--b--",
+      },
+      messageSchema,
+    );
+    expect(file).toEqual({ id: "f1" });
+    expect(http.requests[0]?.init).toMatchObject({
+      method: "PATCH",
+      auth: { secret: "google-account", as: "bearer" },
+      headers: { accept: "application/json", "content-type": "multipart/related; boundary=b" },
+      body: "--b--",
+    });
+  });
+
+  it("checks the answer of sendJson like any other", async () => {
+    const { google } = setUp(new FakeHttp(response(200, '{"name":"alex@example.com"}')));
+    const call = google.sendJson({ method: "PATCH", url: uploadUrl, body: "{}" }, messageSchema);
+    expect(await codeOf(call)).toBe("unexpected-response");
   });
 
   it.each([
@@ -187,6 +215,17 @@ describe("GoogleApi retries", () => {
     const http = new FakeHttp(response(503));
     const { google } = setUp(http);
     expect(await codeOf(google.postJson(sendUrl, {}, messageSchema))).toBe("unavailable");
+    expect(http.requests).toHaveLength(1);
+  });
+
+  it("never retries a multipart upload sent with sendJson", async () => {
+    const http = new FakeHttp(response(503));
+    const { google } = setUp(http);
+    const upload = google.sendJson(
+      { method: "POST", url: uploadUrl, body: "--b--" },
+      messageSchema,
+    );
+    expect(await codeOf(upload)).toBe("unavailable");
     expect(http.requests).toHaveLength(1);
   });
 
