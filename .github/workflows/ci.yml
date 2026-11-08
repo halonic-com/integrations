@@ -1,0 +1,179 @@
+# Checks on every pull request (plan 10.2), the same as halonic-com/halonic
+# without the Studio, desktop, docs and scaffold jobs. The only required
+# check is `ci-ok`: it always runs, waits for every other job and fails if
+# any of them failed.
+
+name: CI
+
+on:
+  # "edited" re-runs the terms guard and the title check when a title or
+  # body changes.
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  merge_group:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TURBO_TELEMETRY_DISABLED: "1"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  fast:
+    name: Fast gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+      # Reads the title from $GITHUB_EVENT_PATH: an `env:` block is printed in the log.
+      - name: Pull request title
+        if: github.event_name == 'pull_request'
+        run: pnpm check:pr-title
+      - name: Repo checks (layers, dependencies, names, file size, lockfile, paths)
+        run: pnpm check
+      - name: Licences
+        run: pnpm check:licences
+      - name: Formatting
+        run: pnpm exec biome ci --linter-enabled=false .
+      # High and critical advisories in shipped dependencies fail; dev
+      # tooling findings are reported by the daily scheduled run (plan 10.2).
+      - name: Dependency audit (shipped code)
+        run: pnpm audit --prod --audit-level high
+
+  terms:
+    # Runs no third-party code: only the repo's own script on Node, so the
+    # secret is never near a dependency. Prints locations, never a term.
+    # The branch, title and body are read from $GITHUB_EVENT_PATH, never
+    # passed in `env:`, which GitHub prints in the public job log.
+    # On a pull request the script and its list of allowed phrases come from
+    # the base commit, so the change under test can't weaken its own check.
+    # Until the HALONIC_DENY_TERMS secret exists it passes with a warning,
+    # unless the repository variable HALONIC_TERMS_ENFORCED is "true"; then a
+    # missing secret fails. Pull requests from forks and from Dependabot
+    # never get the secret, so they are always allowed to skip.
+    name: Personal-terms guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+          package-manager-cache: false
+      - name: Scan the change
+        env:
+          HALONIC_DENY_TERMS: ${{ secrets.HALONIC_DENY_TERMS }}
+          HALONIC_TERMS_REQUIRED: ${{ vars.HALONIC_TERMS_ENFORCED == 'true' && github.event.pull_request.head.repo.fork != true && github.event.pull_request.user.login != 'dependabot[bot]' && 'true' || 'false' }}
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          if [ "$EVENT" = "push" ]; then
+            node tooling/check/src/cli/terms.ts
+          else
+            git worktree add --detach "$RUNNER_TEMP/base" "$BASE"
+            node "$RUNNER_TEMP/base/tooling/check/src/cli/terms.ts" \
+              --allowed-phrases "$RUNNER_TEMP/base/tooling/check/terms-allowed-phrases.txt" \
+              --range "$BASE..$HEAD"
+          fi
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # Pull requests and merge queue scan their own commits; pushes to main
+      # scan the whole history.
+      - name: Scan commits
+        uses: $/.github/actions/gitleaks
+        with:
+          log-opts: ${{ github.event_name != 'push' && format('{0}..{1}', github.event.pull_request.base.sha || github.event.merge_group.base_sha, github.event.pull_request.head.sha || github.event.merge_group.head_sha) || '' }}
+
+  zizmor:
+    name: Workflow lint (zizmor)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      ZIZMOR_VERSION: 1.32.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: pipx run "zizmor==${ZIZMOR_VERSION}" --format=github --min-severity=low .github/
+
+  build:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      TURBO_CACHE_DIR: ${{ github.workspace }}/../turbo-cache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+      # Every task runs; unchanged packages are cache hits (plan 6.4). The
+      # cache is GitHub's own, scoped per branch, so a pull request can read
+      # main's cache but never write to it.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.TURBO_CACHE_DIR }}
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+      - name: Run every task through the cache
+        run: pnpm exec turbo run typecheck lint test build --continue --output-logs=new-only --summarize
+      - name: Task timings
+        if: always()
+        run: |
+          summary=$(ls -t .turbo/runs/*.json 2>/dev/null | head -1)
+          [ -n "$summary" ] || exit 0
+          jq -r '"Tasks: \(.execution.attempted), cached: \(.execution.cached), failed: \(.execution.failed), \((.execution.endTime - .execution.startTime) / 1000)s"' "$summary" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [fast, terms, gitleaks, zizmor, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          failed=$(echo "$NEEDS" | jq -r '[to_entries[] | select(.value.result != "success" and .value.result != "skipped")] | length')
+          if [ "$failed" != "0" ]; then
+            echo "::error::$failed required job(s) failed or were cancelled."
+            exit 1
+          fi

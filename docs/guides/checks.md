@@ -67,3 +67,21 @@ where a term is, never the term, and withholds path parts that contain
 one. Harmless technical phrases that contain a term go in
 `tooling/check/terms-allowed-phrases.txt`. Until the secret is set, the
 guard passes with a warning that says nothing was scanned.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request, in the merge queue
+and on `main`. The only required check is `ci-ok`: it always runs, waits
+for every other job and fails if any failed.
+
+| Job                          | What                                                                                                             |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Fast gates                   | pull request title, `pnpm check`, licences, formatting, `pnpm audit` for shipped dependencies                    |
+| Personal-terms guard         | the guard over the change; runs only our own script, no dependencies, so the secret never meets third-party code |
+| Secret scan                  | `gitleaks` over the pull request's commits, from a digest-pinned image                                           |
+| Workflow lint                | `zizmor` over `.github/`                                                                                         |
+| Typecheck, lint, test, build | every task through Turbo; unchanged packages are cache hits                                                      |
+
+`.github/workflows/scheduled.yml` runs the advisories, the lockfile and
+the licence check daily, and the full terms and secret scan over the whole
+history weekly. A failure opens an issue.

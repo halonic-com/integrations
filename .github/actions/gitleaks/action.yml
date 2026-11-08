@@ -1,0 +1,32 @@
+name: gitleaks
+description: Scans the checked-out history with the gitleaks image pinned in the Dockerfile next to this file. Fails on a leak, and also when no commits were scanned.
+inputs:
+  log-opts:
+    description: git log options, for example BASE..HEAD. Empty scans the whole history.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Scan commits
+      shell: bash
+      env:
+        LOG_OPTS: ${{ inputs.log-opts }}
+      # The container runs as root but the checkout belongs to the runner user.
+      # Without safe.directory git refuses the repo, and gitleaks scans 0 commits
+      # and still reports no leaks, so the commit count is checked as well.
+      run: |
+        image=$(sed -n 's/^FROM //p' "$GITHUB_ACTION_PATH/Dockerfile")
+        args=(git --redact --no-banner --exit-code 1)
+        if [ -n "$LOG_OPTS" ]; then
+          args+=("--log-opts=$LOG_OPTS")
+        fi
+        log="$RUNNER_TEMP/gitleaks.log"
+        docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo \
+          -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo \
+          "$image" "${args[@]}" . 2>&1 | tee "$log"
+        scanned=$(grep -oE '[0-9]+ commits scanned' "$log" | grep -oE '^[0-9]+' || true)
+        if ! [[ "$scanned" =~ ^[1-9][0-9]*$ ]]; then
+          echo "::error title=gitleaks::No commits were scanned, so the scan proves nothing. See the log above."
+          exit 1
+        fi
