@@ -48,3 +48,11 @@ export interface HttpClient {
    */
   fetch(url: string, init?: HttpRequestInit): Promise<HttpResponse>;
 }
+
+/**
+ * The part of the kit's `IntegrationHost` this library uses, as
+ * `Pick<IntegrationHost, "http">`. Tests pass `{ http }`.
+ */
+export interface HttpHost {
+  readonly http: HttpClient;
+}
