@@ -8,6 +8,12 @@ export {
   type RecordingFile,
   recordingFileSchema,
 } from "./format.ts";
+export {
+  findLeaks,
+  type Leak,
+  type LeakKind,
+  type TextLeakKind,
+} from "./safety-net/find-leaks.ts";
 export { RecordingRefused } from "./scrub/context.ts";
 export type {
   CapturedExchange,
