@@ -1,0 +1,65 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "contentType": "multipart/related",
+          "kind": "text",
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Room list\",\"parents\":[\"folder-missing-06\"],\"mimeType\":\"text/plain\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain\r\n\r\nRoom A\nRoom B\r\n--halonic-upload-boundary--"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "multipart/related; boundary=halonic-upload-boundary"
+        },
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id%2Cname%2CmimeType%2Cparents%2CwebViewLink&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "errors": [
+                {
+                  "domain": "global",
+                  "location": "fileId",
+                  "locationType": "parameter",
+                  "message": "<scrubbed:content>",
+                  "reason": "notFound"
+                }
+              ],
+              "message": "<scrubbed:content>"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 404
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "create-file-folder-not-found",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.errors[0].message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
+    }
+  ]
+}

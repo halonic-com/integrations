@@ -1,0 +1,54 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "contentType": "multipart/related",
+          "kind": "text",
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Launch plan\",\"parents\":[\"folder-projects-01\"],\"mimeType\":\"application/vnd.google-apps.document\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/markdown\r\n\r\n# Launch plan\n\n- Pick a date\n- Book the room\r\n--halonic-upload-boundary--"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "multipart/related; boundary=halonic-upload-boundary"
+        },
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id%2Cname%2CmimeType%2Cparents%2CwebViewLink&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-plan-05",
+            "mimeType": "application/vnd.google-apps.document",
+            "name": "<scrubbed:content>",
+            "parents": [
+              "folder-projects-01"
+            ],
+            "webViewLink": "https://docs.google.com/document/d/file-plan-05/edit"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "create-file",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.name",
+      "rule": "user-content"
+    }
+  ]
+}
