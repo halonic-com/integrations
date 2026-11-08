@@ -39,7 +39,26 @@ export function toHits(result: McpToolResult, sourceId: string, limit: number): 
   if (results === undefined) {
     return [textAnswerHit(texts, sourceId)];
   }
-  return results.slice(0, limit).map(toHit);
+  const kept = results.slice(0, limit);
+  const useServerScores = kept.every((result) => serverScoreOf(result) !== undefined);
+  return kept.map((result, rank) =>
+    toHit(result, useServerScores ? (serverScoreOf(result) ?? 0) : rankScore(rank)),
+  );
+}
+
+/**
+ * The result's own `score`, when it is a number. We use the server's
+ * scores only when every hit has one: a server's score and a rank-based
+ * one aren't on the same scale, so one list must not mix them.
+ */
+function serverScoreOf(result: JsonObject): number | undefined {
+  const score = Object.hasOwn(result, "score") ? result["score"] : undefined;
+  return typeof score === "number" && Number.isFinite(score) ? score : undefined;
+}
+
+/** A score from the hit's place in the list: 1 for the first hit, 1/2 for the second. */
+function rankScore(rank: number): number {
+  return 1 / (rank + 1);
 }
 
 /** The results in the answer, or `undefined` when it isn't structured the way we read. */
@@ -87,16 +106,14 @@ function refOf(result: JsonObject): string | undefined {
   return ref !== undefined && ref.length <= maxRefChars ? ref : undefined;
 }
 
-function toHit(result: JsonObject, rank: number): KnowledgeHit {
+function toHit(result: JsonObject, score: number): KnowledgeHit {
   // structuredResults kept only results with a ref.
   const ref = refOf(result) ?? "";
-  const score = Object.hasOwn(result, "score") ? result["score"] : undefined;
   return {
     ref,
     title: cutText(stringField(result, titleFields) ?? ref, maxTitleChars),
     snippet: cutText(stringField(result, snippetFields) ?? "", maxSnippetChars),
-    // Without the server's score, rank gives one: 1 for the first hit, 1/2 for the second.
-    score: typeof score === "number" && Number.isFinite(score) ? score : 1 / (rank + 1),
+    score,
   };
 }
 
