@@ -3,6 +3,19 @@
 // "Offer to Halonic" (I6) without a rewrite.
 
 export { RecordingRefused } from "./scrub/context.ts";
+export type {
+  CapturedExchange,
+  CapturedRequest,
+  CapturedResponse,
+  HeaderEntry,
+  JsonValue,
+  RecordedBody,
+  RecordedExchange,
+  RecordedHeaders,
+  RecordedRequest,
+  RecordedResponse,
+  StreamEvent,
+} from "./scrub/exchange.ts";
 export { definePolicy, type ScrubPolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
 export {
   type Replacement,
