@@ -1,0 +1,96 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_completion_tokens": 1024,
+            "messages": [
+              {
+                "content": "Reply with a single JSON object and nothing else.",
+                "role": "system"
+              },
+              {
+                "content": "<scrubbed:content>",
+                "role": "user"
+              }
+            ],
+            "model": "gpt-5-mini",
+            "response_format": {
+              "type": "json_object"
+            }
+          }
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "choices": [
+              {
+                "finish_reason": "stop",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                  "annotations": [],
+                  "content": "<scrubbed:content>",
+                  "refusal": null,
+                  "role": "assistant"
+                }
+              }
+            ],
+            "created": 1767225600,
+            "id": "chatcmpl-FAKE000000000000000000001",
+            "model": "gpt-5-mini-2025-08-07",
+            "object": "chat.completion",
+            "service_tier": "default",
+            "system_fingerprint": null,
+            "usage": {
+              "completion_tokens": 12,
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "prompt_tokens": 30,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "total_tokens": 42
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-openai",
+  "scenario": "answer-json",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[1].content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.choices[0].message.content",
+      "rule": "user-content"
+    }
+  ]
+}
