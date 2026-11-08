@@ -33,10 +33,10 @@ const otherPartSchema = z
   .looseObject({})
   .refine((part) => !Object.hasOwn(part, "text") && !Object.hasOwn(part, "functionCall"));
 
-const partSchema = z.union([functionCallPartSchema, textPartSchema, otherPartSchema]);
-type GeminiResponsePart = z.infer<typeof partSchema>;
+export const partSchema = z.union([functionCallPartSchema, textPartSchema, otherPartSchema]);
+export type GeminiResponsePart = z.infer<typeof partSchema>;
 type FunctionCallPart = z.infer<typeof functionCallPartSchema>;
-type TextPart = z.infer<typeof textPartSchema>;
+export type TextPart = z.infer<typeof textPartSchema>;
 
 /** Gemini leaves a count out when it is zero. */
 const tokenCountSchema = z.int().nonnegative().optional();
@@ -135,7 +135,8 @@ function toUsage(usage: GeminiResponse["usageMetadata"]): Usage {
   };
 }
 
-function toToolCall(
+/** Also used by the stream, so a tool call gets the same id in its pieces as in `done`. */
+export function toToolCall(
   part: FunctionCallPart,
   responseId: string | undefined,
   index: number,
@@ -149,10 +150,10 @@ function toToolCall(
   };
 }
 
-function isTextPart(part: GeminiResponsePart): part is TextPart {
+export function isTextPart(part: GeminiResponsePart): part is TextPart {
   return Object.hasOwn(part, "text");
 }
 
-function isFunctionCallPart(part: GeminiResponsePart): part is FunctionCallPart {
+export function isFunctionCallPart(part: GeminiResponsePart): part is FunctionCallPart {
   return Object.hasOwn(part, "functionCall");
 }

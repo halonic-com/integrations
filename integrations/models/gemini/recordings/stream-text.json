@@ -1,0 +1,165 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "contents": [
+              {
+                "parts": [
+                  {
+                    "text": "<scrubbed:content>"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "generationConfig": {
+              "maxOutputTokens": 1024
+            },
+            "systemInstruction": {
+              "parts": [
+                {
+                  "text": "<scrubbed:content>"
+                }
+              ]
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "x-goog-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"
+      },
+      "response": {
+        "body": {
+          "kind": "sse",
+          "value": [
+            {
+              "data": {
+                "candidates": [
+                  {
+                    "content": {
+                      "parts": [
+                        {
+                          "text": "<scrubbed:content>"
+                        }
+                      ],
+                      "role": "model"
+                    },
+                    "index": 0
+                  }
+                ],
+                "modelVersion": "gemini-2.5-flash",
+                "responseId": "fake-response-id",
+                "usageMetadata": {
+                  "candidatesTokenCount": 1,
+                  "promptTokenCount": 8,
+                  "thoughtsTokenCount": 21,
+                  "totalTokenCount": 30
+                }
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "candidates": [
+                  {
+                    "content": {
+                      "parts": [
+                        {
+                          "text": "<scrubbed:content>"
+                        }
+                      ],
+                      "role": "model"
+                    },
+                    "index": 0
+                  }
+                ],
+                "modelVersion": "gemini-2.5-flash",
+                "responseId": "fake-response-id",
+                "usageMetadata": {
+                  "candidatesTokenCount": 3,
+                  "promptTokenCount": 8,
+                  "thoughtsTokenCount": 21,
+                  "totalTokenCount": 32
+                }
+              },
+              "event": "message"
+            },
+            {
+              "data": {
+                "candidates": [
+                  {
+                    "content": {
+                      "parts": [
+                        {
+                          "text": "<scrubbed:content>"
+                        }
+                      ],
+                      "role": "model"
+                    },
+                    "finishReason": "STOP",
+                    "index": 0
+                  }
+                ],
+                "modelVersion": "gemini-2.5-flash",
+                "responseId": "fake-response-id",
+                "usageMetadata": {
+                  "candidatesTokenCount": 7,
+                  "promptTokenCount": 8,
+                  "thoughtsTokenCount": 21,
+                  "totalTokenCount": 36
+                }
+              },
+              "event": "message"
+            }
+          ]
+        },
+        "headers": {
+          "content-type": "text/event-stream"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-gemini",
+  "scenario": "stream-text",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-goog-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.contents[0].parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.systemInstruction.parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].data.candidates[0].content.parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].data.candidates[0].content.parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].data.candidates[0].content.parts[0].text",
+      "rule": "user-content"
+    }
+  ]
+}
