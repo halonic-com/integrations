@@ -2,6 +2,12 @@
 // of repo-specific imports, so it can move into the shared kit for
 // "Offer to Halonic" (I6) without a rewrite.
 
+export {
+  formatRecording,
+  RECORDING_FORMAT,
+  type RecordingFile,
+  recordingFileSchema,
+} from "./format.ts";
 export { RecordingRefused } from "./scrub/context.ts";
 export type {
   CapturedExchange,
@@ -25,3 +31,4 @@ export {
   type ScrubRule,
   summarizeReport,
 } from "./scrub/report.ts";
+export { type ScrubOptions, type ScrubResult, scrubExchanges } from "./scrub/scrubber.ts";
