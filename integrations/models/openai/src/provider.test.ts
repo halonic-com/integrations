@@ -10,6 +10,19 @@ import { openai } from "./index.ts";
 import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
 import { createOpenAiProvider } from "./provider.ts";
 
+/**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording.
+ */
+const policy = {
+  userContent: [
+    "request.body.messages[*].content",
+    "request.body.messages[*].tool_calls[*].function.arguments",
+    "request.body.tools[*].function.description",
+  ],
+};
+
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {
   id: "gpt",
@@ -26,17 +39,20 @@ const question: ChatRequest = {
   params: { maxTokens: 1024 },
 };
 
+/** The question in the answer-text recording, with a system prompt. */
+const briefQuestion: ChatRequest = {
+  ...question,
+  messages: [{ role: "system", content: "Be brief." }, ...question.messages],
+};
+
 function provider(http: IntegrationHttpClient) {
   return createOpenAiProvider(http, config);
 }
 
 describe("chat", () => {
   it("names the key for the kit and parses the text and usage", async () => {
-    const recording = replay(answerText);
-    const response = await provider(recording.http).chat({
-      ...question,
-      messages: [{ role: "system", content: "Be brief." }, ...question.messages],
-    });
+    const recording = replay(answerText, { policy });
+    const response = await provider(recording.http).chat(briefQuestion);
     recording.assertAllUsed();
     expect(recording.sent[0]?.init.auth).toEqual({ secret: "openai-key", as: "bearer" });
     expect(recording.sent[0]?.init.headers).toEqual({ "content-type": "application/json" });
@@ -49,7 +65,7 @@ describe("chat", () => {
   });
 
   it("returns the tool calls the model asks for, with their arguments parsed", async () => {
-    const recording = replay(toolCall);
+    const recording = replay(toolCall, { policy });
     const response = await provider(recording.http).chat({
       ...question,
       tools: [
@@ -77,23 +93,30 @@ describe("chat", () => {
   });
 
   it("asks for a JSON answer in JSON mode", async () => {
-    const recording = replay(answerJson);
+    const recording = replay(answerJson, { policy });
     await provider(recording.http).chat({ ...question, responseFormat: "json" });
     recording.assertAllUsed();
-    expect(recording.sent[0]?.body).toMatchObject({ response_format: { type: "json_object" } });
+    // The recording has the instruction scrubbed, as the messages' content, so it is checked here.
+    expect(recording.sent[0]?.body).toMatchObject({
+      messages: [
+        { role: "system", content: "Reply with a single JSON object and nothing else." },
+        {},
+      ],
+      response_format: { type: "json_object" },
+    });
   });
 
   it("passes the signal on", async () => {
-    const recording = replay(answerText);
+    const recording = replay(answerText, { policy });
     const signal = { aborted: false };
-    await provider(recording.http).chat({ ...question, signal });
+    await provider(recording.http).chat({ ...briefQuestion, signal });
     expect(recording.sent[0]?.init.signal).toBe(signal);
   });
 });
 
 describe("chat errors", () => {
   it("reports a refused key without OpenAI's own text", async () => {
-    const recording = replay(keyRefused);
+    const recording = replay(keyRefused, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);
@@ -106,7 +129,7 @@ describe("chat errors", () => {
   });
 
   it("reports an account without credit as quota-exceeded", async () => {
-    const recording = replay(quotaExceeded);
+    const recording = replay(quotaExceeded, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);

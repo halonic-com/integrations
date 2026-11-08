@@ -16,6 +16,21 @@ import type {
 } from "./kit.ts";
 import { createGeminiProvider, generateContentUrl } from "./provider.ts";
 
+/**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording.
+ */
+const policy = {
+  userContent: [
+    "request.body.systemInstruction.parts[*].text",
+    "request.body.contents[*].parts[*].text",
+    "request.body.contents[*].parts[*].functionCall.args.*",
+    "request.body.contents[*].parts[*].functionResponse.response.*",
+    "request.body.tools[*].functionDeclarations[*].description",
+  ],
+};
+
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {
   id: "gemini",
@@ -30,6 +45,12 @@ const question: ChatRequest = {
   model: "gemini-2.5-flash",
   messages: [{ role: "user", content: "Say hello." }],
   params: { maxTokens: 1024 },
+};
+
+/** The question in the answer-text recording, with a system prompt. */
+const briefQuestion: ChatRequest = {
+  ...question,
+  messages: [{ role: "system", content: "Be brief." }, ...question.messages],
 };
 
 const weatherTool = {
@@ -58,11 +79,8 @@ function assistantTurn(response: ChatResponse): ChatMessage {
 
 describe("chat", () => {
   it("puts the key in a header, not the URL, and parses the text and usage", async () => {
-    const recording = replay(answerText);
-    const response = await provider(recording.http).chat({
-      ...question,
-      messages: [{ role: "system", content: "Be brief." }, ...question.messages],
-    });
+    const recording = replay(answerText, { policy });
+    const response = await provider(recording.http).chat(briefQuestion);
     recording.assertAllUsed();
     expect(recording.sent[0]?.init.auth).toEqual({
       secret: "gemini-key",
@@ -81,7 +99,7 @@ describe("chat", () => {
   });
 
   it("returns a tool call with its signature, and sends the turn back unchanged", async () => {
-    const recording = replay(toolCall);
+    const recording = replay(toolCall, { policy });
     const chat = provider(recording.http);
     const request: ChatRequest = {
       model: "gemini-3-flash-preview",
@@ -136,7 +154,7 @@ describe("chat", () => {
   });
 
   it("asks for a JSON answer with the response type", async () => {
-    const recording = replay(answerJson);
+    const recording = replay(answerJson, { policy });
     const response = await provider(recording.http).chat({ ...question, responseFormat: "json" });
     recording.assertAllUsed();
     expect(recording.sent[0]?.body).toMatchObject({
@@ -146,15 +164,15 @@ describe("chat", () => {
   });
 
   it("takes the model by Google's own name too", async () => {
-    const recording = replay(answerText);
-    await provider(recording.http).chat({ ...question, model: "models/gemini-2.5-flash" });
+    const recording = replay(answerText, { policy });
+    await provider(recording.http).chat({ ...briefQuestion, model: "models/gemini-2.5-flash" });
     recording.assertAllUsed();
   });
 
   it("passes the signal on", async () => {
-    const recording = replay(answerText);
+    const recording = replay(answerText, { policy });
     const signal = { aborted: false };
-    await provider(recording.http).chat({ ...question, signal });
+    await provider(recording.http).chat({ ...briefQuestion, signal });
     expect(recording.sent[0]?.init.signal).toBe(signal);
   });
 });
@@ -169,7 +187,7 @@ describe("generateContentUrl", () => {
 
 describe("chat errors", () => {
   it("reports a refused key without Google's own text", async () => {
-    const recording = replay(keyRefused);
+    const recording = replay(keyRefused, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);
@@ -182,7 +200,7 @@ describe("chat errors", () => {
   });
 
   it("reports a used-up quota as rate-limited", async () => {
-    const recording = replay(rateLimited);
+    const recording = replay(rateLimited, { policy });
     const error = await provider(recording.http)
       .chat(question)
       .catch((caught) => caught);

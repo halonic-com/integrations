@@ -1,12 +1,14 @@
 import { type RecordingFile, recordingFileSchema } from "./format.ts";
+import { RequestBodies } from "./replay/request-body.ts";
+import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
 
 /**
  * Replays a recording file as `host.http`, the way the conformance suite
  * will: each call must match the next exchange by method and URL, an
  * unexpected call fails, and `assertAllUsed` fails on an unused exchange.
- * The key and the headers the integration sets must match the recording too
- * (see `checkMatches`). Request bodies in a recording are scrubbed, so they
- * aren't compared; tests check what was sent through `sent`.
+ * The key, the headers the integration sets and the request body must match
+ * the recording too (see `checkMatches`). Tests can also check what was sent
+ * through `sent`.
  *
  * For integration tests only: import it from `@halonicjs/tooling-record/replay`
  * in a devDependency. Replace with `@halonicjs/testing-integration` once it
@@ -101,12 +103,20 @@ export interface ReplayOptions {
    * must not have them either.
    */
   readonly unsetSecrets?: readonly string[];
+  /**
+   * The integration's recording policy, as in its `integration.yaml`. A
+   * recorded body is scrubbed, so the replay scrubs the sent body with the
+   * same rules before it compares the two. Without the policy, a field the
+   * recorder replaced as the user's own content doesn't match.
+   */
+  readonly policy?: ScrubPolicyInput;
 }
 
 /** Reads `recording` with the recording file schema, so a file the suite would refuse fails here too. */
 export function replay(recording: unknown, options: ReplayOptions = {}): Replay {
   const { exchanges } = recordingFileSchema.parse(recording);
   const unset = new Set(options.unsetSecrets ?? []);
+  const bodies = new RequestBodies(definePolicy(options.policy));
   const sent: SentRequest[] = [];
   const http: ReplayHttpClient = {
     async fetch(url, init = {}) {
@@ -115,7 +125,7 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
       if (exchange === undefined) {
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
-      checkMatches(exchange, url, init, unset);
+      checkMatches(exchange, url, init, unset, bodies);
       return toResponse(exchange.response);
     },
   };
@@ -147,6 +157,7 @@ function checkMatches(
   url: string,
   init: ReplayRequestInit,
   unset: ReadonlySet<string>,
+  bodies: RequestBodies,
 ): void {
   const method = init.method ?? "GET";
   if (exchange.request.method !== method || exchange.request.url !== url) {
@@ -157,6 +168,10 @@ function checkMatches(
   const placed = [init.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
   checkKey(exchange.request.headers, placed);
   checkHeaders(exchange.request.headers, init.headers ?? {});
+  const formKeyFields = new Set(
+    placed.flatMap((placement) => (placement.as === "form" ? [placement.field] : [])),
+  );
+  bodies.check(exchange.request, init.body, init.headers ?? {}, formKeyFields);
 }
 
 /**

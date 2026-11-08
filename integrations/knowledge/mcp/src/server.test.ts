@@ -18,55 +18,84 @@ function inSessionOf(sessionId: string) {
   return { ...withKey, "mcp-session-id": sessionId };
 }
 
+/** The messages the client sends, as in the recordings. Only the tool arguments are invented. */
+const initialize = {
+  jsonrpc: "2.0",
+  id: 1,
+  method: "initialize",
+  params: {
+    protocolVersion: "2025-11-25",
+    capabilities: {},
+    clientInfo: { name: "halonic-knowledge-mcp", version: "0.1.0" },
+  },
+};
+const initialized = { jsonrpc: "2.0", method: "notifications/initialized" };
+
+function searchCall(id: number, args: object) {
+  return {
+    jsonrpc: "2.0",
+    id,
+    method: "tools/call",
+    params: { name: "search_docs", arguments: args },
+  };
+}
+
 function post(
   requestHeaders: Record<string, string>,
+  message: unknown,
   status: number,
   value?: unknown,
   responseHeaders: Record<string, string> = {},
 ) {
-  return exchange("POST", requestHeaders, status, value, responseHeaders);
+  return exchange("POST", requestHeaders, message, status, value, responseHeaders);
 }
 
 /** The request that ends a session on the server. */
 function endSession(sessionId: string, status: number) {
-  return exchange("DELETE", inSessionOf(sessionId), status);
+  return exchange("DELETE", inSessionOf(sessionId), undefined, status);
 }
 
 function exchange(
   method: string,
   requestHeaders: Record<string, string>,
+  message: unknown,
   status: number,
   value?: unknown,
   responseHeaders: Record<string, string> = {},
 ) {
   return {
     transport: "http",
-    request: { method, url, headers: requestHeaders, body: { kind: "empty" } },
+    request: { method, url, headers: requestHeaders, body: jsonBody(message) },
     response: {
       status,
       headers:
         value === undefined
           ? responseHeaders
           : { "content-type": "application/json", ...responseHeaders },
-      body: value === undefined ? { kind: "empty" } : { kind: "json", value },
+      body: jsonBody(value),
     },
   };
+}
+
+function jsonBody(value: unknown) {
+  return value === undefined ? { kind: "empty" } : { kind: "json", value };
 }
 
 function handshake(sessionId = firstSession, capabilities: object = { tools: {} }) {
   return [
     post(
       withKey,
+      initialize,
       200,
       { jsonrpc: "2.0", id: 1, result: { protocolVersion: "2025-11-25", capabilities } },
       { "mcp-session-id": sessionId },
     ),
-    post(inSessionOf(sessionId), 202),
+    post(inSessionOf(sessionId), initialized, 202),
   ];
 }
 
-function toolAnswer(id: number, text: string, sessionId = firstSession) {
-  return post(inSessionOf(sessionId), 200, {
+function toolAnswer(id: number, args: object, text: string, sessionId = firstSession) {
+  return post(inSessionOf(sessionId), searchCall(id, args), 200, {
     jsonrpc: "2.0",
     id,
     result: { content: [{ type: "text", text }] },
@@ -130,7 +159,11 @@ function signal() {
 
 describe("McpServer", () => {
   it("opens one session for calls that come in together", async () => {
-    const traffic = recording([...handshake(), toolAnswer(2, "first"), toolAnswer(3, "second")]);
+    const traffic = recording([
+      ...handshake(),
+      toolAnswer(2, { query: "a" }, "first"),
+      toolAnswer(3, { query: "b" }, "second"),
+    ]);
     const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
     const [first, second] = await Promise.all([
       server.callTool("search_docs", { query: "a" }),
@@ -142,7 +175,11 @@ describe("McpServer", () => {
   });
 
   it("opens a new session after one that failed to open", async () => {
-    const traffic = recording([post(withKey, 503), ...handshake(), toolAnswer(2, "found")]);
+    const traffic = recording([
+      post(withKey, initialize, 503),
+      ...handshake(),
+      toolAnswer(2, {}, "found"),
+    ]);
     const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({ code: "unavailable" });
     await expect(server.callTool("search_docs", {})).resolves.toMatchObject({ isError: false });
@@ -152,9 +189,9 @@ describe("McpServer", () => {
   it("opens a new session after the server ended the old one", async () => {
     const traffic = recording([
       ...handshake(),
-      post(inSession, 404),
+      post(inSession, searchCall(2, {}), 404),
       ...handshake(),
-      toolAnswer(2, "x"),
+      toolAnswer(2, {}, "x"),
     ]);
     const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({
@@ -167,11 +204,11 @@ describe("McpServer", () => {
   it("keeps the new session when a late answer says the old one ended", async () => {
     const traffic = recording([
       ...handshake(),
-      post(inSession, 404),
-      post(inSession, 404),
+      post(inSession, searchCall(2, { query: "a" }), 404),
+      post(inSession, searchCall(3, { query: "b" }), 404),
       ...handshake(secondSession),
-      toolAnswer(2, "third", secondSession),
-      toolAnswer(3, "fourth", secondSession),
+      toolAnswer(2, { query: "c" }, "third", secondSession),
+      toolAnswer(3, { query: "d" }, "fourth", secondSession),
       endSession(secondSession, 200),
     ]);
     const held = holdAnswers(traffic.http, [3, 4]);
@@ -201,12 +238,12 @@ describe("McpServer", () => {
 
   it("refuses a server that offers no tools", async () => {
     const traffic = recording([
-      post(withKey, 200, {
+      post(withKey, initialize, 200, {
         jsonrpc: "2.0",
         id: 1,
         result: { protocolVersion: "2025-11-25", capabilities: {} },
       }),
-      post(withKey, 202),
+      post(withKey, initialized, 202),
     ]);
     const server = new McpServer({ http: traffic.http, wait: noWait }, { url });
     await expect(server.callTool("search_docs", {})).rejects.toMatchObject({

@@ -3,6 +3,19 @@
  * runtimes alike, so this folder never needs `Buffer`.
  */
 
+/*
+ * The replay imports this file, and integration tests typecheck it with the
+ * integration preset, which has no Web or Node globals. Node and the cloud
+ * runtimes all have these, so only the parts used here are declared.
+ */
+declare function atob(data: string): string;
+declare function btoa(data: string): string;
+declare const TextEncoder: new () => { encode(text: string): Uint8Array };
+declare const TextDecoder: new (
+  label: string,
+  options: { fatal: boolean },
+) => { decode(bytes: Uint8Array): string };
+
 export interface Base64Style {
   /** `-` and `_` instead of `+` and `/` (RFC 4648 section 5). */
   readonly urlSafe: boolean;

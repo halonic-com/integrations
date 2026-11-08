@@ -8,6 +8,14 @@ import { drive } from "../index.ts";
 import type { IntegrationConnection } from "../kit.ts";
 
 /**
+ * The request paths of the `recording` section in integration.yaml. The
+ * replay scrubs what is sent with them before it compares it with the
+ * recording. Text bodies need no `allowContentTypes` here: the replay
+ * allows the content type a recorded text body has.
+ */
+const policy = { userContent: ["request.body.name"] };
+
+/**
  * A `wait` that resolves at once and records each pause, so a test can see
  * a retry's wait without waiting. The same shape as the Google library's
  * test `fakeWait`, which isn't exported.
@@ -44,14 +52,15 @@ function requireBearer(recorded: Replay): HttpClient {
 /**
  * Connects Drive to a recording, through the shared replay in
  * `@halonicjs/tooling-record/replay`. The replay checks each call against
- * the next exchange and reads the file with the full recording schema.
+ * the next exchange, request body included, and reads the file with the
+ * full recording schema.
  * Tests import the recording file as JSON and pass it in.
  */
 export function connectToRecording(recording: unknown): {
   connection: IntegrationConnection;
   replay: Replay;
 } {
-  const recorded = replay(recording);
+  const recorded = replay(recording, { policy });
   const { wait } = recordingWait();
   return { connection: drive.connect({ http: requireBearer(recorded), wait }), replay: recorded };
 }
