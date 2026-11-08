@@ -5,7 +5,7 @@
         "body": {
           "contentType": "multipart/related",
           "kind": "text",
-          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Launch plan\",\"parents\":[\"folder-projects-01\"],\"mimeType\":\"application/vnd.google-apps.document\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/markdown\r\n\r\n# Launch plan\n\n- Pick a date\n- Book the room\r\n--halonic-upload-boundary--"
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Launch plan\",\"parents\":[\"folder-projects-01\"],\"mimeType\":\"application/vnd.google-apps.document\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/markdown; charset=UTF-8\r\n\r\n# Launch plan\n\n- Pick a date\n- Book the room\r\n--halonic-upload-boundary--"
         },
         "headers": {
           "accept": "application/json",

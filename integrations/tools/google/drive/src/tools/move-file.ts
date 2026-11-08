@@ -31,7 +31,10 @@ export const moveFileTool = {
   // Two requests: one read of the file's folders (retried where the Google
   // library allows) and one move (never retried).
   async run(client, args, signal): Promise<MoveFileResult> {
-    const fromParents = await client.getParents(args.fileId, signal);
+    const parents = await client.getParents(args.fileId, signal);
+    // A file already in toFolderId stays there: the same id in both
+    // addParents and removeParents would leave Drive to pick the outcome.
+    const fromParents = parents.filter((parent) => parent !== args.toFolderId);
     const move = {
       fileId: args.fileId,
       fromParents,

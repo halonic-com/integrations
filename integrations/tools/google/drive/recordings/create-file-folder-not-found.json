@@ -5,7 +5,7 @@
         "body": {
           "contentType": "multipart/related",
           "kind": "text",
-          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Room list\",\"parents\":[\"folder-missing-06\"],\"mimeType\":\"text/plain\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain\r\n\r\nRoom A\nRoom B\r\n--halonic-upload-boundary--"
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{\"name\":\"Room list\",\"parents\":[\"folder-missing-06\"],\"mimeType\":\"text/plain\"}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nRoom A\nRoom B\r\n--halonic-upload-boundary--"
         },
         "headers": {
           "accept": "application/json",

@@ -40,7 +40,9 @@ describe("drive_create_file", () => {
     expect(upload?.body).toContain(
       '{"name":"Launch plan","parents":["folder-projects-01"],"mimeType":"application/vnd.google-apps.document"}',
     );
-    expect(upload?.body).toContain("Content-Type: text/markdown\r\n\r\n# Launch plan");
+    expect(upload?.body).toContain(
+      "Content-Type: text/markdown; charset=UTF-8\r\n\r\n# Launch plan",
+    );
   });
 
   it("turns a missing folder into not-found without Google's own text", async () => {
@@ -50,9 +52,12 @@ describe("drive_create_file", () => {
       content: "Room A\nRoom B",
       folderId: "folder-missing-06",
     });
-    await expect(call).rejects.toBeInstanceOf(GoogleError);
-    await expect(call).rejects.toMatchObject({ code: "not-found" });
-    await expect(call).rejects.not.toThrow(/File not found/);
+    const error = await call.catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(GoogleError);
+    expect(error).toMatchObject({ code: "not-found" });
+    expect((error as GoogleError).message).toBe(
+      "Google Drive found nothing at www.googleapis.com/upload/drive/v3/files (status 404, notFound).",
+    );
   });
 
   it.each([

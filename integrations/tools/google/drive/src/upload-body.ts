@@ -73,12 +73,22 @@ export function multipartUploadBody(metadata: UploadMetadata, content: UploadCon
     "",
     metadataJson,
     `--${boundary}`,
-    `Content-Type: ${content.type}`,
+    `Content-Type: ${contentPartType(content.type)}`,
     "",
     content.text,
     `--${boundary}--`,
   ].join("\r\n");
   return { contentType: `multipart/related; boundary=${boundary}`, body };
+}
+
+/**
+ * The content part's type. The body is always sent as UTF-8, so a `text/*`
+ * type says so: without a charset, text defaults to US-ASCII (RFC 2046,
+ * section 4.1.2). Other types, such as `application/vnd.ms-excel`, have no
+ * charset parameter and stay as they are.
+ */
+function contentPartType(type: string): string {
+  return type.toLowerCase().startsWith("text/") ? `${type}; charset=UTF-8` : type;
 }
 
 /** The first boundary that none of the texts holds (RFC 2046, section 5.1.1). */

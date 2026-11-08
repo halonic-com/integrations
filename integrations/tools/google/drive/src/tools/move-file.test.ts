@@ -55,6 +55,37 @@ describe("drive_move_file", () => {
     expect(new URL(urls[1] ?? "").searchParams.has("removeParents")).toBe(false);
   });
 
+  it("keeps the file in toFolderId when it is already there", async () => {
+    const { connection, requests } = connectToFakeAnswers(
+      {
+        status: 200,
+        body: '{"id":"file-notes-02","parents":["folder-projects-01","folder-archive-08"]}',
+      },
+      { status: 200, body: '{"id":"file-notes-02","parents":["folder-archive-08"]}' },
+    );
+    await callTool(connection, "drive_move_file", {
+      fileId: "file-notes-02",
+      toFolderId: "folder-archive-08",
+    });
+    const move = new URL(requests[1]?.url ?? "");
+    expect(move.searchParams.get("addParents")).toBe("folder-archive-08");
+    expect(move.searchParams.get("removeParents")).toBe("folder-projects-01");
+  });
+
+  it("leaves removeParents out when the file is only in toFolderId", async () => {
+    const { connection, requests } = connectToFakeAnswers(
+      { status: 200, body: '{"id":"file-notes-02","parents":["folder-archive-08"]}' },
+      { status: 200, body: '{"id":"file-notes-02","parents":["folder-archive-08"]}' },
+    );
+    await callTool(connection, "drive_move_file", {
+      fileId: "file-notes-02",
+      toFolderId: "folder-archive-08",
+    });
+    const move = new URL(requests[1]?.url ?? "");
+    expect(move.searchParams.get("addParents")).toBe("folder-archive-08");
+    expect(move.searchParams.has("removeParents")).toBe(false);
+  });
+
   it("never tries the move again after a 503", async () => {
     const { connection, requests } = connectToFakeAnswers(
       { status: 200, body: '{"id":"file-notes-02","parents":["folder-projects-01"]}' },
