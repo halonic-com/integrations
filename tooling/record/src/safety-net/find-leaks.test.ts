@@ -63,7 +63,7 @@ describe("findLeaks", () => {
   it("scans a large base64 body quickly", () => {
     // A body of 200,000 base64 characters with no `%` or `@` in it took about
     // 26 seconds before the encoded-text pattern was anchored to the start of
-    // a run and the part of an address before the `@` was capped.
+    // a run and addresses were looked for from each `@`.
     const body = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo".repeat(6_000).slice(0, 200_000);
     const encodedAddress = encodeURIComponent(FAKE.email);
     const started = performance.now();

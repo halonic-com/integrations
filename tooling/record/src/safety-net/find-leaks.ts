@@ -1,9 +1,9 @@
 import { decodeBase64Text } from "../scrub/base64.ts";
+import { findEmails } from "../scrub/emails.ts";
 import { isExampleEmail, isExamplePhone } from "../scrub/fakes.ts";
 import { KnownSecrets } from "../scrub/known-secrets.ts";
 import {
   CANDIDATE_RUN,
-  EMAIL,
   hasPhoneLength,
   PHONE,
   PLACEHOLDER,
@@ -112,9 +112,9 @@ function scan(text: string, secrets: KnownSecrets): TextLeak[] {
       }
     }
   }
-  for (const match of text.matchAll(EMAIL)) {
-    if (!isExampleEmail(match[0])) {
-      add("email", match.index);
+  for (const { address, index } of findEmails(text)) {
+    if (!isExampleEmail(address)) {
+      add("email", index);
     }
   }
   for (const match of text.matchAll(PHONE)) {

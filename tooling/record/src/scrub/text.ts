@@ -1,9 +1,9 @@
 import { decodeBase64Text, encodeBase64 } from "./base64.ts";
 import type { ScrubContext } from "./context.ts";
+import { findEmails } from "./emails.ts";
 import { isExampleEmail, isExamplePhone, SECRET } from "./fakes.ts";
 import {
   CANDIDATE_RUN,
-  EMAIL,
   hasPhoneLength,
   looksRandom,
   PHONE,
@@ -103,13 +103,21 @@ function decodeEncodedText(run: string, depth: number): ReturnType<typeof decode
 }
 
 function replaceEmails(text: string, where: string, context: ScrubContext): string {
-  return text.replace(EMAIL, (address) => {
-    if (isExampleEmail(address)) {
-      return address;
-    }
-    context.report.add("email", where);
-    return context.fakes.email(address);
-  });
+  let result = "";
+  let position = 0;
+  for (const { address, index } of findEmails(text)) {
+    result += text.slice(position, index) + replaceEmail(address, where, context);
+    position = index + address.length;
+  }
+  return result + text.slice(position);
+}
+
+function replaceEmail(address: string, where: string, context: ScrubContext): string {
+  if (isExampleEmail(address)) {
+    return address;
+  }
+  context.report.add("email", where);
+  return context.fakes.email(address);
 }
 
 function replacePhones(text: string, where: string, context: ScrubContext): string {
