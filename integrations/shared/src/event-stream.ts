@@ -22,7 +22,7 @@ export interface EventStreamLimits {
 /** No tool result or answer piece we pass on to a model comes close to this. */
 const defaultMaxEventBytes = 1024 * 1024;
 
-const byteOrderMark = "﻿";
+const byteOrderMark = "\uFEFF";
 
 /**
  * Reads server-sent events from a response body, piece by piece, as the

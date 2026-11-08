@@ -69,7 +69,10 @@ describe("EventStream", () => {
   });
 
   it("removes a byte order mark at the start of the stream only", async () => {
-    expect(await eventsOf(["﻿data: a\n\ndata: ﻿b\n\n"])).toEqual([message("a"), message("﻿b")]);
+    expect(await eventsOf(["\uFEFFdata: a\n\ndata: \uFEFFb\n\n"])).toEqual([
+      message("a"),
+      message("\uFEFFb"),
+    ]);
   });
 
   it("dispatches an event with an empty data line, as MCP servers send to set the id", async () => {
