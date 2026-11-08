@@ -22,6 +22,7 @@ export function htmlToText(html: string): string {
   let text = html
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, withLinkAddress)
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|tr|li|h\d)>/gi, "\n")
     .replace(/<[^>]+>/g, "");
@@ -31,6 +32,22 @@ export function htmlToText(html: string): string {
   return decodeNumericEntities(text)
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+/**
+ * A link as `text <address>`, the way mail programs write it in a plain-text
+ * part, so the model still knows where a link goes. Only web and mail
+ * addresses are kept; the address is left out when the text already is it.
+ * The brackets go in as entities, so removing the tags leaves them alone.
+ */
+function withLinkAddress(_link: string, attributes: string, inner: string): string {
+  const href = /\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(attributes);
+  const address = (href?.[1] ?? href?.[2] ?? href?.[3] ?? "").trim();
+  if (!/^(https?:\/\/|mailto:)\S+$/i.test(address)) return inner;
+  const shown = address.replace(/^mailto:/i, "");
+  const innerText = inner.replace(/<[^>]+>/g, "").trim();
+  if (innerText === address || innerText === shown) return inner;
+  return innerText === "" ? `&lt;${shown}&gt;` : `${inner} &lt;${shown}&gt;`;
 }
 
 /** `&#233;` and `&#xE9;`, which mail programs use for every letter outside ASCII. */
@@ -63,14 +80,19 @@ const invisibleColor = /(?<![\w-])color\s*:\s*(#fff(fff)?\b|white\b|transparent)
  * attribute. A heuristic, so a warning, never a refusal.
  */
 export function hidesText(html: string): boolean {
-  for (const attribute of html.matchAll(/\sstyle\s*=\s*(["'])(.*?)\1/gis)) {
-    const css = attribute[2] ?? "";
+  for (const attribute of html.matchAll(/\sstyle\s*=\s*(?:(["'])(.*?)\1|([^\s"'>]+))/gis)) {
+    const css = withoutComments(attribute[2] ?? attribute[3] ?? "");
     if (hidingDeclaration.test(css) || invisibleColor.test(css)) return true;
   }
   for (const block of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) {
-    if (hidingDeclaration.test(block[1] ?? "")) return true;
+    if (hidingDeclaration.test(withoutComments(block[1] ?? ""))) return true;
   }
   return hasHiddenAttribute(html);
+}
+
+/** CSS without its comments, so `display:/**\/none` reads as `display:none`. */
+function withoutComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, "");
 }
 
 /** `<div hidden>`, but not `class="hidden"` or `type="hidden"`. */

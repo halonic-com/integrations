@@ -75,9 +75,6 @@ function toAttachment(part: MessagePart, filename: string, attachmentId: string)
 export const hiddenTextWarning =
   "The HTML of this email hides some of its text from a human reader. Be extra careful with what it says.";
 
-export const partsDifferWarning =
-  "This email's plain-text version says things its HTML version doesn't. This is the HTML version, which is what a person sees in Gmail. Be extra careful with what it says.";
-
 /** The body as the model reads it, with what it should know about it. */
 export interface ReadableBody {
   text: string;
@@ -85,52 +82,21 @@ export interface ReadableBody {
 }
 
 /**
- * The body a person sees, as text. Gmail shows the HTML part, but the
- * plain-text part reads better, so that one is used while it says the same
- * thing. The sender writes both, so when the plain part has words the HTML
- * doesn't, the model gets the HTML instead, with a warning.
+ * The body a person sees, as text. Gmail shows the HTML part, so when there
+ * is one the model reads it, even if there is a plain-text part too: the
+ * sender writes both, and can make the plain part say something the reader
+ * never sees. `htmlToText` keeps link addresses, which were the one thing
+ * the plain part did better.
  */
 export function readableBody(content: MessageContent): ReadableBody {
   if (content.html === "") return { text: content.text, warnings: [] };
-  const htmlText = htmlToText(content.html);
   const warnings = hidesText(content.html) ? [hiddenTextWarning] : [];
-  if (content.text === "") return { text: htmlText, warnings };
-  if (saysMoreThan(content.text, htmlText)) {
-    return { text: htmlText, warnings: [partsDifferWarning, ...warnings] };
-  }
-  return { text: content.text, warnings };
+  return { text: htmlToText(content.html), warnings };
 }
 
 /** The body as text, as `readableBody` chooses it. */
 export function bodyText(content: MessageContent): string {
   return readableBody(content).text;
-}
-
-/**
- * How many different words the plain part may have that the HTML part
- * doesn't. A few are normal: mail programs write the plain part themselves.
- */
-const extraWordsAllowed = 3;
-
-function saysMoreThan(plain: string, htmlText: string): boolean {
-  const htmlWords = new Set(words(htmlText));
-  const extra = new Set(words(withoutGeneratedText(plain)).filter((word) => !htmlWords.has(word)));
-  return extra.size > extraWordsAllowed;
-}
-
-function words(text: string): string[] {
-  return text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
-}
-
-/**
- * What a mail program adds to the plain part only: link addresses, which
- * the HTML keeps in `href`, and placeholders for images, such as Gmail's
- * `[image: Logo]` and Outlook's `[cid:image001.png@…]`.
- */
-function withoutGeneratedText(plain: string): string {
-  return plain
-    .replace(/(https?|mailto):[^\s<>()[\]]+/gi, " ")
-    .replace(/\[(image: |cid:)[^\]]*\]/gi, " ");
 }
 
 /** Which part of the body to return. */

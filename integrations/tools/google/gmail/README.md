@@ -83,13 +83,13 @@ something else:
   changes the mailbox is retried.
 - **The model reads what a person sees.** Gmail shows a mail's HTML part,
   and the sender writes the plain-text part too, so they can make the two
-  say different things. The reading tools still prefer the plain part, but
-  only while it has no words the HTML lacks (more than three, after link
-  addresses and image placeholders are left out). Otherwise the model gets
-  the HTML as text and a `warning`. The hidden-text `warning` now also
-  looks at the HTML when there is a plain part, and also catches `<style>`
-  rules, the `hidden` attribute and `mso-hide:all`. Both are heuristics:
-  they warn, they never refuse.
+  say different things. So when a mail has HTML, the reading tools always
+  read the HTML as text, even if there is a plain part; the old connector
+  preferred the plain part. Links keep their address, as `text <url>`, the
+  way a plain part writes them. The hidden-text `warning` looks at the HTML
+  whenever there is some, and also catches `<style>` rules, unquoted
+  `style` attributes, CSS comments, the `hidden` attribute and
+  `mso-hide:all`. It's a heuristic: it warns, it never refuses.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without

@@ -14,6 +14,24 @@ describe("htmlToText", () => {
     ).toBe("a < b && \"c\" 'd'\n\ne");
   });
 
+  it("writes a link as its text and its address, as a plain-text part does", () => {
+    const html =
+      '<p><a href="https://example.com/a?x=1&amp;y=2">the agenda</a>, ' +
+      "<a href='mailto:sam@example.com'>Sam</a>, " +
+      '<a href=https://example.com/b><img alt="Logo"></a></p>';
+    expect(htmlToText(html)).toBe(
+      "the agenda <https://example.com/a?x=1&y=2>, Sam <sam@example.com>, <https://example.com/b>",
+    );
+  });
+
+  it("leaves out the address when the text is the address, or when it isn't a web or mail address", () => {
+    const html =
+      '<p><a href="https://example.com">https://example.com</a> ' +
+      '<a href="mailto:sam@example.com">sam@example.com</a> ' +
+      '<a href="#top">Top</a> <a href="javascript:void(0)">Open</a> <a name="x">Here</a></p>';
+    expect(htmlToText(html)).toBe("https://example.com sam@example.com Top Open Here");
+  });
+
   it("decodes numeric entities and leaves impossible ones alone", () => {
     expect(htmlToText("<p>Caf&#233; &#xE9;t&#X E9; &#0; &#x110000;</p>")).toBe(
       "Café ét&#X E9; &#0; &#x110000;",
@@ -35,6 +53,9 @@ describe("hidesText", () => {
     '<style type="text/css">@media all { .x { visibility: hidden } }</style>',
     "<div hidden>x</div>",
     '<div data-a="1" HIDDEN="hidden">x</div>',
+    "<span style=display:none>x</span>",
+    '<span style="display:/**/none">x</span>',
+    "<style>.x{visibility:/* a */hidden}</style>",
   ])("finds hidden text in %s", (html) => {
     expect(hidesText(html)).toBe(true);
   });
