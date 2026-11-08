@@ -57,6 +57,18 @@ describe("scrubHeaders", () => {
     expect(scrubbed).toEqual({ "content-type": "application/json" });
   });
 
+  it("leaves out content-encoding, because the file holds the decoded body", () => {
+    const scrubbed = scrubHeaders(
+      [
+        ["Content-Encoding", "gzip"],
+        ["content-type", "application/json"],
+      ],
+      "headers",
+      testContext(),
+    );
+    expect(scrubbed).toEqual({ "content-type": "application/json" });
+  });
+
   it("keeps a declared secret header even when its name looks unstable", () => {
     const context = testContext({ secretHeaders: ["x-request-id"] });
     expect(scrubHeaders([["x-request-id", FAKE.plainKey]], "headers", context)).toEqual({

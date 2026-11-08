@@ -18,8 +18,9 @@ const SECRET_HEADERS = new Set([
 /**
  * Headers left out of a recording: they change on every run (dates, request
  * IDs, trace IDs), describe the connection rather than the API, or no longer
- * fit once a body is scrubbed (`content-length`). Leaving them out keeps
- * recordings stable between runs.
+ * fit the body as saved (`content-length` changes when a body is scrubbed, and
+ * `content-encoding` would claim a gzip body when the file holds it decoded).
+ * Leaving them out keeps recordings stable between runs and replayable.
  */
 const UNSTABLE_HEADERS = new Set([
   "age",
@@ -27,6 +28,7 @@ const UNSTABLE_HEADERS = new Set([
   "cf-cache-status",
   "cf-ray",
   "connection",
+  "content-encoding",
   "content-length",
   "date",
   "etag",
