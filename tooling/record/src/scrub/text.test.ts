@@ -45,6 +45,15 @@ describe("scrubText", () => {
     );
   });
 
+  it("replaces an e-mail address after a large base64 body quickly", () => {
+    const body = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo".repeat(6_000).slice(0, 200_000);
+    const started = performance.now();
+    const scrubbed = scrubText(`${body} ${FAKE.email}`, "here", testContext());
+    const elapsed = performance.now() - started;
+    expect(scrubbed.endsWith(" person1@example.com")).toBe(true);
+    expect(elapsed).toBeLessThan(1_000);
+  });
+
   it("replaces an e-mail address inside HTML", () => {
     const html = `<p>Write to <a href="mailto:${FAKE.email}">${FAKE.email}</a></p>`;
     expect(scrubText(html, "here", testContext())).toBe(

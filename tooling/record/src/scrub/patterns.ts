@@ -42,8 +42,13 @@ export const AUTH_SCHEME = /^(?:Bearer|Basic|Digest|Token)\s+/i;
  */
 export const CANDIDATE_RUN = /(?<![\w+/-])[\w+/-]{16,}={0,2}(?![\w+/=-])/g;
 
-/** E-mail addresses, including ones in HTML, URLs and mail headers. */
-export const EMAIL = /[\w.%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
+/**
+ * E-mail addresses, including ones in HTML, URLs and mail headers. The
+ * lookbehind makes a match start only where a run of address characters
+ * starts, so a long run with no `@` in it, such as a base64 message body, is
+ * scanned once rather than again from every character.
+ */
+export const EMAIL = /(?<![\w.%+-])[\w.%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 
 /**
  * Phone numbers written the way people write them: with a country code

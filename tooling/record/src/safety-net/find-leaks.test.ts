@@ -60,6 +60,19 @@ describe("findLeaks", () => {
     expect(kinds(`{"x":"${value}"}`)).toEqual(["email"]);
   });
 
+  it("scans a large base64 body quickly", () => {
+    // A body of 200,000 base64 characters with no `%` or `@` in it took about
+    // 26 seconds before the encoded-text and address patterns were anchored
+    // to the start of a run.
+    const body = "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo".repeat(6_000).slice(0, 200_000);
+    const encodedAddress = encodeURIComponent(FAKE.email);
+    const started = performance.now();
+    const found = kinds(`{"raw":"${body}","q":"${encodedAddress}"}`);
+    const elapsed = performance.now() - started;
+    expect(found).toEqual(["email"]);
+    expect(elapsed).toBeLessThan(1_000);
+  });
+
   it("accepts the scrubber's own stand-ins", () => {
     const scrubbed = JSON.stringify({
       authorization: "Bearer <scrubbed:secret>",
