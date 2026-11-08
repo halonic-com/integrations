@@ -2,7 +2,27 @@
  * Mail HTML as plain text for the model, as the old connector did it: line
  * breaks where blocks end, tags removed and the common entities decoded.
  * Not a full HTML parser on purpose; the result is only ever read.
+ *
+ * Every pattern here that waits for something to close (a tag's `>`, an
+ * element's end tag, a CSS comment's `*\/`) also stops at the end of the
+ * HTML. Browsers read an unclosed tag the same way, and it keeps each
+ * pattern linear: a pattern that needs the closer scans to the end again
+ * from every opening that has none, and a large mail full of unclosed tags
+ * then takes minutes.
  */
+
+/** Any tag, or an unclosed one up to the end. */
+const anyTag = /<[^>]+(?:>|$)/g;
+
+/**
+ * A link: its attributes, then its text up to `</a>`. The attributes are
+ * read as a browser reads them. A quote starts a value only right after
+ * `=`; anywhere else, such as inside an unquoted value, it is an ordinary
+ * character, so `<a x=a">` ends at its first `>`. A quoted value that never
+ * closes runs to the end, and so does the tag.
+ */
+const link =
+  /<a\b((?:[^>=]|=\s*(?:"[^"]*(?:"|$)|'[^']*(?:'|$)|[^\s>]*))*)(?:>|$)([\s\S]*?)(?:<\/a>|$)/gi;
 
 /**
  * The entities mail HTML uses most, in the old connector's order. `&amp;`
@@ -20,12 +40,12 @@ const entities: readonly (readonly [RegExp, string])[] = [
 
 export function htmlToText(html: string): string {
   let text = html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<a\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/a>/gi, withLinkAddress)
+    .replace(/<style[\s\S]*?(?:<\/style>|$)/gi, "")
+    .replace(/<script[\s\S]*?(?:<\/script>|$)/gi, "")
+    .replace(link, withLinkAddress)
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|tr|li|h\d)>/gi, "\n")
-    .replace(/<[^>]+>/g, "");
+    .replace(anyTag, "");
   for (const [entity, character] of entities) {
     text = text.replace(entity, character);
   }
@@ -48,7 +68,7 @@ function withLinkAddress(_link: string, attributes: string, inner: string): stri
   const address = attributeValue(attributes, "href")?.trim() ?? "";
   if (!/^(https?:\/\/|mailto:)[^\s"'<>]+$/i.test(address)) return inner;
   const withoutScheme = address.replace(/^mailto:/i, "");
-  const innerText = inner.replace(/<[^>]+>/g, "").trim();
+  const innerText = inner.replace(anyTag, "").trim();
   if (innerText === address || innerText === withoutScheme) return inner;
   const shown = shortened(withoutScheme);
   return innerText === "" ? `&lt;${shown}&gt;` : `${inner} &lt;${shown}&gt;`;
@@ -61,7 +81,8 @@ function withLinkAddress(_link: string, attributes: string, inner: string): stri
  * The first one counts when a name repeats, as in a browser.
  */
 function attributeValue(attributes: string, wanted: string): string | undefined {
-  const attribute = /\s*([^\s/>][^\s/>=]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]*)))?/y;
+  const attribute =
+    /\s*([^\s/>][^\s/>=]*)(?:\s*=\s*(?:"([^"]*)(?:"|$)|'([^']*)(?:'|$)|([^\s>]*)))?/y;
   let position = 0;
   while (position < attributes.length) {
     attribute.lastIndex = position;
@@ -115,11 +136,11 @@ const invisibleColor = /(?<![\w-])color\s*:\s*(#fff(fff)?\b|white\b|transparent)
  * attribute. A heuristic, so a warning, never a refusal.
  */
 export function hidesText(html: string): boolean {
-  for (const attribute of html.matchAll(/\sstyle\s*=\s*(?:(["'])(.*?)\1|([^\s"'>]+))/gis)) {
+  for (const attribute of html.matchAll(/\sstyle\s*=\s*(?:(["'])(.*?)(?:\1|$)|([^\s"'>]+))/gis)) {
     const css = withoutComments(attribute[2] ?? attribute[3] ?? "");
     if (hidingDeclaration.test(css) || invisibleColor.test(css)) return true;
   }
-  for (const block of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)) {
+  for (const block of html.matchAll(/<style[^>]*(?:>|$)([\s\S]*?)(?:<\/style>|$)/gi)) {
     if (hidingDeclaration.test(withoutComments(block[1] ?? ""))) return true;
   }
   return hasHiddenAttribute(html);
@@ -127,12 +148,12 @@ export function hidesText(html: string): boolean {
 
 /** CSS without its comments, so `display:/**\/none` reads as `display:none`. */
 function withoutComments(css: string): string {
-  return css.replace(/\/\*[\s\S]*?\*\//g, "");
+  return css.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, "");
 }
 
 /** `<div hidden>`, but not `class="hidden"` or `type="hidden"`. */
 function hasHiddenAttribute(html: string): boolean {
-  for (const [tag] of html.matchAll(/<[a-z][^>]*>/gi)) {
+  for (const [tag] of html.matchAll(/<[a-z][^>]*(?:>|$)/gi)) {
     const attributeNames = tag.replace(/"[^"]*"|'[^']*'/g, '""');
     if (/\shidden(?=[\s=/>])/i.test(attributeNames)) return true;
   }
