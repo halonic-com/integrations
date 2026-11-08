@@ -1,0 +1,13 @@
+# Only the gitleaks image for now: its pin lives in the Dockerfile of the
+# gitleaks action, which is never built.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /.github/actions/gitleaks
+    schedule:
+      interval: weekly
+    # Wait a week after a release before proposing it.
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci

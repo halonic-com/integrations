@@ -1,0 +1,11 @@
+name: Setup
+description: Installs pnpm (version from packageManager), Node (from devEngines) and the dependencies, with a frozen lockfile.
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      with:
+        cache: true
+    - name: Install
+      shell: bash
+      run: pnpm install --frozen-lockfile

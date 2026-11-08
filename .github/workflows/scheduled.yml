@@ -1,0 +1,86 @@
+# New advisories appear without any code change, so main is checked on a
+# schedule too (plan 10.2, 11.1). A failure opens an issue.
+
+name: Scheduled checks
+
+on:
+  schedule:
+    - cron: "17 4 * * *" # daily: advisories and the lockfile
+    - cron: "47 4 * * 1" # weekly: full terms and secret scan
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: scheduled
+  cancel-in-progress: false
+
+jobs:
+  advisories:
+    name: Advisories and lockfile
+    if: github.event.schedule != '47 4 * * 1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup
+      - name: Lockfile check
+        run: pnpm check lockfile
+      - name: Licences
+        run: pnpm check:licences
+      - name: Audit shipped dependencies (high and critical fail)
+        run: pnpm audit --prod --audit-level high
+      - name: Audit dev tooling (report only)
+        run: pnpm audit || echo "::warning::Advisories in dev tooling; see the log above."
+
+  full-scan:
+    # Weekly, and on demand: the whole tree and the whole history.
+    name: Full terms and secret scan
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '47 4 * * 1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+          package-manager-cache: false
+      - name: Personal-terms guard over every file and commit
+        env:
+          HALONIC_DENY_TERMS: ${{ secrets.HALONIC_DENY_TERMS }}
+        run: node tooling/check/src/cli/terms.ts --all
+      - name: gitleaks over the whole history
+        uses: $/.github/actions/gitleaks
+
+  report:
+    name: Open an issue on failure
+    needs: [advisories, full-scan]
+    if: failure()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Scheduled checks failed"
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          body="The scheduled checks failed on main: $RUN_URL"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
