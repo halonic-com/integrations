@@ -139,6 +139,19 @@ describe("scrubHeaders", () => {
     });
   });
 
+  it("scrubs every URL in a link header and keeps the rest", () => {
+    const link = [
+      `<https://api.example.com/items?access_token=${FAKE.plainKey}&page=2>; rel="next"`,
+      `</items?page=9>; rel="last"; title="${FAKE.email}"`,
+    ].join(", ");
+    expect(scrubHeaders([["Link", link]], "headers", testContext())).toEqual({
+      link: [
+        '<https://api.example.com/items?access_token=scrubbed-secret-1&page=2>; rel="next"',
+        '</items?page=9>; rel="last"; title="person1@example.com"',
+      ].join(", "),
+    });
+  });
+
   it("scrubs a relative URL in a location header and keeps it relative", () => {
     const location = `/callback?code=${FAKE.plainKey}&state=1`;
     expect(scrubHeaders([["Location", location]], "headers", testContext())).toEqual({

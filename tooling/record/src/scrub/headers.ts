@@ -66,6 +66,9 @@ const UNSTABLE_PREFIXES = [
 /** Headers whose whole value is one URL, absolute or relative. */
 const URL_HEADERS = new Set(["location", "content-location", "referer"]);
 
+/** A URL in angle brackets, as a `Link` header lists them (RFC 8288). */
+const LINK_TARGET = /<([^>]*)>/;
+
 /**
  * Scrubs every header and returns them as one object with lower-case names,
  * the way `fetch` reports them, so a header with odd casing (`X-Api-KEY`) is
@@ -76,7 +79,8 @@ const URL_HEADERS = new Set(["location", "content-location", "referer"]);
  * - headers named like a secret (`X-Access-Token`, `Private-Token`,
  *   `X-Session-Id`) get a secret stand-in, the same way query, form and JSON
  *   fields do
- * - URL headers (`location`) go through the URL rules
+ * - URL headers (`location`) go through the URL rules, and so does each
+ *   `<url>` of a `link` header
  * - every other value goes through the free-text rules
  */
 export function scrubHeaders(
@@ -131,7 +135,28 @@ function scrubHeader(name: string, value: string, where: string, context: ScrubC
   if (URL_HEADERS.has(name)) {
     return scrubUrlReference(value, where, context);
   }
+  if (name === "link") {
+    return scrubLinkHeader(value, where, context);
+  }
   return scrubText(value, where, context);
+}
+
+/**
+ * `<https://...?page_token=...>; rel="next", <...>; rel="last"`: each URL
+ * goes through the URL rules, so a query parameter named like a secret is
+ * replaced as it is in a request URL. The parameters between the URLs go
+ * through the free-text rules.
+ */
+function scrubLinkHeader(value: string, where: string, context: ScrubContext): string {
+  // Splitting on a pattern with one group puts the URLs at the odd indexes.
+  const parts = value.split(new RegExp(LINK_TARGET, "g"));
+  return parts
+    .map((part, index) =>
+      index % 2 === 1
+        ? `<${scrubUrlReference(part, where, context)}>`
+        : scrubText(part, where, context),
+    )
+    .join("");
 }
 
 function scrubKeyHeader(name: string, value: string): string {
