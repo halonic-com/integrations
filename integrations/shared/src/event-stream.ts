@@ -9,7 +9,7 @@ export interface ServerSentEvent {
   readonly type: string;
   /** The `data:` lines, joined with a line feed. */
   readonly data: string;
-  /** The last `id:` the stream sent up to this event, or `""` when none. */
+  /** The last `id:` the stream sent up to and with this event, or `""` when none. */
   readonly lastEventId: string;
 }
 
@@ -33,8 +33,8 @@ const byteOrderMark = "﻿";
  *
  * Read it with `for await`. Leaving the loop early cancels the stream.
  * Errors from the stream itself, such as a dropped connection or the kit's
- * timeout, pass through unchanged, and `lastEventId` stays set, so the
- * caller can ask the service to resume.
+ * timeout, pass through unchanged, and `lastEventId` stays at the last
+ * complete event, so the caller can ask the service to resume.
  *
  * `retry:` fields are ignored: when to reconnect is the caller's choice.
  *
@@ -50,6 +50,10 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
   #lastEventId = "";
   #iterated = false;
 
+  // The newest `id:` read. It becomes `lastEventId` only when its event is
+  // complete, and it is not reset between events, as the rules say.
+  #idBuffer = "";
+
   // The event being built, reset after each blank line.
   #type = "";
   #dataLines: string[] = [];
@@ -61,8 +65,9 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
   }
 
   /**
-   * The last `id:` the stream sent, even on an event that was never
-   * dispatched. Send it as `Last-Event-ID` to resume after a drop.
+   * The id of the last complete event, also one without data. An event cut
+   * off by a drop doesn't count, so a resume asks for it again. Send it as
+   * `Last-Event-ID` to resume after a drop.
    */
   get lastEventId(): string {
     return this.#lastEventId;
@@ -149,7 +154,7 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
       case "id":
         // The rules ignore an id with a NUL in it.
         if (!value.includes("\0")) {
-          this.#lastEventId = value;
+          this.#idBuffer = value;
         }
         break;
       default:
@@ -159,6 +164,7 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
   }
 
   #dispatch(): ServerSentEvent | undefined {
+    this.#lastEventId = this.#idBuffer;
     const hasData = this.#dataLines.length > 0;
     const event: ServerSentEvent = {
       type: this.#type === "" ? "message" : this.#type,

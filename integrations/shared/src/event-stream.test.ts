@@ -86,8 +86,10 @@ describe("EventStream", () => {
     expect(await eventsOf(["id: 1\n\nid: a\0b\ndata: x\n\n"])).toEqual([message("x", "1")]);
   });
 
-  it("drops an event the stream ends in the middle of", async () => {
-    expect(await eventsOf(["data: done\n\ndata: cut"])).toEqual([message("done")]);
+  it("drops an event the stream ends in the middle of, and its id", async () => {
+    const stream = new EventStream(fakeByteStream(["id: 1\ndata: done\n\nid: 2\ndata: cut"]));
+    expect(await readAll(stream)).toEqual([message("done", "1")]);
+    expect(stream.lastEventId).toBe("1");
   });
 
   it("releases the stream after its end", async () => {
@@ -113,8 +115,15 @@ describe("EventStream", () => {
       for await (const event of stream) seen.push(event);
     }).rejects.toBe(drop);
     expect(seen).toEqual([message("a", "3")]);
-    // The cut event's id was read, so a resume starts after it; the service sends it again.
-    expect(stream.lastEventId).toBe("4");
+    // Event 4 was cut off, so a resume starts after event 3 and gets event 4 again.
+    expect(stream.lastEventId).toBe("3");
+  });
+
+  it("keeps an id for the next events until a new one comes", async () => {
+    expect(await eventsOf(["id: 7\ndata: a\n\ndata: b\n\n"])).toEqual([
+      message("a", "7"),
+      message("b", "7"),
+    ]);
   });
 
   it("refuses an event larger than the limit and cancels the stream", async () => {
@@ -143,6 +152,12 @@ describe("EventStream", () => {
       code: "bad-encoding",
       message: "The event stream isn't valid UTF-8.",
     });
+  });
+
+  it("reads the body of a real Response, which must fit ByteStream", async () => {
+    const body = new Response("id: 1\ndata: real\n\n").body;
+    if (body === null) throw new Error("The response has no body.");
+    expect(await readAll(new EventStream(body))).toEqual([message("real", "1")]);
   });
 
   it("can be read only once", async () => {

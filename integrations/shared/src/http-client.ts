@@ -65,7 +65,9 @@ export interface ByteStream {
 
 /** The parts of a `ReadableStreamDefaultReader<Uint8Array>` we use. */
 export interface ByteStreamReader {
-  read(): Promise<{ done: false; value: Uint8Array } | { done: true; value?: undefined }>;
+  read(): Promise<
+    { done: false; value: Uint8Array } | { done: true; value?: Uint8Array | undefined }
+  >;
   /** Stops the stream; the connection can be closed. */
   cancel(reason?: unknown): Promise<void>;
   releaseLock(): void;
