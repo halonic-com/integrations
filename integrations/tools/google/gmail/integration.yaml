@@ -1,0 +1,203 @@
+id: tool-google-gmail
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [connector]
+
+# Every request goes to the Gmail API, and only there.
+hosts:
+  - gmail.googleapis.com
+
+secrets:
+  google-account:
+    purpose: Access to the Google account you connect, through the Google sign-in.
+    hosts: [gmail.googleapis.com]
+    as: bearer
+
+# Not settled yet: the Google sign-in will read the scopes each service
+# needs from its sheet; the field name may change. gmail.modify is the only
+# scope that allows gmail_modify_labels (messages.batchModify), and it also
+# covers reading, drafts, sending and the signature (settings.sendAs). It
+# doesn't allow deleting mail for good.
+googleScopes:
+  - https://www.googleapis.com/auth/gmail.modify
+
+tokens: [] # Halonic's Google sign-in keeps the refresh token, not Gmail
+
+# Every text the model reads, word for word as in the code. Arguments the
+# code doesn't describe aren't listed.
+tools:
+  - name: gmail_triage
+    description: >-
+      For mailbox checks: searches mail (default: unread mail in the inbox)
+      and reads every match in one call. Returns each message's sender,
+      recipients, subject, date, labels, the first part of its body and its
+      attachments. Read a long body in full with gmail_read_message.
+    arguments:
+      query: "Gmail search query (default: is:unread in:inbox)."
+      bodyChars: Body characters per message (lowered automatically for many messages).
+      includeInline: Also list small inline images such as signature logos.
+      pageToken: nextPageToken from the previous call, for more results.
+    risk: read
+    untrusted: true # senders, subjects and bodies are written by other people
+  - name: gmail_search
+    description: >-
+      Searches mail with Gmail search syntax (e.g. "from:bank is:unread
+      newer_than:7d", "subject:invoice has:attachment"). Returns id, threadId,
+      from, to, cc, subject, date, labels and snippet per message, and an
+      estimate of how many messages match.
+    arguments:
+      query: "Gmail search query (default: in:inbox)."
+      pageToken: nextPageToken from the previous search, for more results.
+    risk: read
+    untrusted: true # senders, subjects and snippets are written by other people
+  - name: gmail_read_message
+    description: >-
+      Reads one message: headers, plain-text body (HTML converted to text)
+      and its attachments with name, type, size and partId. Long bodies come
+      in pages: when nextBodyOffset is present, call again with bodyOffset.
+    arguments:
+      maxBodyChars: Body characters to return (default 20000).
+      bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
+      includeInline: Also list small inline images such as signature logos.
+    risk: read
+    untrusted: true # the message is written by someone else
+  - name: gmail_read_thread
+    description: >-
+      Reads the messages of a conversation thread, oldest first, with the
+      first 4,000 characters of each body by default. Returns at most
+      maxMessages messages; when nextMessageOffset is present, call again
+      with messageOffset for the rest.
+    arguments:
+      maxBodyChars: Body characters to return per message (default 4000).
+      bodyOffset: Where to start in each body; use nextBodyOffset from the previous read.
+      includeInline: Also list small inline images such as signature logos.
+      maxMessages: Messages to return (default 25).
+      messageOffset: Where to start in the thread; use nextMessageOffset from the previous read.
+    risk: read
+    untrusted: true # the messages are written by other people
+  - name: gmail_list_labels
+    description: Lists label ids and names, for gmail_modify_labels and search.
+    risk: read
+    untrusted: true # label names aren't values the integration controls
+  - name: gmail_get_draft
+    description: >-
+      Shows a draft as it will be sent: to, cc, bcc, subject, body and
+      attachment names. Long bodies come in pages: when nextBodyOffset is
+      present, call again with bodyOffset.
+    arguments:
+      maxBodyChars: Body characters to return (default 20000).
+      bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
+    risk: read
+    untrusted: true # a reply draft quotes mail written by someone else
+  - name: gmail_modify_labels
+    description: >-
+      Adds or removes labels on messages. Mark read: remove "UNREAD".
+      Archive: remove "INBOX". Star: add "STARRED". Use label ids from
+      gmail_list_labels for custom labels.
+    risk: write
+    untrusted: false # returns only a count
+  - name: gmail_create_draft
+    description: >-
+      Creates a draft (not sent) in the account's Drafts folder. Prefer this
+      when a person should review before sending; send it later with
+      gmail_send_draft.
+    arguments:
+      to: 'Recipient addresses, e.g. "Name <someone@example.com>".'
+      subject: 'Subject. When replying and left empty, "Re: <original subject>" is used.'
+      body: >-
+        Plain-text body. End it with the last sentence of the message: no
+        closing line, name or signature. The account's Gmail signature is
+        appended, and it already carries the closing.
+      html: Optional HTML body, sent alongside the plain-text body.
+      replyToMessageId: >-
+        Gmail message id to reply to; keeps the reply in the same thread and
+        quotes the original below the signature, so do not paste the
+        original into the body.
+      quoteOriginal: Include the quoted original when replying (default true).
+      signature: Append the account's Gmail signature (default true).
+    risk: write
+    untrusted: false # returns only ids
+  - name: gmail_send
+    description: >-
+      Sends an email from the account; once sent it cannot be undone. To
+      reply in a thread, pass replyToMessageId.
+    arguments:
+      to: 'Recipient addresses, e.g. "Name <someone@example.com>".'
+      subject: 'Subject. When replying and left empty, "Re: <original subject>" is used.'
+      body: >-
+        Plain-text body. End it with the last sentence of the message: no
+        closing line, name or signature. The account's Gmail signature is
+        appended, and it already carries the closing.
+      html: Optional HTML body, sent alongside the plain-text body.
+      replyToMessageId: >-
+        Gmail message id to reply to; keeps the reply in the same thread and
+        quotes the original below the signature, so do not paste the
+        original into the body.
+      quoteOriginal: Include the quoted original when replying (default true).
+      signature: Append the account's Gmail signature (default true).
+    risk: send
+    untrusted: false # returns only ids
+  - name: gmail_send_draft
+    description: Sends an existing draft by draftId. Sending cannot be undone.
+    risk: send
+    untrusted: false # returns only ids
+
+needs: []
+
+# Fields that hold the user's own content, for the recorder. A message
+# appears at the top of a response (messages.get), in a thread's list
+# (threads.get) and inside a draft (drafts.get). Paths can't recurse, so
+# each MIME level is listed down to the fourth, the deepest Gmail nests
+# ordinary mail (mixed > related > alternative > text).
+recording:
+  userContent:
+    # messages.get
+    - response.body.snippet
+    - response.body.payload.headers[*].value
+    - response.body.payload.filename
+    - response.body.payload.body.data
+    - response.body.payload.parts[*].headers[*].value
+    - response.body.payload.parts[*].filename
+    - response.body.payload.parts[*].body.data
+    - response.body.payload.parts[*].parts[*].headers[*].value
+    - response.body.payload.parts[*].parts[*].filename
+    - response.body.payload.parts[*].parts[*].body.data
+    - response.body.payload.parts[*].parts[*].parts[*].headers[*].value
+    - response.body.payload.parts[*].parts[*].parts[*].filename
+    - response.body.payload.parts[*].parts[*].parts[*].body.data
+    # threads.get
+    - response.body.messages[*].snippet
+    - response.body.messages[*].payload.headers[*].value
+    - response.body.messages[*].payload.filename
+    - response.body.messages[*].payload.body.data
+    - response.body.messages[*].payload.parts[*].headers[*].value
+    - response.body.messages[*].payload.parts[*].filename
+    - response.body.messages[*].payload.parts[*].body.data
+    - response.body.messages[*].payload.parts[*].parts[*].headers[*].value
+    - response.body.messages[*].payload.parts[*].parts[*].filename
+    - response.body.messages[*].payload.parts[*].parts[*].body.data
+    - response.body.messages[*].payload.parts[*].parts[*].parts[*].headers[*].value
+    - response.body.messages[*].payload.parts[*].parts[*].parts[*].filename
+    - response.body.messages[*].payload.parts[*].parts[*].parts[*].body.data
+    # drafts.get
+    - response.body.message.snippet
+    - response.body.message.payload.headers[*].value
+    - response.body.message.payload.filename
+    - response.body.message.payload.body.data
+    - response.body.message.payload.parts[*].headers[*].value
+    - response.body.message.payload.parts[*].filename
+    - response.body.message.payload.parts[*].body.data
+    - response.body.message.payload.parts[*].parts[*].headers[*].value
+    - response.body.message.payload.parts[*].parts[*].filename
+    - response.body.message.payload.parts[*].parts[*].body.data
+    - response.body.message.payload.parts[*].parts[*].parts[*].headers[*].value
+    - response.body.message.payload.parts[*].parts[*].parts[*].filename
+    - response.body.message.payload.parts[*].parts[*].parts[*].body.data
+    # labels.list: the user names their own labels
+    - response.body.labels[*].name
+    # settings.sendAs.list: the signature and the name shown as sender
+    - response.body.sendAs[*].signature
+    - response.body.sendAs[*].displayName
+    # messages.send and drafts.create: the whole outgoing message
+    - request.body.raw
+    - request.body.message.raw
