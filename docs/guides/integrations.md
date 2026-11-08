@@ -491,6 +491,19 @@ An integration whose tools can change while it is connected, such as our
 MCP client, also implements the connection's optional `listTools`. Every
 other integration declares its tools once, in `tools`.
 
+The server writes the names, descriptions and schemas that `listTools`
+returns, so Halonic treats them as untrusted. For a tool that `tools`
+doesn't declare, Halonic fences off the description and the schema texts
+like an untrusted result, and counts its results as untrusted too. For a
+declared name, it uses the declared tool. **Don't fence these texts
+yourself** and never mark them trusted. Do strip hidden characters and
+cap their lengths, and refuse a tool whose name or property names aren't
+1 to 64 letters, digits, `_` or `-`: Halonic doesn't fence those.
+
+> **Not settled yet:** Halonic doesn't fence these texts yet
+> (`ports.untrusted-tool-listings` is a draft). Until it does, say in the
+> README that descriptions reach the model unfenced.
+
 A knowledge source says `provides: [knowledge]` and implements
 `createKnowledgeProvider(source)`. The same rules apply: one client, Zod
 checks and limits on every result. Its provider sets `untrusted`, with the
