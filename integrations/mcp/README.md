@@ -35,8 +35,9 @@ server's `ping` and refuses every other request from the server.
   `GET` and `Last-Event-ID`, only when the server gave its events ids. It
   gives up after 3 resumes in a row that brought no new event, so a long
   call the server closes on purpose keeps going, and after 10 resumes in
-  all, even when each brought a new event. The `retry:` pause is not
-  honoured yet: the kit has no timer for integrations.
+  all, even when each brought a new event. Before each resume it waits
+  with `host.wait` as long as the server's `retry:` asks, at least 1 s
+  and at most 30 s, the host's limit.
 - No standing `GET` stream for messages outside a request yet, so a
   `tools/list_changed` notice arrives only during a request.
 

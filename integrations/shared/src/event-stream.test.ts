@@ -58,10 +58,37 @@ describe("EventStream", () => {
     expect(await eventsOf(pieces)).toEqual([message("é")]);
   });
 
-  it("skips comments, unknown fields and retry", async () => {
+  it("skips comments and unknown fields, and keeps retry out of the events", async () => {
     expect(await eventsOf([": keep-alive\nretry: 1000\nfoo: bar\ndata: x\n\n"])).toEqual([
       message("x"),
     ]);
+  });
+
+  describe("reconnectionTimeMs", () => {
+    async function reconnectionTimeOf(text: string): Promise<number | undefined> {
+      const stream = new EventStream(fakeByteStream([text]));
+      await readAll(stream);
+      return stream.reconnectionTimeMs;
+    }
+
+    it("is undefined when the stream sends no retry", async () => {
+      expect(await reconnectionTimeOf("data: x\n\n")).toBeUndefined();
+    });
+
+    it("keeps the last valid retry", async () => {
+      expect(await reconnectionTimeOf("retry: 1000\ndata: x\n\nretry: 2500\n\n")).toBe(2500);
+    });
+
+    it("counts a retry whose event is cut off", async () => {
+      expect(await reconnectionTimeOf("retry: 1500\ndata: unfinished")).toBe(1500);
+    });
+
+    it.each(["-1", "1.5", "1e3", " 2000", "2000ms", ""])(
+      "ignores a retry of %j and keeps the one before",
+      async (value) => {
+        expect(await reconnectionTimeOf(`retry: 700\n\nretry: ${value}\n\n`)).toBe(700);
+      },
+    );
   });
 
   it("removes only one space after the colon", async () => {

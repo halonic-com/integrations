@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { McpError } from "./errors.ts";
 import { errorForStatus } from "./http-status.ts";
 import {
+  maxResumePauseMs,
   maxResumesPerRequest,
   maxResumesWithoutProgress,
+  minResumePauseMs,
   StreamableHttpTransport,
 } from "./http-transport.ts";
 import { McpSession } from "./session.ts";
 import { endpoint, type FakeEvent, type FakeExchange, FakeServer } from "./test/fake-server.ts";
+import { type FakeWait, fakeWait } from "./test/fake-wait.ts";
 
 const clientInfo = { name: "halonic", version: "0.1.0" };
 const auth = { secret: "mcp-server-key", as: "bearer" } as const;
@@ -75,13 +78,12 @@ function resumeFrom(lastEventId: string, events: FakeEvent[], drop = false): Fak
   };
 }
 
-async function connect(exchanges: FakeExchange[]) {
+async function connect(exchanges: FakeExchange[], { wait, waits }: FakeWait = fakeWait()) {
   const server = new FakeServer([...initializeExchanges, ...exchanges]);
-  const mcp = new McpSession(new StreamableHttpTransport(server, { url: endpoint, auth }), {
-    clientInfo,
-  });
+  const transport = new StreamableHttpTransport({ http: server, wait }, { url: endpoint, auth });
+  const mcp = new McpSession(transport, { clientInfo });
   await mcp.initialize();
-  return { server, mcp };
+  return { server, mcp, waits };
 }
 
 describe("StreamableHttpTransport", () => {
@@ -236,6 +238,61 @@ describe("StreamableHttpTransport", () => {
       await expect(mcp.callTool("echo", {})).rejects.toMatchObject({ code: "unavailable" });
     });
 
+    it("waits as long as the server's retry asks before it resumes", async () => {
+      const { server, mcp, waits } = await connect([
+        cutCall([{ id: "e1", retry: "2000" }], true),
+        resumeFrom("e1", [{ id: "e2", data: callAnswer }]),
+      ]);
+      await mcp.callTool("echo", {});
+      expect(waits).toEqual([2_000]);
+      server.assertAllUsed();
+    });
+
+    it("keeps the server's retry for the later resumes of the call", async () => {
+      const { mcp, waits } = await connect([
+        cutCall([{ id: "e1", retry: "2000" }], true),
+        resumeFrom("e1", [{ id: "e2" }], true),
+        resumeFrom("e2", [{ id: "e3", retry: "3000" }], true),
+        resumeFrom("e3", [{ id: "e4", data: callAnswer }]),
+      ]);
+      await mcp.callTool("echo", {});
+      expect(waits).toEqual([2_000, 2_000, 3_000]);
+    });
+
+    it.each([
+      ["no retry", undefined],
+      ["a retry shorter than the minimum", "0"],
+      ["an invalid retry", "soon"],
+    ])("waits the minimum pause after %s", async (_, retry) => {
+      const { mcp, waits } = await connect([
+        cutCall([{ id: "e1", ...(retry === undefined ? {} : { retry }) }], true),
+        resumeFrom("e1", [{ id: "e2", data: callAnswer }]),
+      ]);
+      await mcp.callTool("echo", {});
+      expect(waits).toEqual([minResumePauseMs]);
+    });
+
+    it("never asks the host to wait longer than its limit", async () => {
+      const { mcp, waits } = await connect([
+        cutCall([{ id: "e1", retry: "600000" }], true),
+        resumeFrom("e1", [{ id: "e2", data: callAnswer }]),
+      ]);
+      await mcp.callTool("echo", {});
+      expect(waits).toEqual([maxResumePauseMs]);
+    });
+
+    it("ends the call without resuming when it is cancelled during the pause", async () => {
+      const controller = new AbortController();
+      const cancelled = new Error("cancelled by the caller");
+      const pause = fakeWait(() => controller.abort(cancelled));
+      // No resume exchange: the fake server fails on a `GET` it doesn't expect.
+      const { server, mcp } = await connect([cutCall([{ id: "e1" }], true)], pause);
+      await expect(mcp.callTool("echo", {}, controller.signal)).rejects.toBe(cancelled);
+      expect(pause.waits).toEqual([minResumePauseMs]);
+      server.assertAllUsed();
+      server.assertNoBodyLeftOpen();
+    });
+
     it("refuses a resume the server answers without a stream", async () => {
       const { mcp } = await connect([
         cutCall([{ id: "e1" }], true),
@@ -371,9 +428,11 @@ describe("StreamableHttpTransport", () => {
         },
       },
     ]);
-    const mcp = new McpSession(new StreamableHttpTransport(server, { url: endpoint }), {
-      clientInfo,
-    });
+    const transport = new StreamableHttpTransport(
+      { http: server, wait: fakeWait().wait },
+      { url: endpoint },
+    );
+    const mcp = new McpSession(transport, { clientInfo });
     await expect(mcp.initialize()).rejects.toMatchObject({ code: "unexpected-response" });
     server.assertNoBodyLeftOpen();
   });
@@ -401,7 +460,11 @@ describe("StreamableHttpTransport", () => {
 
   it("sends no DELETE when the server gave no session", async () => {
     const server = new FakeServer([]);
-    await new StreamableHttpTransport(server, { url: endpoint }).close();
+    const transport = new StreamableHttpTransport(
+      { http: server, wait: fakeWait().wait },
+      { url: endpoint },
+    );
+    await transport.close();
     expect(server.calls).toEqual([]);
   });
 });

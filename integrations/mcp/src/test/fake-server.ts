@@ -3,8 +3,8 @@ import type { HttpClient, HttpRequestInit, HttpResponse } from "@halonicjs/integ
 /**
  * A fake MCP server for tests. Its exchanges have the shape of a
  * `halonic.recording/1` file, so they can move into recordings once replay
- * exists, plus two things recordings can't hold: event ids and a dropped
- * connection, which the resume tests need. Like replay, it fails on an
+ * exists, plus what recordings can't hold: event ids, `retry:` and a
+ * dropped connection, which the resume tests need. Like replay, it fails on an
  * unexpected call and `assertAllUsed` fails on an unused exchange.
  * `assertNoBodyLeftOpen` checks that the client read or cancelled every
  * answer, so no connection stays open.
@@ -40,6 +40,8 @@ export type FakeBody =
 export interface FakeEvent {
   readonly id?: string;
   readonly data?: unknown;
+  /** Sent as it is in a `retry:` line, so a test can also send an invalid value. */
+  readonly retry?: string;
 }
 
 export const endpoint = "https://mcp.example.com/mcp";
@@ -157,7 +159,8 @@ function bodyText(body: FakeBody): string {
 
 /** The lines of one event, without the blank line that completes it. */
 function eventLines(event: FakeEvent): string {
+  const retry = event.retry === undefined ? "" : `retry: ${event.retry}\n`;
   const id = event.id === undefined ? "" : `id: ${event.id}\n`;
   const data = event.data === undefined ? "" : ` ${JSON.stringify(event.data)}`;
-  return `${id}data:${data}\n`;
+  return `${retry}${id}data:${data}\n`;
 }

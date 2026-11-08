@@ -3,11 +3,11 @@ import {
   type ByteStream,
   EventStream,
   EventStreamError,
-  type HttpClient,
   type HttpResponse,
   type SecretPlacement,
 } from "@halonicjs/integration-shared";
 import { McpError, unexpectedResponse } from "./errors.ts";
+import { type McpHost, maxIntegrationWaitMs } from "./host.ts";
 import { errorForStatus } from "./http-status.ts";
 import type { JsonRpcRequest, OutgoingMessage } from "./json-rpc.ts";
 import type { McpTransport } from "./transport.ts";
@@ -40,6 +40,22 @@ export const maxResumesWithoutProgress = 3;
 export const maxResumesPerRequest = 10;
 
 /**
+ * The shortest pause before a resume, in milliseconds. It applies when the
+ * server sends no `retry:`, and also when it asks for less, so a server
+ * that closes the stream at once can't make us send `GET`s back to back.
+ * The spec lets a client wait longer than `retry:` asks. One second keeps
+ * a call that the server closes on purpose a few times quick.
+ */
+export const minResumePauseMs = 1_000;
+
+/**
+ * The longest pause before a resume, in milliseconds: the host's own limit
+ * for `wait`. A server that asks for more waits this long; the caller's
+ * deadline still ends the call.
+ */
+export const maxResumePauseMs = maxIntegrationWaitMs;
+
+/**
  * The streamable HTTP transport
  * (https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http).
  *
@@ -52,17 +68,18 @@ export const maxResumesPerRequest = 10;
  * gave its events ids, we resume with a `GET` and `Last-Event-ID`, until
  * {@link maxResumesWithoutProgress} resumes in a row brought no new event,
  * and never more than {@link maxResumesPerRequest} times in all.
- * A server that wants a pause first (`retry:`) gets none: the kit has no
- * timer for integrations yet.
+ * Before each resume we wait with `host.wait` for as long as the server's
+ * last `retry:` asked, kept between {@link minResumePauseMs} and
+ * {@link maxResumePauseMs}. Cancelling the call also cancels the pause.
  */
 export class StreamableHttpTransport implements McpTransport {
-  readonly #http: HttpClient;
+  readonly #host: McpHost;
   readonly #options: StreamableHttpOptions;
   #sessionId: string | undefined;
   #protocolVersion: string | undefined;
 
-  constructor(http: HttpClient, options: StreamableHttpOptions) {
-    this.#http = http;
+  constructor(host: McpHost, options: StreamableHttpOptions) {
+    this.#host = host;
     this.#options = options;
   }
 
@@ -122,6 +139,9 @@ export class StreamableHttpTransport implements McpTransport {
     let body = firstBody;
     // The id of the last complete event over all streams of this request.
     let lastEventId = "";
+    // The server's last valid `retry:` over all streams of this request, as
+    // a browser's EventSource keeps it across reconnections.
+    let reconnectionTimeMs: number | undefined;
     let resumesWithoutProgress = 0;
     let resumes = 0;
     while (true) {
@@ -136,6 +156,7 @@ export class StreamableHttpTransport implements McpTransport {
         if (error instanceof McpError) throw error;
         drop = { error };
       }
+      reconnectionTimeMs = events.reconnectionTimeMs ?? reconnectionTimeMs;
       if (events.lastEventId !== "" && events.lastEventId !== lastEventId) {
         lastEventId = events.lastEventId;
         resumesWithoutProgress = 0;
@@ -154,6 +175,8 @@ export class StreamableHttpTransport implements McpTransport {
       }
       resumesWithoutProgress += 1;
       resumes += 1;
+      // An abort during the pause rejects here and ends the call.
+      await this.#host.wait(resumePauseMs(reconnectionTimeMs), signal);
       body = await this.#resume(lastEventId, signal);
     }
   }
@@ -183,7 +206,7 @@ export class StreamableHttpTransport implements McpTransport {
     if (this.#sessionId !== undefined) headers["mcp-session-id"] = this.#sessionId;
     if (this.#protocolVersion !== undefined)
       headers["mcp-protocol-version"] = this.#protocolVersion;
-    return this.#http.fetch(this.#options.url, {
+    return this.#host.http.fetch(this.#options.url, {
       method,
       headers,
       ...(body === undefined ? {} : { body }),
@@ -209,6 +232,12 @@ export class StreamableHttpTransport implements McpTransport {
     if (!/^[\x21-\x7e]{1,256}$/.test(sessionId)) throw unexpectedResponse();
     this.#sessionId = sessionId;
   }
+}
+
+/** The pause before a resume: the server's `retry:`, kept between our minimum and maximum. */
+function resumePauseMs(reconnectionTimeMs: number | undefined): number {
+  const asked = reconnectionTimeMs ?? minResumePauseMs;
+  return Math.min(Math.max(asked, minResumePauseMs), maxResumePauseMs);
 }
 
 function isRequest(message: OutgoingMessage): message is JsonRpcRequest {
