@@ -22,7 +22,8 @@ const sheetFile = /^integrations\/(?:.+\/)?integration\.yaml$/;
  * its own list of Google APIs:
  *
  * - `googleScopes`: `{ scope, reason }` per scope; the scope is a Google
- *   scope URL and the reason is shown to the user.
+ *   scope URL and the reason is shown to the user. `restricted: true` marks
+ *   a scope Google calls restricted, so Studio can tag it.
  * - `googleApis`: `{ api, name }` per API the user switches on in the
  *   Google Cloud Console; at least one whenever `googleScopes` is set.
  * - `googleCheck`: one `GET` without a body to a host of the sheet and of
@@ -70,7 +71,7 @@ class SheetChecker {
       return;
     }
     this.whenPresent("googleScopes", (field) =>
-      this.checkEntries(field, "googleScopes", ["scope", "reason"]),
+      this.checkEntries(field, "googleScopes", ["scope", "reason"], ["restricted"]),
     );
     this.whenPresent("googleApis", (field) =>
       this.checkEntries(field, "googleApis", ["api", "name"]),
@@ -90,9 +91,18 @@ class SheetChecker {
     return isMapping(secrets) && googleSecret in secrets;
   }
 
-  /** Each entry is a mapping with exactly these keys, each holding non-empty text. */
-  private checkEntries(field: SheetField, name: string, keys: readonly [string, string]): void {
+  /**
+   * Each entry is a mapping with these keys, each holding non-empty text, and
+   * nothing else but the optional keys.
+   */
+  private checkEntries(
+    field: SheetField,
+    name: string,
+    keys: readonly [string, string],
+    optionalKeys: readonly string[] = [],
+  ): void {
     const shape = `{ ${keys.join(", ")} }`;
+    const allowedKeys = [...keys, ...optionalKeys];
     if (!Array.isArray(field.value)) {
       this.error(field, `${name} is a list of ${shape} entries.`);
       return;
@@ -103,8 +113,9 @@ class SheetChecker {
         this.error(field, `${where} is ${shape}, not plain text.`);
         continue;
       }
-      for (const extra of Object.keys(entry).filter((key) => !keys.includes(key))) {
-        this.error(field, `${where} has ${extra}; an entry holds only ${shape}.`);
+      const optional = optionalKeys.length > 0 ? ` and optionally ${optionalKeys.join(", ")}` : "";
+      for (const extra of Object.keys(entry).filter((key) => !allowedKeys.includes(key))) {
+        this.error(field, `${where} has ${extra}; an entry holds only ${shape}${optional}.`);
       }
       for (const key of keys) {
         if (!isText(entry[key])) {
@@ -115,6 +126,14 @@ class SheetChecker {
         this.error(
           field,
           `${where}: scope is a full Google scope URL, such as https://www.googleapis.com/auth/drive, or openid, email or profile.`,
+        );
+      }
+      // Only `true`: a scope that isn't restricted leaves the key out, so a
+      // `false` can't hide a typo such as `ture`.
+      if (name === "googleScopes" && "restricted" in entry && entry["restricted"] !== "true") {
+        this.error(
+          field,
+          `${where}: restricted is true, for a scope Google calls restricted. Leave it out otherwise.`,
         );
       }
       if (name === "googleApis" && isText(entry["api"]) && !isGoogleApi(entry["api"])) {
