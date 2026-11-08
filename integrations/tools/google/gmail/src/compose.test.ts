@@ -44,7 +44,7 @@ function fakeGmail(answers: Record<string, { status: number; body: unknown }>) {
       };
     },
   };
-  return { client: new GmailClient({ http }), asked };
+  return { client: new GmailClient({ http, wait: async () => {} }), asked };
 }
 
 const compose = (args: Record<string, unknown>) => composeArguments.parse(args);
