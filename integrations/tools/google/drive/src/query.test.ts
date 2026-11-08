@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { allOf, bracketsBalance, inFolder, nameOrContentHas, notTrashed, quoted } from "./query.ts";
+import {
+  allOf,
+  inFolder,
+  nameOrContentHas,
+  notTrashed,
+  quoted,
+  staysInOneClause,
+} from "./query.ts";
 
 describe("Drive query", () => {
   it("quotes a value and escapes backslashes and single quotes", () => {
@@ -16,22 +23,28 @@ describe("Drive query", () => {
   });
 
   it("accepts balanced brackets, also with brackets and escaped quotes inside strings", () => {
-    expect(bracketsBalance("name = 'a' or name = 'b'")).toBe(true);
-    expect(bracketsBalance("(name = 'a' or name = 'b') and mimeType = 'text/plain'")).toBe(true);
-    expect(bracketsBalance("name = 'a)'")).toBe(true);
-    expect(bracketsBalance("name = 'Tom\\'s (plan'")).toBe(true);
-    expect(bracketsBalance("name = 'a\\\\' and (starred = true)")).toBe(true);
+    expect(staysInOneClause("name = 'a' or name = 'b'")).toBe(true);
+    expect(staysInOneClause("(name = 'a' or name = 'b') and mimeType = 'text/plain'")).toBe(true);
+    expect(staysInOneClause("name = 'a)'")).toBe(true);
+    expect(staysInOneClause("name = 'Tom\\'s (plan'")).toBe(true);
+    expect(staysInOneClause("name = 'a\\\\' and (starred = true)")).toBe(true);
+    expect(staysInOneClause(`fullText contains '"exact words"'`)).toBe(true);
   });
 
   it("refuses a query that closes a bracket it didn't open, or leaves one open", () => {
-    expect(bracketsBalance("name = 'a') or (trashed = true")).toBe(false);
-    expect(bracketsBalance("(name = 'a'")).toBe(false);
-    expect(bracketsBalance("name = 'a')")).toBe(false);
+    expect(staysInOneClause("name = 'a') or (trashed = true")).toBe(false);
+    expect(staysInOneClause("(name = 'a'")).toBe(false);
+    expect(staysInOneClause("name = 'a')")).toBe(false);
   });
 
   it("refuses a string that is left open, which would hide a bracket", () => {
-    expect(bracketsBalance("name = 'a) or (trashed = true")).toBe(false);
-    expect(bracketsBalance("name = 'a\\')")).toBe(false);
+    expect(staysInOneClause("name = 'a) or (trashed = true")).toBe(false);
+    expect(staysInOneClause("name = 'a\\')")).toBe(false);
+  });
+
+  it("refuses a double quote outside a string, which Drive might read as a string of its own", () => {
+    expect(staysInOneClause(`name = "'") or (trashed = true or name = "'"`)).toBe(false);
+    expect(staysInOneClause(`name = "report"`)).toBe(false);
   });
 
   it("joins clauses with and", () => {
