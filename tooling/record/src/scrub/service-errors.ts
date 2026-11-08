@@ -22,6 +22,30 @@ interface ServiceErrorFormat {
 }
 
 /**
+ * The free-text fields of Google's `google.rpc` error details, a fixed set of
+ * types: https://cloud.google.com/apis/design/errors#error_details
+ *
+ * Each detail's `@type`, `reason`, `domain` and `retryDelay` stay. Gemini,
+ * for one, says a key was refused only in an `ErrorInfo`'s `reason`
+ * (`API_KEY_INVALID`). A field not listed here still goes through the
+ * free-text rules, and a `details` that isn't a list is replaced whole.
+ */
+const googleErrorDetailText = [
+  "fieldViolations", // BadRequest
+  "violations", // QuotaFailure, PreconditionFailure
+  "metadata", // ErrorInfo
+  "message", // LocalizedMessage
+  "links", // Help
+  "resourceName", // ResourceInfo
+  "owner", // ResourceInfo
+  "description", // ResourceInfo
+  "stackEntries", // DebugInfo
+  "detail", // DebugInfo
+  "requestId", // RequestInfo
+  "servingData", // RequestInfo
+];
+
+/**
  * Google's JSON API errors, the same for Gmail, Drive and every other
  * `*.googleapis.com` API: https://cloud.google.com/apis/design/errors
  *
@@ -40,8 +64,7 @@ const googleErrors: ServiceErrorFormat = {
     // The sentence about the error, and the same per error in the older format
     "response.body.error.message",
     "response.body.error.errors[*].message",
-    // BadRequest describes each refused field in words, ErrorInfo carries metadata
-    "response.body.error.details",
+    ...googleErrorDetailText.map((field) => `response.body.error.details[*].${field}`),
   ],
 };
 
