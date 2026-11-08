@@ -526,9 +526,22 @@ same meaning as on a tool: `true` when hits and documents hold text from
 outside the account, such as a remote server's answers. Halonic fences
 them off when it is `true` or missing, so always set it.
 
-> **Not settled yet:** streaming answers arrive with the first provider
-> that streams. Write `chat` so that adding a streaming method later
-> doesn't change it.
+A model provider that streams also implements the optional `stream`, and
+sets `capabilities.streaming` only then:
+
+- **Send the same request as `chat`,** with the service's switch for
+  streaming, and read the events with `EventStream` from
+  `integrations/shared`.
+- **End with one `done` that holds exactly what `chat` returns** for the
+  same answer. Build the service's whole answer from the events and map it
+  with the same function `chat` uses, so the two can't drift apart.
+- **The pieces must add up to `done`:** the `text` deltas joined are its
+  `content`, and each tool call's `arguments` pieces joined parse to its
+  arguments. `index` counts tool calls, not the service's blocks.
+- **Errors follow section 7:** an error event in the stream gets a code
+  from the service's error type, never its text; a stream that ends before
+  the service's end event is `unexpected-response`; the kit's errors and a
+  dropped connection pass through unchanged.
 
 ## 7. Errors
 

@@ -1,8 +1,12 @@
+import { EventStream } from "@halonicjs/integration-shared";
 import { errorForResponse, unexpectedResponse } from "./errors.ts";
 import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
+import { fromAnthropicStream } from "./from-stream.ts";
 import type {
   ChatRequest,
   ChatResponse,
+  ChatStreamEvent,
+  HttpResponse,
   IntegrationHttpClient,
   LlmCapabilities,
   LlmProvider,
@@ -15,15 +19,14 @@ export const messagesUrl = "https://api.anthropic.com/v1/messages";
 export const apiVersion = "2023-06-01";
 
 /**
- * Only what the mapping handles. Images aren't in `ChatMessage` yet, a JSON
- * answer is only asked for in words (see `to-request.ts`), and streaming
- * comes with `stream`.
+ * Only what the mapping handles. Images aren't in `ChatMessage` yet, and a
+ * JSON answer is only asked for in words (see `to-request.ts`).
  */
 export const anthropicCapabilities: LlmCapabilities = {
   tools: true,
   jsonOutput: false,
   vision: false,
-  streaming: false,
+  streaming: true,
 };
 
 /**
@@ -40,6 +43,7 @@ export function createAnthropicProvider(
     type: "anthropic",
     capabilities: anthropicCapabilities,
     chat: (request) => chat(http, request),
+    stream: (request) => stream(http, request),
   };
 }
 
@@ -54,16 +58,47 @@ async function chat(http: IntegrationHttpClient, request: ChatRequest): Promise<
 }
 
 /**
- * Sends one Messages request and returns the JSON body of a successful
- * answer. The kit's own errors (refused host or secret, timeout, abort)
- * pass through unchanged. Streaming will send the same body with
- * `stream: true` and read the answer as events instead.
+ * The same request as `chat`, with `stream: true`, read as events as the
+ * model writes. Also one request, never retried. Aborting the signal ends
+ * the stream with the kit's error, and leaving the loop early closes the
+ * connection.
  */
+async function* stream(
+  http: IntegrationHttpClient,
+  request: ChatRequest,
+): AsyncGenerator<ChatStreamEvent> {
+  const body = { ...toAnthropicRequest(request), stream: true as const };
+  const response = await sendMessages(http, body, request.signal);
+  if (response.body === null || mediaType(response) !== "text/event-stream") {
+    throw unexpectedResponse();
+  }
+  yield* fromAnthropicStream(new EventStream(response.body));
+}
+
+/** Sends one Messages request and returns the JSON body of a successful answer. */
 async function postMessages(
   http: IntegrationHttpClient,
   body: AnthropicRequest,
   signal: ChatRequest["signal"],
 ): Promise<unknown> {
+  const response = await sendMessages(http, body, signal);
+  try {
+    return await response.json();
+  } catch {
+    throw unexpectedResponse();
+  }
+}
+
+/**
+ * Sends one Messages request and returns a successful response, before its
+ * body is read. The kit's own errors (refused host or secret, timeout,
+ * abort) pass through unchanged.
+ */
+async function sendMessages(
+  http: IntegrationHttpClient,
+  body: AnthropicRequest & { stream?: true },
+  signal: ChatRequest["signal"],
+): Promise<HttpResponse> {
   const response = await http.fetch(messagesUrl, {
     method: "POST",
     headers: { "content-type": "application/json", "anthropic-version": apiVersion },
@@ -74,9 +109,10 @@ async function postMessages(
   if (!response.ok) {
     throw await errorForResponse(response);
   }
-  try {
-    return await response.json();
-  } catch {
-    throw unexpectedResponse();
-  }
+  return response;
+}
+
+/** The media type of the response, without parameters such as `charset`. */
+function mediaType(response: HttpResponse): string {
+  return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }

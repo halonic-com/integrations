@@ -51,6 +51,36 @@ export async function errorForResponse(response: HttpResponse): Promise<Anthropi
   return new AnthropicError(code, `${messages[code]}${detail}.`);
 }
 
+/**
+ * The error for an `error` event in a streamed answer. The HTTP status was
+ * already `200`, so the code comes from Anthropic's error type instead,
+ * such as `overloaded_error` when the API is overloaded mid-answer.
+ * https://docs.anthropic.com/en/docs/build-with-claude/streaming#error-events
+ */
+export function errorForStreamEvent(data: unknown): AnthropicError {
+  const body = errorBodySchema.safeParse(data);
+  if (!body.success) {
+    return unexpectedResponse();
+  }
+  const type = body.data.error.type;
+  const code = codeForErrorType.get(type) ?? "unavailable";
+  return new AnthropicError(code, `${messages[code]} (${type}).`);
+}
+
+/**
+ * Anthropic's error types, by the status they belong to. A Map, because
+ * the type comes from the service. Any other type, such as `api_error` or
+ * `overloaded_error`, is `unavailable`.
+ */
+const codeForErrorType: ReadonlyMap<string, AnthropicErrorCode> = new Map([
+  ["invalid_request_error", "bad-arguments"],
+  ["request_too_large", "bad-arguments"],
+  ["authentication_error", "not-signed-in"],
+  ["permission_error", "not-allowed"],
+  ["not_found_error", "not-found"],
+  ["rate_limit_error", "rate-limited"],
+]);
+
 /** For a body that isn't JSON or that the schema refuses. The parse error isn't attached: it can quote the body. */
 export function unexpectedResponse(): AnthropicError {
   return new AnthropicError("unexpected-response", `${messages["unexpected-response"]}.`);

@@ -35,6 +35,18 @@ output token, and the stop reason as
 `finishReason` (`end_turn` and `stop_sequence` → `stop`, `tool_use` →
 `tool_calls`, `max_tokens` → `length`, anything else → `other`).
 
+`stream` sends the same request with `stream: true` and reads Anthropic's
+[streamed events](https://docs.anthropic.com/en/docs/build-with-claude/streaming)
+with `EventStream` from `integrations/shared`. It yields each text piece as
+`text`, each tool call as `tool-call` pieces (the first with the call's id
+and name, then the pieces of its argument JSON; `{}` when a tool without
+arguments sends none), and ends with one `done` holding exactly what `chat`
+returns for the same answer: the blocks are rebuilt from the events and
+mapped by the same code. Thinking isn't yielded as `reasoning`, because
+`chat` keeps it only in `replay`. An `error` event mid-answer becomes an
+`AnthropicError` by its type (`overloaded_error` → `unavailable`), and a
+stream that ends before `message_stop` is `unexpected-response`.
+
 Thinking is sent back unchanged: an assistant message with an Anthropic
 `replay` goes back as exactly that content, signatures and block order
 included. Without one, or with another provider's after a model switch,
@@ -42,11 +54,14 @@ the turn is rebuilt from `content` and `toolCalls`.
 
 ## Limits
 
-- **Capabilities:** `tools` only. `jsonOutput` is `false`: the Messages
+- **Capabilities:** `tools` and `streaming`. `jsonOutput` is `false`: the Messages
   API can only guarantee JSON against a schema, and `ChatRequest` carries
   none, so a JSON answer is asked for in words. `vision` is `false` until
-  `ChatMessage` carries images. `streaming` is `false` until `stream` is
-  added.
+  `ChatMessage` carries images.
+- **Headers timeout:** the sheet keeps the 10-minute `headersTimeoutMs`,
+  because `chat` gets its headers only when the answer is done. `stream`
+  gets them at once and then has the kit's 60 seconds between two pieces;
+  Anthropic sends `ping` events to keep a slow answer inside that.
 - **Sampling:** `temperature` and `topP` are sent as given, but most
   current Claude models refuse them. Opus 4.7 and later, Opus 5 and 5.5,
   Fable 5 and 5.1 and Sonnet 5 refuse any value, and Sonnet 5.5 refuses
@@ -63,4 +78,8 @@ the turn is rebuilt from `content` and `toolCalls`.
   `pnpm record` and an Anthropic test account weren't available yet. They
   follow Anthropic's documented response shapes in the recorder's format,
   scrubbed as the recorder would scrub them. Replace them with real
-  recordings once both are available.
+  recordings once both are available. A streamed tool call has no
+  recording yet: the recorder scrubs each `partial_json` piece on its own,
+  so the pieces no longer join to JSON on replay. Its mapping is tested
+  with hand-written events in `from-stream.test.ts` until the recorder
+  scrubs the joined arguments.

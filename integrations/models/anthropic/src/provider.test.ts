@@ -3,10 +3,18 @@ import { describe, expect, it } from "vitest";
 import answerText from "../recordings/answer-text.json" with { type: "json" };
 import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import overloaded from "../recordings/overloaded.json" with { type: "json" };
+import streamOverloaded from "../recordings/stream-overloaded.json" with { type: "json" };
+import streamText from "../recordings/stream-text.json" with { type: "json" };
 import toolCall from "../recordings/tool-call.json" with { type: "json" };
 import { AnthropicError } from "./errors.ts";
 import { anthropic } from "./index.ts";
-import type { ChatRequest, IntegrationHttpClient, ProviderConfig } from "./kit.ts";
+import type {
+  ChatRequest,
+  ChatStreamEvent,
+  IntegrationHttpClient,
+  LlmProvider,
+  ProviderConfig,
+} from "./kit.ts";
 import { createAnthropicProvider } from "./provider.ts";
 
 /**
@@ -49,6 +57,17 @@ const briefQuestion: ChatRequest = {
 
 function provider(http: IntegrationHttpClient) {
   return createAnthropicProvider(http, config);
+}
+
+async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
+  if (llm.stream === undefined) {
+    throw new Error("The provider doesn't stream.");
+  }
+  const read: ChatStreamEvent[] = [];
+  for await (const piece of llm.stream(request)) {
+    read.push(piece);
+  }
+  return read;
 }
 
 describe("chat", () => {
@@ -164,14 +183,94 @@ describe("chat errors", () => {
   });
 });
 
+describe("stream", () => {
+  it("sends the chat request with stream: true and yields the text, then done", async () => {
+    const recording = replay(streamText, { policy });
+    const read = await readStream(provider(recording.http), briefQuestion);
+    recording.assertAllUsed();
+    expect(recording.sent[0]?.body).toMatchObject({ stream: true, model });
+    expect(recording.sent[0]?.init.auth).toEqual({
+      secret: "anthropic-key",
+      as: "header",
+      header: "x-api-key",
+    });
+    const texts = read.filter((piece) => piece.type === "text").map((piece) => piece.delta);
+    expect(texts).toHaveLength(3);
+    expect(read.at(-1)).toEqual({
+      type: "done",
+      response: {
+        content: texts.join(""),
+        toolCalls: [],
+        replay: { type: "anthropic", data: [{ type: "text", text: texts.join("") }] },
+        usage: { inputTokens: 21, outputTokens: 9 },
+        finishReason: "stop",
+      },
+    });
+  });
+
+  it("sends the same body as chat apart from stream", async () => {
+    const chatRecording = replay(answerText, { policy });
+    await provider(chatRecording.http).chat(briefQuestion);
+    const streamRecording = replay(streamText, { policy });
+    await readStream(provider(streamRecording.http), briefQuestion);
+    expect(streamRecording.sent[0]?.body).toEqual({
+      ...(chatRecording.sent[0]?.body as object),
+      stream: true,
+    });
+  });
+
+  it("passes the signal on", async () => {
+    const recording = replay(streamText, { policy });
+    const signal = { aborted: false };
+    await readStream(provider(recording.http), { ...briefQuestion, signal });
+    expect(recording.sent[0]?.init.signal).toBe(signal);
+  });
+
+  it("reports an error event mid-answer by its type", async () => {
+    const recording = replay(streamOverloaded, { policy });
+    const read: ChatStreamEvent[] = [];
+    const error = await (async () => {
+      for await (const piece of provider(recording.http).stream?.(question) ?? []) {
+        read.push(piece);
+      }
+    })().catch((caught) => caught);
+    expect(read.map((piece) => piece.type)).toEqual(["text", "text"]);
+    expect(error).toBeInstanceOf(AnthropicError);
+    expect(error).toMatchObject({ code: "unavailable" });
+    expect(error.message).toBe(
+      "Anthropic is having trouble right now. Try again later (overloaded_error).",
+    );
+  });
+
+  it("reports a refused key before any event, like chat", async () => {
+    const http = fakeResponse(401, async () => ({
+      type: "error",
+      error: { type: "authentication_error", message: "invalid x-api-key" },
+    }));
+    const error = await readStream(provider(http), question).catch((caught) => caught);
+    expect(error).toMatchObject({ code: "not-signed-in", name: "AnthropicError" });
+  });
+
+  it("refuses a successful answer that isn't an event stream", async () => {
+    const http = fakeResponse(200, async () => ({ content: [] }));
+    const error = await readStream(provider(http), question).catch((caught) => caught);
+    expect(error).toMatchObject({ code: "unexpected-response" });
+  });
+});
+
 describe("the integration", () => {
   it("reports only the capabilities the mapping handles", () => {
     const connection = anthropic.connect({ http: replay(answerText).http });
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "claude",
       type: "anthropic",
-      capabilities: { tools: true, jsonOutput: false, vision: false, streaming: false },
+      capabilities: { tools: true, jsonOutput: false, vision: false, streaming: true },
     });
+  });
+
+  it("offers stream along with chat", () => {
+    const connection = anthropic.connect({ http: replay(answerText).http });
+    expect(connection.createLlmProvider?.(config).stream).toBeTypeOf("function");
   });
 
   it("has no tools", async () => {
