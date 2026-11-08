@@ -9,3 +9,4 @@ export type {
   HttpResponse,
   SecretPlacement,
 } from "./http-client.ts";
+export { cutText } from "./text.ts";
