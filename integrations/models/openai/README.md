@@ -39,6 +39,10 @@ refusal), its `tool_calls` with the arguments parsed, `usage` from
 - **Capabilities:** `tools` and `jsonOutput`. `vision` is `false` until
   `ChatMessage` carries images. `streaming` is `false` until `stream` is
   added.
+- **Sampling:** `temperature`, `topP` and `stop` are sent as given, but
+  reasoning models refuse them, and a workflow that sets them for such a
+  model gets `bad-arguments`. In the same way, only reasoning models accept
+  `reasoningEffort`.
 - **Broken tool arguments:** when the model's arguments aren't a JSON
   object, for example in an answer cut off at the token limit, the answer
   is refused as `unexpected-response` rather than running the tool with
