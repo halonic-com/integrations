@@ -40,17 +40,27 @@ export function toHits(result: McpToolResult, sourceId: string, limit: number): 
     return [textAnswerHit(texts, sourceId)];
   }
   const kept = results.slice(0, limit);
-  const useServerScores = kept.every((result) => serverScoreOf(result) !== undefined);
-  return kept.map((result, rank) =>
-    toHit(result, useServerScores ? (serverScoreOf(result) ?? 0) : rankScore(rank)),
-  );
+  return hitsWithServerScores(kept) ?? kept.map((result, rank) => toHit(result, rankScore(rank)));
 }
 
 /**
- * The result's own `score`, when it is a number. We use the server's
- * scores only when every hit has one: a server's score and a rank-based
- * one aren't on the same scale, so one list must not mix them.
+ * The hits with the server's own scores, or `undefined` when one of them
+ * has none: a server's score and a rank-based one aren't on the same
+ * scale, so one list must not mix them.
  */
+function hitsWithServerScores(results: readonly JsonObject[]): KnowledgeHit[] | undefined {
+  const hits: KnowledgeHit[] = [];
+  for (const result of results) {
+    const score = serverScoreOf(result);
+    if (score === undefined) {
+      return undefined;
+    }
+    hits.push(toHit(result, score));
+  }
+  return hits;
+}
+
+/** The result's own `score`, when it is a finite number. */
 function serverScoreOf(result: JsonObject): number | undefined {
   const score = Object.hasOwn(result, "score") ? result["score"] : undefined;
   return typeof score === "number" && Number.isFinite(score) ? score : undefined;
@@ -119,7 +129,7 @@ function toHit(result: JsonObject, score: number): KnowledgeHit {
 
 /**
  * The one hit for a plain-text answer. It is no document of its own: its
- * ref only names it, as the old source's did.
+ * ref only names it.
  */
 function textAnswerHit(texts: readonly string[], sourceId: string): KnowledgeHit {
   return {
