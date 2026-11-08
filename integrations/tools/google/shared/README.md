@@ -89,7 +89,9 @@ straight to the API's "Enable" page:
 
 Google names the project by its number, not its id. A field is `undefined`
 when Google leaves it out or it doesn't have the shape of an API name or a
-project, so no free text gets through. Gmail and Drive need no change for
+project, so no free text gets through. An `errors` entry or a detail the
+library can't read is skipped on its own, so a good `ErrorInfo` next to
+it still counts. Gmail and Drive need no change for
 this: every request goes through `googleApi`.
 
 ```ts

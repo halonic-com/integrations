@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { disabledApiIn } from "./disabled-api.ts";
 import {
   errorInfoOnlyBody,
+  oddEntryServiceDisabledBody,
   recordedServiceDisabledBody,
   serviceDisabledBody,
 } from "./test/service-disabled.ts";
@@ -97,6 +98,42 @@ describe("disabledApiIn", () => {
     ["an OAuth error", JSON.stringify({ error: "invalid_grant" })],
   ])("says nothing for %s", (_case, body) => {
     expect(disabledApiIn(body)).toBeUndefined();
+  });
+
+  it("skips an errors entry it can't read and still finds the ErrorInfo", () => {
+    expect(disabledApiIn(oddEntryServiceDisabledBody())).toEqual({
+      api: "drive.googleapis.com",
+      project: "123456789012",
+    });
+  });
+
+  it.each([
+    ["an entry that isn't an object", ["not an object", { reason: "accessNotConfigured" }]],
+    [
+      "an entry with a reason that isn't a string",
+      [{ reason: 42 }, { reason: "accessNotConfigured" }],
+    ],
+  ])("finds accessNotConfigured after %s", (_case, errors) => {
+    const body = JSON.stringify({ error: { code: 403, errors } });
+    expect(disabledApiIn(body)).toEqual({ api: undefined, project: undefined });
+  });
+
+  it("finds the ErrorInfo when the errors list isn't a list", () => {
+    const body = errorInfoOnlyBody({ service: "drive.googleapis.com" });
+    const withOddErrors = JSON.stringify({
+      error: { ...JSON.parse(body).error, errors: "Holiday plans for alex@example.com" },
+    });
+    expect(disabledApiIn(withOddErrors)).toEqual({
+      api: "drive.googleapis.com",
+      project: undefined,
+    });
+  });
+
+  it("finds accessNotConfigured when the details aren't a list", () => {
+    const body = JSON.stringify({
+      error: { errors: [{ reason: "accessNotConfigured" }], details: { odd: true } },
+    });
+    expect(disabledApiIn(body)).toEqual({ api: undefined, project: undefined });
   });
 
   it("skips details it can't read and finds the ErrorInfo after them", () => {

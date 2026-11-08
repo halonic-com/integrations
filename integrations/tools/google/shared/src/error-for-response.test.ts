@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { codeForStatus, errorForResponse, unexpectedResponse } from "./error-for-response.ts";
 import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import {
+  oddEntryServiceDisabledBody,
   recordedServiceDisabledBody,
   serviceDisabledBody,
   userContentInFreeText,
@@ -95,6 +96,28 @@ describe("errorForResponse", () => {
     );
   });
 
+  it("keeps the first reason when a later errors entry is odd", () => {
+    const body = JSON.stringify({
+      error: {
+        status: "PERMISSION_DENIED",
+        errors: [{ reason: "rateLimitExceeded" }, { reason: { message: "alex@example.com" } }],
+      },
+    });
+    const error = errorForResponse(403, body, request);
+    expect(error.code).toBe("rate-limited");
+    expect(error.message).toContain("(status 403, rateLimitExceeded)");
+    expect(error.message).not.toMatch(/example\.com/);
+  });
+
+  it("falls back to Google's status when the first errors entry is odd", () => {
+    const body = JSON.stringify({
+      error: { status: "PERMISSION_DENIED", errors: [{ reason: ["alex@example.com"] }] },
+    });
+    expect(errorForResponse(403, body, request).message).toContain(
+      "(status 403, PERMISSION_DENIED)",
+    );
+  });
+
   it("maps a 403 rate limit by Google's reason", () => {
     const error = errorForResponse(403, googleBody(403, "userRateLimitExceeded"), request);
     expect(error.code).toBe("rate-limited");
@@ -137,6 +160,19 @@ describe("errorForResponse for a switched-off API", () => {
     const error = errorForResponse(403, serviceDisabledBody(), driveRequest);
     expect(error.message).not.toMatch(userContentInFreeText);
     expect(error.message).not.toMatch(/Holiday|q=|https:/);
+  });
+
+  it("still says the API is off when another errors entry is odd, without its free text", () => {
+    const error = errorForResponse(403, oddEntryServiceDisabledBody(), driveRequest);
+    expect(error).toMatchObject({
+      code: "api-disabled",
+      api: "drive.googleapis.com",
+      project: "123456789012",
+    });
+    expect(error.message).toBe(
+      "The Google Drive API (drive.googleapis.com) is switched off in Google Cloud project 123456789012. Switch it on, then try again (status 403, forbidden).",
+    );
+    expect(error.message).not.toMatch(userContentInFreeText);
   });
 
   it("still says the API is off when a recording has removed its name", () => {
