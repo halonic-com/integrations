@@ -1,0 +1,85 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/labels"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "labels": [
+              {
+                "id": "INBOX",
+                "labelListVisibility": "labelShow",
+                "messageListVisibility": "hide",
+                "name": "<scrubbed:content>",
+                "type": "system"
+              },
+              {
+                "id": "UNREAD",
+                "name": "<scrubbed:content>",
+                "type": "system"
+              },
+              {
+                "id": "STARRED",
+                "name": "<scrubbed:content>",
+                "type": "system"
+              },
+              {
+                "id": "Label_7",
+                "labelListVisibility": "labelShow",
+                "messageListVisibility": "show",
+                "name": "<scrubbed:content>",
+                "type": "user"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "list-labels",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels[1].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels[2].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels[3].name",
+      "rule": "user-content"
+    }
+  ]
+}

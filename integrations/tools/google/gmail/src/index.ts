@@ -1,6 +1,9 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { GmailClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
+import { getDraftTool } from "./tools/get-draft.ts";
+import { listLabelsTool } from "./tools/list-labels.ts";
+import { modifyLabelsTool } from "./tools/modify-labels.ts";
 import { readMessageTool } from "./tools/read-message.ts";
 import { readThreadTool } from "./tools/read-thread.ts";
 import { searchTool } from "./tools/search.ts";
@@ -15,6 +18,9 @@ const tools: readonly ToolImplementation<GmailClient>[] = [
   searchTool,
   readMessageTool,
   readThreadTool,
+  listLabelsTool,
+  getDraftTool,
+  modifyLabelsTool,
 ];
 
 export const gmail: Integration = {

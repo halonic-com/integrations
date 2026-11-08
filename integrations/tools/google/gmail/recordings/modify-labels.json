@@ -1,0 +1,48 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "addLabelIds": [
+              "Label_7"
+            ],
+            "ids": [
+              "19a0c0ffee000001",
+              "19a0c0ffee000002"
+            ],
+            "removeLabelIds": [
+              "UNREAD",
+              "INBOX"
+            ]
+          }
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/batchModify"
+      },
+      "response": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {},
+        "status": 204
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-gmail",
+  "scenario": "modify-labels",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}
