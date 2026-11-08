@@ -176,6 +176,23 @@ describe("prepareRecording", () => {
     });
   });
 
+  it("accepts a declared query parameter the secret rule already removed", () => {
+    const callback: CapturedExchange = {
+      request: {
+        method: "GET",
+        url: `https://login.example.com/callback?code=${FAKE.plainKey}`,
+        headers: [],
+      },
+      response: { status: 200, headers: [], body: "" },
+    };
+    const prepared = prepareRecording({
+      ...input([callback]),
+      policy: definePolicy({ userContent: ["request.query.code"] }),
+    });
+    expect(prepared.ok).toBe(true);
+    expect(JSON.stringify(prepared)).not.toContain(FAKE.plainKey);
+  });
+
   it("accepts an unmatched user-content path the scenario lists as unused", () => {
     const sendOnly = definePolicy({
       userContent: ["response.body.messages[*].snippet", "request.body.raw"],
