@@ -130,15 +130,17 @@ recording:
   userContent:
     - response.body.snippet # a message's opening words
     - response.body.payload.headers[*].value # Subject, From, To, Date
+    - request.query.q # the search, in the URL's query string
     - request.body.raw # the whole outgoing message
 ```
 
 The `From` and `To` values are scrubbed as content too. The recorder would
 replace their e-mail addresses anyway, but not the names next to them.
 
-The search query travels in the URL (`?q=…`), where `userContent` paths
-can't reach yet. Record `search-two-pages.json` with a query you made up,
-such as `subject:halonic-test`, never a real name or address.
+The search query travels in the URL (`?q=…`), so the sheet declares it as
+`request.query.q`. A scenario that doesn't search, such as sending, lists
+that path in its `unusedUserContent`, and a read-only scenario lists
+`request.body.raw`.
 
 ### The client
 
