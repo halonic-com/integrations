@@ -70,17 +70,23 @@ export async function errorForResponse(response: HttpResponse): Promise<OpenAiEr
 
 /**
  * The error for a chunk with `error` in a streamed answer. The HTTP status
- * was already `200`, so the code comes from OpenAI's error code or type
- * instead. Any other one is `unavailable`, like a `5xx`.
+ * was already `200`, so the code comes from OpenAI's error code if we know
+ * it, else from its type. Only when we know neither is it `unavailable`,
+ * like a `5xx`.
  */
 export function errorForStreamChunk(data: unknown): OpenAiError {
   const body = errorBodySchema.safeParse(data);
   if (!body.success) {
     return unexpectedResponse();
   }
-  const detail = body.data.error.code ?? body.data.error.type;
-  const code = codeForErrorType.get(detail ?? "") ?? "unavailable";
+  const { code: errorCode, type: errorType } = body.data.error;
+  const code = knownCode(errorCode) ?? knownCode(errorType) ?? "unavailable";
+  const detail = errorCode ?? errorType;
   return new OpenAiError(code, `${messages[code]}${detail ? ` (${detail})` : ""}.`);
+}
+
+function knownCode(name: string | null | undefined): OpenAiErrorCode | undefined {
+  return name ? codeForErrorType.get(name) : undefined;
 }
 
 /** OpenAI's error codes and types we know, by our code. A Map, because the name comes from the service. */

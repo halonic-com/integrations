@@ -44,8 +44,10 @@ call's id and name), and ends at `[DONE]` with one `done` holding exactly
 what `chat` returns for the same answer: the answer is rebuilt from the
 chunks and mapped by the same code. A refusal is yielded as one `text`
 piece just before `done`, because `chat` shows it only when there is no
-content. A chunk with `error` becomes an `OpenAiError` by its code or type
-(`server_error` → `unavailable`), and a stream that ends before `[DONE]` or
+content. A chunk with `error` becomes an `OpenAiError` by its code if we
+know it, else by its type (`context_length_exceeded` with
+`invalid_request_error` → `bad-arguments`); when we know neither, it is
+`unavailable`, like `server_error`. A stream that ends before `[DONE]` or
 without usage is `unexpected-response`.
 
 ## Limits

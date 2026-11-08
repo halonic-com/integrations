@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { codeForStatus, errorForResponse } from "./errors.ts";
+import { codeForStatus, errorForResponse, errorForStreamChunk } from "./errors.ts";
 import type { HttpResponse } from "./kit.ts";
 
 const noHeaders = { get: () => null };
@@ -82,5 +82,30 @@ describe("errorForResponse", () => {
     const error = await errorForResponse(notJson);
     expect(error).toMatchObject({ code: "unavailable", name: "OpenAiError" });
     expect(error.message).not.toContain("html");
+  });
+});
+
+describe("errorForStreamChunk", () => {
+  it("uses the type when the code is one we don't know", () => {
+    const error = errorForStreamChunk({
+      error: { code: "context_length_exceeded", type: "invalid_request_error" },
+    });
+    expect(error.code).toBe("bad-arguments");
+    expect(error.message).toBe("OpenAI refused the request as invalid (context_length_exceeded).");
+  });
+
+  it("prefers a known code to the type", () => {
+    const error = errorForStreamChunk({
+      error: { code: "insufficient_quota", type: "invalid_request_error" },
+    });
+    expect(error.code).toBe("quota-exceeded");
+  });
+
+  it("is unavailable when neither the code nor the type is known", () => {
+    const error = errorForStreamChunk({ error: { code: null, type: "server_error" } });
+    expect(error.code).toBe("unavailable");
+    expect(error.message).toBe(
+      "OpenAI is having trouble right now. Try again later (server_error).",
+    );
   });
 });
