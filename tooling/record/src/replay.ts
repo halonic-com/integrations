@@ -39,7 +39,10 @@ export interface ReplayRequestInit {
 export interface ReplayResponse {
   readonly ok: boolean;
   readonly status: number;
+  /** The recorded response headers. Headers the recorder leaves out give `null`. */
+  readonly headers: { get(name: string): string | null };
   json(): Promise<unknown>;
+  text(): Promise<string>;
 }
 
 /** `host.http`, as a replay provides it. */
@@ -127,6 +130,20 @@ function toResponse(recorded: Exchange["response"]): ReplayResponse {
   return {
     ok: recorded.status >= 200 && recorded.status < 300,
     status: recorded.status,
+    // The recorder saves header names in lower case, as `Headers.get` matches them.
+    headers: { get: (name) => recorded.headers[name.toLowerCase()] ?? null },
+    text: async () => {
+      switch (body.kind) {
+        case "empty":
+          return "";
+        case "json":
+          return JSON.stringify(body.value);
+        case "text":
+          return body.value;
+        default:
+          throw new Error(`The replay can't read a "${body.kind}" body as text yet.`);
+      }
+    },
     json: async () => {
       switch (body.kind) {
         case "json":
@@ -140,7 +157,17 @@ function toResponse(recorded: Exchange["response"]): ReplayResponse {
   };
 }
 
-/** A response for error paths that recordings can't show, such as a body that isn't JSON. */
+/**
+ * A response for error paths that recordings can't show, such as a body that
+ * isn't JSON. It has no headers, and `text` gives what `json` gives, as JSON.
+ */
 export function fakeResponse(status: number, json: () => Promise<unknown>): ReplayHttpClient {
-  return { fetch: async () => ({ ok: status >= 200 && status < 300, status, json }) };
+  const response: ReplayResponse = {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: { get: () => null },
+    json,
+    text: async () => JSON.stringify(await json()),
+  };
+  return { fetch: async () => response };
 }
