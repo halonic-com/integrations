@@ -79,3 +79,13 @@ never sent to Gemini.
 - **Limits:** Gemini answers every used-up limit with `429`
   `RESOURCE_EXHAUSTED`, a daily quota as well as a per-minute one, so both
   are `rate-limited`.
+- **Model names** go in the URL path, encoded, so a name can't change the
+  path or the host. Google's own form, `models/gemini-2.5-flash`, works too.
+- **Recordings** in `recordings/` were written by hand, not recorded:
+  `pnpm record` and a Gemini test account weren't available yet. They
+  follow Google's documented response shapes, and the recorder's own
+  scrubber and safety net (`prepareRecording`) made the files. Thought
+  signatures are random-looking, so the recorder replaces them with
+  `scrubbed-secret-<n>`. The same signature gets the same stand-in, so a
+  replay still shows it going back unchanged. Replace them with real
+  recordings once both are available.

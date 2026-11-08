@@ -250,6 +250,9 @@ importers:
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../tooling/config
+      '@halonicjs/tooling-record':
+        specifier: workspace:*
+        version: link:../../../tooling/record
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
