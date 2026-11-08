@@ -10,7 +10,9 @@ retry rules and turns Google's errors into `GoogleError`.
 Connect a Google account in Halonic and tick Drive. Halonic's Google
 sign-in asks for one scope, `drive`. It keeps the refresh token itself;
 Drive only names the secret (`google-account`), and the kit adds the access
-token to requests to `www.googleapis.com`.
+token to requests to `www.googleapis.com`. That host also serves Gmail,
+Calendar and other Google APIs, so the host list doesn't keep the token to
+Drive; the scope does.
 
 `drive` is the narrowest scope the tools work with: they search, read,
 update and move files the user already has. `drive.file` reaches only files

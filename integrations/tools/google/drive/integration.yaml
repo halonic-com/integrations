@@ -4,6 +4,8 @@ kit: 1 # the version of the Integration port it was built against
 provides: [connector]
 
 # The Drive API v3 and its upload path (/upload/drive/v3) both live here.
+# The host also serves Gmail, Calendar and other Google APIs, so it doesn't
+# keep the google-account token to Drive; the drive scope below does.
 hosts:
   - www.googleapis.com
 
