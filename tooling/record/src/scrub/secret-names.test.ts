@@ -2,12 +2,18 @@ import { describe, expect, it } from "vitest";
 import { isSecretName, jsonFieldKind } from "./secret-names.ts";
 
 describe("isSecretName", () => {
-  it.each(["access_token", "refreshToken", "Client-Secret", "passphrase", "pass", "X-Session-Id"])(
-    "says %s is a secret",
-    (name) => {
-      expect(isSecretName(name, "json", [])).toBe(true);
-    },
-  );
+  it.each([
+    "access_token",
+    "refreshToken",
+    "id_token",
+    "code_verifier",
+    "Client-Secret",
+    "passphrase",
+    "pass",
+    "X-Session-Id",
+  ])("says %s is a secret", (name) => {
+    expect(isSecretName(name, "json", [])).toBe(true);
+  });
 
   it.each(["token_type", "passage", "compass", "Access-Control-Allow-Credentials", "keyboard"])(
     "says %s is not a secret",
