@@ -22,3 +22,11 @@ Each integration has its own permission sheet and recorded responses. See
 
 The tooling, checks and settings match the main repo's. Change them there
 first, then here.
+
+## Contributing and licence
+
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) explains how to
+set up the repo, what an integration needs and how pull requests are reviewed.
+
+Halonic integrations are licensed under the [Apache License 2.0](LICENSE). See
+[NOTICE](NOTICE) for the copyright notice.
