@@ -111,10 +111,13 @@ describe("chat", () => {
       ],
     });
     recording.assertAllUsed();
-    expect(recording.sent[1]?.body).toMatchObject({
+    const sentBack = recording.sent[1]?.body as { contents: unknown[] };
+    // Exact, so an extra or changed field in the replayed turn fails the test.
+    expect(sentBack.contents[1]).toEqual({ role: "model", parts: call.replay?.data });
+    expect(sentBack).toMatchObject({
       contents: [
         { role: "user" },
-        { role: "model", parts: call.replay?.data },
+        { role: "model" },
         {
           role: "user",
           parts: [
