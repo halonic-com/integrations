@@ -265,8 +265,8 @@ Rules for each field:
    is a string; `init` takes the usual `fetch` options (`method`,
    `headers`, `body`, `signal`) plus `auth`. Never call `fetch`,
    `XMLHttpRequest` or `WebSocket` yourself, never reach for `globalThis` or
-   `process`, and never use `setTimeout` or `setInterval`: wait with
-   `host.wait` (rule 11).
+   `process`, and never use a timer (`setTimeout`, `setInterval`,
+   `setImmediate` or `AbortSignal.timeout`): wait with `host.wait` (rule 11).
 2. **Never handle key values. Name the secret and let the kit add it:**
 
    ```ts
@@ -326,6 +326,8 @@ Rules for each field:
       const value = response.headers.get("retry-after")?.trim();
       if (value === undefined || value === "") return undefined;
       if (/^\d+$/.test(value)) return Number(value) * 1000;
+      // An HTTP date starts with a day name. Date.parse alone accepts "-5".
+      if (!/^[a-z]{3}/i.test(value)) return undefined;
       const at = Date.parse(value);
       const now = Date.parse(response.headers.get("date") ?? "");
       return Number.isNaN(at) || Number.isNaN(now) ? undefined : Math.max(0, at - now);
