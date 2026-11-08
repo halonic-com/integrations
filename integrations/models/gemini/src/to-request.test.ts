@@ -50,7 +50,7 @@ describe("toGeminiContents", () => {
     ]);
   });
 
-  it("rebuilds another provider's turn with the placeholder signature and without its ids", () => {
+  it("rebuilds another provider's turn with the placeholder signature and its ids", () => {
     const contents = toGeminiContents([
       {
         role: "assistant",
@@ -65,14 +65,16 @@ describe("toGeminiContents", () => {
         role: "model",
         parts: [
           {
-            functionCall: { name: "now", args: {} },
+            functionCall: { id: "toolu_fake1", name: "now", args: {} },
             thoughtSignature: "skip_thought_signature_validator",
           },
         ],
       },
       {
         role: "user",
-        parts: [{ functionResponse: { name: "now", response: { output: "noon" } } }],
+        parts: [
+          { functionResponse: { id: "toolu_fake1", name: "now", response: { output: "noon" } } },
+        ],
       },
     ]);
   });
@@ -143,7 +145,7 @@ describe("toGeminiContents", () => {
     ]);
   });
 
-  it("never sends an id Gemini didn't issue", () => {
+  it("never sends an id made up for a call that came without one", () => {
     const id = generatedCallId("resp1", 0);
     const contents = toGeminiContents([
       { role: "assistant", content: "", toolCalls: [{ id, name: "now", arguments: {} }] },

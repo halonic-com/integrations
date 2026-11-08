@@ -7,14 +7,14 @@
  * calls from 0 again, and the host keys approvals and tool results by
  * `toolCallId`.
  *
- * Only Gemini's own ids are sent to Gemini: a `functionResponse` with an
- * id Gemini didn't issue could be refused. That covers the ids made up
- * here as well as another provider's (`toolu_…`, `call_…`) after a model
- * switch. Gemini's own ids are letters and digits only; a made-up id has
- * the prefix.
+ * The ids made up here are never sent to Gemini: Gemini 2.5 didn't issue
+ * them, and they are known by their prefix. Every other id is sent as it
+ * is, on the call and on its response alike, so the two still match. That
+ * includes another provider's ids (`toolu_…`, `call_…`) after a model
+ * switch. Gemini's own id format isn't documented, so the integration
+ * doesn't guess at it.
  */
 const generatedPrefix = "gemini-call-";
-const geminiIdPattern = /^[A-Za-z0-9]+$/;
 
 /**
  * The id for the `index`th call of an answer that came without one. An
@@ -27,10 +27,7 @@ export function generatedCallId(responseId: string | undefined, index: number): 
     : `${generatedPrefix}${responseId}-${index}`;
 }
 
-/** The id to send Gemini for a tool call, or `undefined` for one Gemini didn't issue. */
+/** The id to send Gemini for a tool call, or `undefined` for one made up here. */
 export function idForGemini(id: string): string | undefined {
-  if (id.startsWith(generatedPrefix) || !geminiIdPattern.test(id)) {
-    return undefined;
-  }
-  return id;
+  return id.startsWith(generatedPrefix) ? undefined : id;
 }
