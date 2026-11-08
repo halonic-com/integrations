@@ -1,5 +1,6 @@
+import { type DisabledApi, disabledApiIn } from "./disabled-api.ts";
 import { googleErrorReason } from "./error-reason.ts";
-import { GoogleError, type GoogleErrorCode } from "./errors.ts";
+import { GoogleApiDisabledError, GoogleError, type GoogleErrorCode } from "./errors.ts";
 
 /** The request an error answered. Used only to name it in the message. */
 export interface FailedRequest {
@@ -33,6 +34,9 @@ const maxPathLength = 120;
  * it looks like an identifier, Google's machine-readable reason. Never
  * Google's own error text, the query string or a header.
  *
+ * A `403` that says the API is switched off becomes a
+ * {@link GoogleApiDisabledError}, which also names the API and the project.
+ *
  * @param status - the response's HTTP status, never a `2xx`
  * @param bodyText - the response body as text; it may be anything
  */
@@ -42,8 +46,15 @@ export function errorForResponse(
   request: FailedRequest,
 ): GoogleError {
   const reason = googleErrorReason(bodyText);
-  const code = codeForStatus(status, reason);
   const details = reason === undefined ? `status ${status}` : `status ${status}, ${reason}`;
+  const disabled = status === 403 ? disabledApiIn(bodyText) : undefined;
+  if (disabled !== undefined) {
+    return new GoogleApiDisabledError(
+      `${apiDisabledMessage(request, disabled)} (${details}).`,
+      disabled,
+    );
+  }
+  const code = codeForStatus(status, reason);
   return new GoogleError(code, `${messageFor(code, request)} (${details}).`);
 }
 
@@ -108,11 +119,26 @@ function messageFor(code: GoogleErrorCode, request: FailedRequest): string {
       return `${service} is getting too many requests. Try again later`;
     case "quota-exceeded":
       return `The Google account has reached a ${service} limit. Try again tomorrow or free up space`;
+    case "api-disabled":
+      return apiDisabledMessage(request, { api: undefined, project: undefined });
     case "unavailable":
       return `${service} is having trouble. Try again later`;
     case "unexpected-response":
       return `${service} answered ${target} in an unexpected way`;
   }
+}
+
+/**
+ * What the message says for a switched-off API. The API and the project
+ * passed {@link disabledApiIn}'s shape checks, so they can't carry text.
+ */
+function apiDisabledMessage(request: FailedRequest, disabled: DisabledApi): string {
+  const api = disabled.api === undefined ? "" : ` (${disabled.api})`;
+  const project =
+    disabled.project === undefined
+      ? "the Google Cloud project"
+      : `Google Cloud project ${disabled.project}`;
+  return `The ${request.service} API${api} is switched off in ${project}. Switch it on, then try again`;
 }
 
 /**

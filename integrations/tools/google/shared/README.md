@@ -10,6 +10,7 @@ library, not an integration: it has no permission sheet, no tools and no
 | `src/errors.ts`             | `GoogleError`, the one error type of every Google integration      |
 | `src/error-for-response.ts` | turns a Google error response into a `GoogleError`                 |
 | `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text        |
+| `src/disabled-api.ts`       | reads which API is switched off, and in which project              |
 | `src/http.ts`               | the small part of the kit's host this library uses: `http`, `wait` |
 | `src/google-api.ts`         | `googleApi`: every Google request goes through it                  |
 | `src/retry-policy.ts`       | when a request is sent again, and how long to wait first           |
@@ -61,6 +62,7 @@ Every Google error becomes a `GoogleError` with one of the guide's codes
 | `403`                                                                         | `not-allowed`         |
 | `403` with a rate-limit reason (`rateLimitExceeded`, `userRateLimitExceeded`) | `rate-limited`        |
 | `403` with a limit reason (`dailyLimitExceeded`, `quotaExceeded`)             | `quota-exceeded`      |
+| `403` for a switched-off API (`accessNotConfigured`, `SERVICE_DISABLED`)      | `api-disabled`        |
 | `404`                                                                         | `not-found`           |
 | `408`, `429`                                                                  | `rate-limited`        |
 | `5xx` and any other status                                                    | `unavailable`         |
@@ -70,6 +72,31 @@ The message names the service, the host and path (never the query), the
 status, and Google's reason when it looks like an identifier. It never
 holds Google's own error text: that text can echo the request, including
 the user's content.
+
+### A switched-off API
+
+When the user's Google Cloud project hasn't switched on the API a request
+needs, Google answers `403` with `accessNotConfigured` in `errors` and an
+`ErrorInfo` detail with the reason `SERVICE_DISABLED`. The library then
+throws a `GoogleApiDisabledError`, a `GoogleError` with the code
+`api-disabled` and two more fields, so Halonic's run banner can link
+straight to the API's "Enable" page:
+
+| Field     | From the `ErrorInfo`'s `metadata` | Example                |
+| --------- | --------------------------------- | ---------------------- |
+| `api`     | `service`                         | `drive.googleapis.com` |
+| `project` | `consumer`, without `projects/`   | `123456789012`         |
+
+Google names the project by its number, not its id. A field is `undefined`
+when Google leaves it out or it doesn't have the shape of an API name or a
+project, so no free text gets through. Gmail and Drive need no change for
+this: every request goes through `googleApi`.
+
+```ts
+if (error instanceof GoogleApiDisabledError) {
+  showEnableLink(error.api, error.project); // "drive.googleapis.com", "123456789012"
+}
+```
 
 ## Recordings
 
@@ -85,8 +112,12 @@ so a Google sheet doesn't list these paths under `recording.userContent`:
 | `error.errors[*].message`               | the same sentence in the older format, once per error                                                       |
 | the free-text fields of `error.details` | a `BadRequest` describes each refused field in words, and an `ErrorInfo` carries metadata about the request |
 
-The library reads only `error.status` and `error.errors[*].reason`, and
-none of these paths covers them, so a replay maps an error to the same code.
+The library reads `error.status`, `error.errors[*].reason` and each
+detail's `@type` and `reason`. None of these paths covers them, so a replay
+maps an error to the same code. It also reads `service` and `consumer` from
+an `ErrorInfo`'s `metadata` for a switched-off API. The recorder removes
+those, so in a replay a `GoogleApiDisabledError` has `api` and `project`
+left `undefined`.
 `error.code`, `error.status`, `error.errors[*].domain` and each detail's
 `@type`, `reason`, `domain` and `retryDelay` stay readable in the file.
 

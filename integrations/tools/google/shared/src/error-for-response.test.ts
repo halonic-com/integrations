@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { codeForStatus, errorForResponse, unexpectedResponse } from "./error-for-response.ts";
-import { GoogleError } from "./errors.ts";
+import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
+import {
+  recordedServiceDisabledBody,
+  serviceDisabledBody,
+  userContentInFreeText,
+} from "./test/service-disabled.ts";
 
 const request = {
   service: "Gmail",
@@ -105,6 +110,53 @@ describe("errorForResponse", () => {
   it("names no target for a URL it can't read", () => {
     const error = errorForResponse(404, "", { service: "Gmail", url: "not a url" });
     expect(error.message).toBe("Gmail found nothing at the service (status 404).");
+  });
+});
+
+describe("errorForResponse for a switched-off API", () => {
+  const driveRequest = {
+    service: "Google Drive",
+    url: "https://www.googleapis.com/drive/v3/files?q=name%20contains%20%27Holiday%27",
+  };
+
+  it("names the API and the project, so Halonic can link to the API's Enable page", () => {
+    const error = errorForResponse(403, serviceDisabledBody(), driveRequest);
+    expect(error).toBeInstanceOf(GoogleApiDisabledError);
+    expect(error).toBeInstanceOf(GoogleError);
+    expect(error).toMatchObject({
+      code: "api-disabled",
+      api: "drive.googleapis.com",
+      project: "123456789012",
+    });
+    expect(error.message).toBe(
+      "The Google Drive API (drive.googleapis.com) is switched off in Google Cloud project 123456789012. Switch it on, then try again (status 403, accessNotConfigured).",
+    );
+  });
+
+  it("never repeats Google's free text, its activation link or the query string", () => {
+    const error = errorForResponse(403, serviceDisabledBody(), driveRequest);
+    expect(error.message).not.toMatch(userContentInFreeText);
+    expect(error.message).not.toMatch(/Holiday|q=|https:/);
+  });
+
+  it("still says the API is off when a recording has removed its name", () => {
+    const error = errorForResponse(403, recordedServiceDisabledBody(), driveRequest);
+    expect(error).toMatchObject({ code: "api-disabled", api: undefined, project: undefined });
+    expect(error.message).toBe(
+      "The Google Drive API is switched off in the Google Cloud project. Switch it on, then try again (status 403, accessNotConfigured).",
+    );
+  });
+
+  it("reads the switched-off API only on a 403", () => {
+    const error = errorForResponse(400, serviceDisabledBody(), driveRequest);
+    expect(error).not.toBeInstanceOf(GoogleApiDisabledError);
+    expect(error.code).toBe("bad-arguments");
+  });
+
+  it("keeps an ordinary 403 as not-allowed", () => {
+    const error = errorForResponse(403, googleBody(403, "insufficientPermissions"), request);
+    expect(error).not.toBeInstanceOf(GoogleApiDisabledError);
+    expect(error.code).toBe("not-allowed");
   });
 });
 
