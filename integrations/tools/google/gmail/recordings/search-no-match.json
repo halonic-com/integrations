@@ -10,7 +10,7 @@
           "authorization": "Bearer <scrubbed:secret>"
         },
         "method": "GET",
-        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Ahalonic-test-nothing&maxResults=15"
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=15"
       },
       "response": {
         "body": {
@@ -31,6 +31,11 @@
   "integration": "tool-google-gmail",
   "scenario": "search-no-match",
   "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
     {
       "count": 1,
       "path": "exchanges[0].request.headers.authorization",

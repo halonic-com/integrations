@@ -10,7 +10,7 @@
           "authorization": "Bearer <scrubbed:secret>"
         },
         "method": "GET",
-        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Ahalonic-test&maxResults=2"
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=2"
       },
       "response": {
         "body": {
@@ -159,6 +159,11 @@
   "scrubReport": [
     {
       "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].request.headers.authorization",
       "rule": "secret-header"
     },
@@ -171,11 +176,6 @@
       "count": 1,
       "path": "exchanges[1].request.headers.authorization",
       "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[1].response.body.snippet",
-      "rule": "user-content"
     },
     {
       "count": 1,
@@ -199,13 +199,13 @@
     },
     {
       "count": 1,
-      "path": "exchanges[2].request.headers.authorization",
-      "rule": "secret-header"
+      "path": "exchanges[1].response.body.snippet",
+      "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body.snippet",
-      "rule": "user-content"
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
     },
     {
       "count": 1,
@@ -230,6 +230,11 @@
     {
       "count": 1,
       "path": "exchanges[2].response.body.payload.headers[4].value",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.snippet",
       "rule": "user-content"
     }
   ]

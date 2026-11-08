@@ -78,6 +78,9 @@ something else:
 - **`gmail_modify_labels` refuses to add `TRASH` or `SPAM`.** Gmail deletes
   trashed mail for good after 30 days, and spam is reported to Google;
   neither is a label change the user expects from this tool.
+- **Reads are retried** after a `429` or a `5xx`, as the guide's rule 10
+  and the Google library ask. The old connector never retried. Nothing that
+  changes the mailbox is retried.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without

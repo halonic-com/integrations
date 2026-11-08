@@ -38,7 +38,8 @@ export class GmailClient {
   readonly #google: GoogleApi;
 
   constructor(host: IntegrationHost) {
-    // No clock: the kit doesn't offer one yet, so nothing is retried, as in the old connector.
+    // Reads are retried as the Google library's rules allow, waiting with host.wait;
+    // a request that changes the mailbox never is.
     this.#google = googleApi(host, { secret: "google-account", service: "Gmail" });
   }
 

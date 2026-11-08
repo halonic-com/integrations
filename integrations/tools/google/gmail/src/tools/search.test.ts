@@ -3,11 +3,17 @@ import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 
+/**
+ * The search as the recordings hold it: the recorder scrubs `q`
+ * (`request.query.q` in the sheet), and the replay compares whole URLs.
+ */
+const recordedQuery = "<scrubbed:content>";
+
 describe("gmail_search", () => {
   it("lists one page, reads each message's summary and passes the page token on", async () => {
     const { connection, replay } = connectToRecording("search-two-messages");
     const result = await callTool(connection, "gmail_search", {
-      query: "subject:halonic-test",
+      query: recordedQuery,
       maxResults: 2,
     });
     replay.assertAllUsed();
@@ -43,7 +49,7 @@ describe("gmail_search", () => {
   it("asks for the next page with the token from the previous one", async () => {
     const { connection, replay } = connectToRecording("search-next-page");
     const result = await callTool(connection, "gmail_search", {
-      query: "subject:halonic-test",
+      query: recordedQuery,
       maxResults: 2,
       pageToken: "scrubbed-secret-1",
     });
@@ -55,7 +61,7 @@ describe("gmail_search", () => {
   it("returns an empty list, not an error, when nothing matches", async () => {
     const { connection, replay } = connectToRecording("search-no-match");
     const result = await callTool(connection, "gmail_search", {
-      query: "subject:halonic-test-nothing",
+      query: recordedQuery,
     });
     replay.assertAllUsed();
     expect(result).toEqual({ resultSizeEstimate: 0, messages: [] });
@@ -75,16 +81,17 @@ describe("gmail_search", () => {
         };
       },
     };
-    const result = await gmail.connect({ http }).callTool("gmail_search", {});
+    const result = await gmail.connect({ http, wait: async () => {} }).callTool("gmail_search", {});
     expect(JSON.parse(result)).toEqual({ messages: [] });
   });
 
   it("turns a refused sign-in into not-signed-in without Google's own text", async () => {
     const { connection } = connectToRecording("search-signed-out");
-    const call = connection.callTool("gmail_search", { query: "subject:halonic-test" });
+    const call = connection.callTool("gmail_search", { query: recordedQuery });
     await expect(call).rejects.toBeInstanceOf(GoogleError);
     await expect(call).rejects.toMatchObject({ code: "not-signed-in" });
-    await expect(call).rejects.not.toThrow(/Invalid Credentials|halonic-test/);
+    // The recording holds Google's text as the placeholder, so it must not show up.
+    await expect(call).rejects.not.toThrow(/scrubbed/);
   });
 
   it("refuses more than 25 results and a huge page token before any request", async () => {

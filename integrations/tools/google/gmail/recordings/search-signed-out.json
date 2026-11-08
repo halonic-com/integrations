@@ -10,7 +10,7 @@
           "authorization": "Bearer <scrubbed:secret>"
         },
         "method": "GET",
-        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Ahalonic-test&maxResults=15"
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=%3Cscrubbed%3Acontent%3E&maxResults=15"
       },
       "response": {
         "body": {
@@ -21,11 +21,11 @@
               "errors": [
                 {
                   "domain": "global",
-                  "message": "Invalid Credentials",
+                  "message": "<scrubbed:content>",
                   "reason": "authError"
                 }
               ],
-              "message": "Request had invalid authentication credentials.",
+              "message": "<scrubbed:content>",
               "status": "UNAUTHENTICATED"
             }
           }
@@ -44,8 +44,23 @@
   "scrubReport": [
     {
       "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].request.headers.authorization",
       "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.errors[0].message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
     }
   ]
 }
