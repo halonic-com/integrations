@@ -8,6 +8,9 @@ import {
 import { z } from "zod";
 import { type DriveFile, driveFileSchema, fileFields, listedFileFields } from "./file.ts";
 import type { IntegrationHost } from "./kit.ts";
+import type { NewFileMetadata } from "./new-file-metadata.ts";
+import { multipartUploadBody, type UploadContent, type UploadMetadata } from "./upload-body.ts";
+import { writtenFileFields } from "./written-file.ts";
 
 const fileListSchema = withNextPageToken(z.object({ files: z.array(driveFileSchema).default([]) }));
 export type FileList = z.infer<typeof fileListSchema>;
@@ -84,4 +87,60 @@ export class DriveClient {
     });
     return await this.#google.getText(url, signal);
   }
+
+  /**
+   * One request: uploads a new file, its metadata and content together.
+   * Never retried: a timeout doesn't prove the file wasn't created, and a
+   * second try could create it twice.
+   */
+  async createFile(
+    metadata: NewFileMetadata,
+    content: UploadContent,
+    signal?: AbortSignal,
+  ): Promise<DriveFile> {
+    const url = googleUrl(googleBaseUrls.driveUpload, ["files"], uploadQuery);
+    return await this.#upload("POST", url, metadata, content, signal);
+  }
+
+  /**
+   * One request: replaces a file's content and keeps its name and folder.
+   * Not retried either: the Google library only repeats reads.
+   */
+  async replaceFileContent(
+    fileId: string,
+    content: UploadContent,
+    signal?: AbortSignal,
+  ): Promise<DriveFile> {
+    const url = googleUrl(googleBaseUrls.driveUpload, ["files", fileId], uploadQuery);
+    return await this.#upload("PATCH", url, {}, content, signal);
+  }
+
+  async #upload(
+    method: "POST" | "PATCH",
+    url: string,
+    metadata: UploadMetadata,
+    content: UploadContent,
+    signal: AbortSignal | undefined,
+  ): Promise<DriveFile> {
+    const upload = multipartUploadBody(metadata, content);
+    const request = {
+      method,
+      url,
+      headers: { "content-type": upload.contentType },
+      body: upload.body,
+      signal,
+    };
+    return await this.#google.sendJson(request, driveFileSchema);
+  }
 }
+
+/**
+ * The query of every upload: metadata and content in one request, the
+ * fields the tools return, and files in shared drives too.
+ * https://developers.google.com/workspace/drive/api/guides/manage-uploads#multipart
+ */
+const uploadQuery = {
+  uploadType: "multipart",
+  fields: writtenFileFields,
+  supportsAllDrives: true,
+} as const;

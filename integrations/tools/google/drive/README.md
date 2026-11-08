@@ -90,3 +90,11 @@ something else:
 - **A fixed multipart boundary.** `drive_create_file` used a random one;
   it now picks one that isn't in the content, so the same call always
   sends the same request.
+- **A checked `mimeType`.** The upload tools take a plain media type, such
+  as `text/csv`, and refuse anything else before a request. The old
+  connector put it into the upload unchecked, so a line break could add a
+  header.
+- **Smaller results from the changing tools.** They return the few fields
+  their descriptions name (was Drive's whole file and the account), and the
+  text of an upload is limited to a million characters, under Drive's 5 MB
+  for a multipart upload.

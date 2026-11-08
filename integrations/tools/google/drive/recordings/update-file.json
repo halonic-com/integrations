@@ -1,0 +1,54 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "contentType": "multipart/related",
+          "kind": "text",
+          "value": "--halonic-upload-boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--halonic-upload-boundary\r\nContent-Type: text/plain\r\n\r\nNotes for the next meeting:\nBring the plan.\r\n--halonic-upload-boundary--"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "multipart/related; boundary=halonic-upload-boundary"
+        },
+        "method": "PATCH",
+        "url": "https://www.googleapis.com/upload/drive/v3/files/file-notes-02?uploadType=multipart&fields=id%2Cname%2CmimeType%2Cparents%2CwebViewLink&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-notes-02",
+            "mimeType": "text/plain",
+            "name": "<scrubbed:content>",
+            "parents": [
+              "folder-projects-01"
+            ],
+            "webViewLink": "https://drive.google.com/file/d/file-notes-02/view"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "update-file",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.name",
+      "rule": "user-content"
+    }
+  ]
+}
