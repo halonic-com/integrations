@@ -16,4 +16,14 @@ describe("cutText", () => {
     // "a😀b": the emoji is two UTF-16 units, at index 1 and 2.
     expect(cutText("a😀bcd", 3)).toBe("a…");
   });
+
+  it("refuses a limit below one character", () => {
+    expect(() => cutText("abc", 0)).toThrow(RangeError);
+    expect(() => cutText("", -1)).toThrow(RangeError);
+    expect(() => cutText("abc", Number.NaN)).toThrow(RangeError);
+  });
+
+  it("cuts to the ellipsis alone at a limit of one", () => {
+    expect(cutText("abc", 1)).toBe("…");
+  });
 });

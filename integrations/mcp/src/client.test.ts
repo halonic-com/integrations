@@ -156,6 +156,25 @@ describe("McpClient", () => {
     expect(transport.closed).toBe(true);
   });
 
+  it("waits for a session that is still opening, then ends it on close", async () => {
+    const handshake = heldAnswer(initialized());
+    const transport = new FakeTransport([handshake.held, textAnswer("x")]);
+    const { client } = clientOn(transport);
+
+    const call = client.callTool("echo", {});
+    let closeDone = false;
+    const closing = client.close().then(() => {
+      closeDone = true;
+    });
+    await Promise.resolve();
+    expect(closeDone).toBe(false);
+
+    handshake.release();
+    await closing;
+    await call.catch(() => undefined);
+    expect(transport.closed).toBe(true);
+  });
+
   it("refuses calls after close, without opening a session", async () => {
     const { client, opened } = clientOn();
     await client.close();
