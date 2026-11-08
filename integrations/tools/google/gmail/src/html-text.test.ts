@@ -32,6 +32,34 @@ describe("htmlToText", () => {
     expect(htmlToText(html)).toBe("https://example.com sam@example.com Top Open Here");
   });
 
+  it.each([
+    ['<a title="x href=https://bank.example" href="https://evil.example">Your bank</a>'],
+    [`<a title='x href="https://bank.example"' href=https://evil.example>Your bank</a>`],
+    ['<a data-x="1"href="https://evil.example" title="y href=https://bank.example">Your bank</a>'],
+  ])(
+    "takes the link address from the href attribute, never from another attribute's value: %s",
+    (html) => {
+      expect(htmlToText(html)).toBe("Your bank <https://evil.example>");
+    },
+  );
+
+  it("takes the first href when there are two, as a browser does", () => {
+    expect(
+      htmlToText('<a HREF="https://evil.example" href="https://bank.example">Your bank</a>'),
+    ).toBe("Your bank <https://evil.example>");
+  });
+
+  it("keeps a quoted > inside the tag and leaves out an address with brackets or quotes", () => {
+    expect(htmlToText('<p><a href="https://x.example/a>b" title=">">click</a> here</p>')).toBe(
+      "click here",
+    );
+  });
+
+  it("cuts a long link address", () => {
+    const address = `https://example.com/${"a".repeat(300)}`;
+    expect(htmlToText(`<a href="${address}">Open</a>`)).toBe(`Open <${address.slice(0, 200)}…>`);
+  });
+
   it("decodes numeric entities and leaves impossible ones alone", () => {
     expect(htmlToText("<p>Caf&#233; &#xE9;t&#X E9; &#0; &#x110000;</p>")).toBe(
       "Café ét&#X E9; &#0; &#x110000;",

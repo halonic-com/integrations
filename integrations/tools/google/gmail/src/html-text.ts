@@ -22,7 +22,7 @@ export function htmlToText(html: string): string {
   let text = html
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi, withLinkAddress)
+    .replace(/<a\b((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/a>/gi, withLinkAddress)
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|tr|li|h\d)>/gi, "\n")
     .replace(/<[^>]+>/g, "");
@@ -39,15 +39,50 @@ export function htmlToText(html: string): string {
  * part, so the model still knows where a link goes. Only web and mail
  * addresses are kept; the address is left out when the text already is it.
  * The brackets go in as entities, so removing the tags leaves them alone.
+ *
+ * An address with quotes or angle brackets is left out: a real link encodes
+ * them, and the model must never be told a wrong address. Long addresses are
+ * cut, because the reader only sees them on hover.
  */
 function withLinkAddress(_link: string, attributes: string, inner: string): string {
-  const href = /\shref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i.exec(attributes);
-  const address = (href?.[1] ?? href?.[2] ?? href?.[3] ?? "").trim();
-  if (!/^(https?:\/\/|mailto:)\S+$/i.test(address)) return inner;
-  const shown = address.replace(/^mailto:/i, "");
+  const address = attributeValue(attributes, "href")?.trim() ?? "";
+  if (!/^(https?:\/\/|mailto:)[^\s"'<>]+$/i.test(address)) return inner;
+  const withoutScheme = address.replace(/^mailto:/i, "");
   const innerText = inner.replace(/<[^>]+>/g, "").trim();
-  if (innerText === address || innerText === shown) return inner;
+  if (innerText === address || innerText === withoutScheme) return inner;
+  const shown = shortened(withoutScheme);
   return innerText === "" ? `&lt;${shown}&gt;` : `${inner} &lt;${shown}&gt;`;
+}
+
+/**
+ * The value of one attribute, read the way a browser reads the tag: the
+ * attributes in order from the start, each quoted value as a whole. So an
+ * `href=` inside another attribute's value is never taken for the link.
+ * The first one counts when a name repeats, as in a browser.
+ */
+function attributeValue(attributes: string, wanted: string): string | undefined {
+  const attribute = /\s*([^\s/>][^\s/>=]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]*)))?/y;
+  let position = 0;
+  while (position < attributes.length) {
+    attribute.lastIndex = position;
+    const match = attribute.exec(attributes);
+    if (match === null || match[0] === "") {
+      // A stray `/` or trailing space between attributes: step over it.
+      position += 1;
+      continue;
+    }
+    if (match[1]?.toLowerCase() === wanted) return match[2] ?? match[3] ?? match[4] ?? "";
+    position = attribute.lastIndex;
+  }
+  return undefined;
+}
+
+const longestShownAddress = 200;
+
+function shortened(address: string): string {
+  return address.length <= longestShownAddress
+    ? address
+    : `${address.slice(0, longestShownAddress)}…`;
 }
 
 /** `&#233;` and `&#xE9;`, which mail programs use for every letter outside ASCII. */
