@@ -215,6 +215,9 @@ importers:
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../tooling/config
+      '@halonicjs/tooling-record':
+        specifier: workspace:*
+        version: link:../../../tooling/record
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6

@@ -1,0 +1,54 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "halonic-knowledge-mcp",
+                "version": "0.1.0"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://docs.example.com/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": "invalid_token"
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 401
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "knowledge-mcp",
+  "scenario": "key-refused",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}
