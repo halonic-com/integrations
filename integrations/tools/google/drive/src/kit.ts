@@ -10,11 +10,11 @@
  * publishes these names.
  *
  * To swap: delete this file and import the same names from
- * `@halonicjs/integration-kit`. The host's HTTP client is the Google
- * library's `HttpClient`, the part of the kit's client that library uses,
- * so `googleApi` accepts this host as it is.
+ * `@halonicjs/integration-kit`. The host's `http` and `wait` are the
+ * Google library's `GoogleHost`, the part of the kit's host that library
+ * uses, so `googleApi` accepts this host as it is.
  */
-import type { HttpClient } from "@halonicjs/integration-tool-google-shared";
+import type { GoogleHost } from "@halonicjs/integration-tool-google-shared";
 import type { z } from "zod";
 
 /** What calling a tool can do. Approvals and the "allow sending" check act on it. */
@@ -33,10 +33,12 @@ export interface IntegrationTool {
   untrusted: boolean;
 }
 
-/** What an integration is given. Drive keeps no tokens and reads no settings, so only `http`. */
-export interface IntegrationHost {
-  readonly http: HttpClient;
-}
+/**
+ * What an integration is given: `http` for requests and `wait` for the
+ * pause before a retry. Drive keeps no tokens and reads no settings, so
+ * it needs nothing else.
+ */
+export type IntegrationHost = GoogleHost;
 
 /** One integration connected through its host. */
 export interface IntegrationConnection {

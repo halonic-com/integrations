@@ -53,8 +53,8 @@ setting act on it.
 - **Results** are cut: at most 100 files per search, 1,000 items per tree
   and 100,000 characters per read, with `nextPageToken`, `truncated` or
   `nextOffset` when there is more.
-- **Retries:** none yet. The Google library retries reads only when it is
-  given a clock, and the kit doesn't offer one yet. Creating, updating and
+- **Retries:** the Google library retries a read at most twice, after a
+  `429` or a `5xx`, waiting with the host's `wait`. Creating, updating and
   moving are never retried: a timeout doesn't prove nothing changed.
 - **Errors** are `GoogleError` from the Google library. Google's own error
   text is never passed on.
