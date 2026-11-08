@@ -103,21 +103,20 @@ function scrubQuery(url: URL, where: string, userContent: QueryPaths, context: S
     const name = scrubText(rawName, `${where}.query`, context);
     const location = `${where}.query.${name}`;
     const declared = userContent.match(rawName);
+    // A declared parameter counts as matched whichever rule replaces it: one
+    // with a secret-like name (`request.query.code`) goes to the secret rule.
+    if (declared !== undefined) {
+      context.matchedUserContent.add(declared);
+    }
     if (
       value !== "" &&
       !PLACEHOLDER.test(value) &&
       isSecretName(rawName, "query-or-form", context.policy.secretFields)
     ) {
-      // A declared parameter with a secret-like name (`request.query.code`)
-      // is removed by the secret rule instead, so its declaration is met.
-      if (declared !== undefined) {
-        context.matchedUserContent.add(declared);
-      }
       context.report.add("secret-field", location);
       return [name, secretStandIn(value, context)];
     }
     if (declared !== undefined) {
-      context.matchedUserContent.add(declared);
       return [name, replaceUserContent(value, location, context)];
     }
     return [name, scrubQueryValue(value, location, context)];
