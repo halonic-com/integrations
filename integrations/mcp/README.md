@@ -10,13 +10,14 @@ nothing but our code and Zod into the cloud runtime.
 
 ## What it does so far
 
-| Part          | File           | What                                                                                     |
-| ------------- | -------------- | ---------------------------------------------------------------------------------------- |
-| JSON-RPC 2.0  | `json-rpc.ts`  | the messages, and sorting what the server sends into requests, notifications and answers |
-| MCP results   | `protocol.ts`  | the versions we speak and Zod schemas for `initialize`, `tools/list`, `tools/call`       |
-| The session   | `session.ts`   | the handshake, id matching, paged `tools/list` and `tools/call`                          |
-| The transport | `transport.ts` | how the session sends messages; the streamable HTTP transport comes next                 |
-| Errors        | `errors.ts`    | `McpError` with a `code`; never the server's own text                                    |
+| Part          | File                | What                                                                                     |
+| ------------- | ------------------- | ---------------------------------------------------------------------------------------- |
+| JSON-RPC 2.0  | `json-rpc.ts`       | the messages, and sorting what the server sends into requests, notifications and answers |
+| MCP results   | `protocol.ts`       | the versions we speak and Zod schemas for `initialize`, `tools/list`, `tools/call`       |
+| The session   | `session.ts`        | the handshake, id matching, paged `tools/list` and `tools/call`                          |
+| The transport | `transport.ts`      | how the session sends messages                                                           |
+| HTTP          | `http-transport.ts` | the streamable HTTP transport: `Mcp-Session-Id`, JSON and event-stream answers, resume   |
+| Errors        | `errors.ts`         | `McpError` with a `code`; never the server's own text                                    |
 
 Tools only for v0.1. Resources, prompts, sampling and OAuth come later
 (migration checklist K12). The client declares no capabilities, answers the
@@ -30,6 +31,12 @@ server's `ping` and refuses every other request from the server.
   characters). A server's annotations are read but are hints only: they
   never lower a tool's risk on their own.
 - `tools/call` is never retried, because a tool can send or delete.
+- An answer stream that ends or drops before the answer is resumed with a
+  `GET` and `Last-Event-ID`, at most 3 times, and only when the server
+  gave its events ids. The `retry:` pause is not honoured yet: the kit has
+  no timer for integrations.
+- No standing `GET` stream for messages outside a request yet, so a
+  `tools/list_changed` notice arrives only during a request.
 
 ## Still to come (HAL-134)
 
