@@ -1,0 +1,93 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-notes-02?fields=id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%2Ctrashed&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-notes-02",
+            "mimeType": "text/plain",
+            "modifiedTime": "2026-10-28T16:05:00.000Z",
+            "name": "<scrubbed:content>",
+            "owners": [
+              {
+                "emailAddress": "<scrubbed:content>"
+              }
+            ],
+            "parents": [
+              "folder-projects-01"
+            ],
+            "size": "2048",
+            "trashed": false,
+            "webViewLink": "https://drive.google.com/file/d/file-notes-02/view"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-notes-02?alt=media&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "contentType": "text/plain",
+          "kind": "text",
+          "value": "Made-up notes for the recording, long enough to come in two parts.\n"
+        },
+        "headers": {
+          "content-type": "text/plain"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "read-text-file-in-parts",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}

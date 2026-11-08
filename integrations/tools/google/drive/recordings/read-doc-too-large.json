@@ -1,0 +1,113 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-plan-01?fields=id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%2Ctrashed&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-plan-01",
+            "mimeType": "application/vnd.google-apps.document",
+            "modifiedTime": "2026-11-02T09:30:00.000Z",
+            "name": "<scrubbed:content>",
+            "owners": [
+              {
+                "emailAddress": "<scrubbed:content>"
+              }
+            ],
+            "parents": [
+              "folder-projects-01"
+            ],
+            "trashed": false,
+            "webViewLink": "https://docs.google.com/document/d/file-plan-01/edit"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-plan-01/export?mimeType=text%2Fmarkdown"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 403,
+              "errors": [
+                {
+                  "domain": "global",
+                  "message": "<scrubbed:content>",
+                  "reason": "exportSizeLimitExceeded"
+                }
+              ],
+              "message": "<scrubbed:content>"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 403
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "read-doc-too-large",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.error.errors[0].message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.error.message",
+      "rule": "user-content"
+    }
+  ]
+}
