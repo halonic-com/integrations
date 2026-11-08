@@ -37,12 +37,14 @@ approvals act on; Halonic refuses them while sending is off.
 
 - **Requests per call** are fixed and small. Each tool says how many it
   makes at most; the largest is `gmail_triage`, with one list request and
-  one request per message (at most 26).
+  one request per message (at most 26), not counting retries.
 - **Results** are cut: at most 25 messages per search, bodies in pages of
   `maxBodyChars`, threads in pages of `maxMessages`, at most 500 labels.
-- **Retries:** none yet. The Google library retries reads only when it is
-  given a clock, and the kit doesn't offer one yet. Sending is never
-  retried: a timeout doesn't prove the mail wasn't sent.
+- **Retries** follow the Google library
+  ([`../shared`](../shared/README.md#retries)): reads are sent again at
+  most twice after a `429` or a `5xx`, waiting with the host's `wait`.
+  Nothing that changes the mailbox is retried, and sending never is: a
+  timeout doesn't prove the mail wasn't sent.
 - **Errors** are `GoogleError` from the Google library. Google's own error
   text is never passed on.
 
