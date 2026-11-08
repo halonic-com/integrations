@@ -279,6 +279,79 @@ describe("StreamableHttpTransport", () => {
     expect(String(error)).not.toContain("secret detail");
   });
 
+  describe("freeing the connection of an answer it doesn't read", () => {
+    const html = {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    } as const;
+
+    it("cancels the confirmation of a notification", async () => {
+      const { server } = await connect([]);
+      server.assertNoBodyLeftOpen();
+    });
+
+    it.each([
+      [
+        "an error status",
+        [
+          {
+            request: { method: "POST" },
+            response: { status: 500, body: { kind: "text", text: "busy" } },
+          },
+        ],
+      ],
+      [
+        "an unknown content type",
+        [
+          {
+            request: { method: "POST" },
+            response: { ...html, body: { kind: "text", text: "<html>" } },
+          },
+        ],
+      ],
+      [
+        "a refused resume",
+        [
+          cutCall([{ id: "e1" }], true),
+          {
+            request: { method: "GET" },
+            response: { status: 405, body: { kind: "text", text: "no" } },
+          },
+        ],
+      ],
+      [
+        "a resume answered without a stream",
+        [
+          cutCall([{ id: "e1" }], true),
+          {
+            request: { method: "GET" },
+            response: { ...html, body: { kind: "text", text: "<html>" } },
+          },
+        ],
+      ],
+    ] as const satisfies readonly (readonly [string, readonly FakeExchange[]])[])(
+      "cancels %s",
+      async (_case, exchanges) => {
+        const { server, mcp } = await connect([...exchanges]);
+        await expect(mcp.callTool("echo", {})).rejects.toBeInstanceOf(Error);
+        server.assertAllUsed();
+        server.assertNoBodyLeftOpen();
+      },
+    );
+
+    it.each([200, 404, 500])("cancels the answer to DELETE (%i)", async (status) => {
+      const { server, mcp } = await connect([
+        {
+          request: { method: "DELETE" },
+          response: { status, body: { kind: "text", text: "bye" } },
+        },
+      ]);
+      await mcp.close().catch(() => undefined);
+      server.assertAllUsed();
+      server.assertNoBodyLeftOpen();
+    });
+  });
+
   it("refuses a session id with characters a header can't carry", async () => {
     const server = new FakeServer([
       {
