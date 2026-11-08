@@ -1,0 +1,92 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-plan-01?fields=id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%2Ctrashed&supportsAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": "file-plan-01",
+            "mimeType": "application/vnd.google-apps.document",
+            "modifiedTime": "2026-11-02T09:30:00.000Z",
+            "name": "<scrubbed:content>",
+            "owners": [
+              {
+                "emailAddress": "<scrubbed:content>"
+              }
+            ],
+            "parents": [
+              "folder-projects-01"
+            ],
+            "trashed": false,
+            "webViewLink": "https://docs.google.com/document/d/file-plan-01/edit"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files/file-plan-01/export?mimeType=text%2Fmarkdown"
+      },
+      "response": {
+        "body": {
+          "contentType": "text/markdown",
+          "kind": "text",
+          "value": "# halonic-test plan\n\nA made-up plan for the recording.\n\n- First step\n- Second step\n"
+        },
+        "headers": {
+          "content-type": "text/markdown"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "read-doc-markdown",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}
