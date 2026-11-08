@@ -62,11 +62,18 @@ common shapes (`hits.ts`, `document.ts`):
   `results`, `hits`, `documents` or `items`, or one JSON result per text
   part. Each result needs a ref (`ref`, `id`, `uri` or `url`); its title is
   `title` or `name`, its snippet `snippet`, `summary`, `text`, `content` or
-  `description`, and its `score` is kept when it is a number. Hits keep the
-  server's order. Any other answer is plain text and becomes one hit,
-  `<source>:search`, that holds it all.
+  `description`. Hits keep the server's order. When every hit has a
+  numeric `score`, hits keep it; otherwise every hit gets a score from its
+  place (1, 1/2, 1/3, …), so one list never mixes the two. Any other
+  answer is plain text and becomes one hit, `<source>:search`, that holds
+  it all.
 - **Get:** a JSON object with `content`, `text` or `body` (and `title` or
   `name`), or else the whole text. The ref is always the caller's.
+- **A missing document:** a server that reports it with `isError` makes
+  `get` fail with `tool-failed`; it doesn't return `null`. The source
+  can't tell "not found" from any other failure of the tool. `get` returns
+  `null` only when the source has no `getTool`, or when the tool answers
+  without an error and without any text.
 
 ## Limits
 
@@ -86,8 +93,10 @@ request. Text that is cut ends with `…`, never in the middle of a character.
 
 The source opens the MCP session on the first search or read, never in
 `connect`, and all sources of one connection share it. Each `search` and
-`get` is one tool call; the first also sends the two requests of the
-handshake. A session that fails to open or that the server ends is
+`get` is one tool call. A search always sends `limit` with the query, set
+to the number of hits it keeps. A tool that doesn't take a `limit`
+argument gets it anyway. The first call also sends the two requests of
+the handshake. A session that fails to open or that the server ends is
 dropped, and the next call opens a new one. The failed call itself is
 never repeated. `close` ends the session on the server.
 

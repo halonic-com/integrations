@@ -47,6 +47,22 @@ describe("toHits", () => {
     ]);
   });
 
+  it("uses rank-based scores for all hits when only some results have a score", () => {
+    const results = [{ id: "doc-1", score: 12.5 }, { id: "doc-2" }, { id: "doc-3", score: "high" }];
+    expect(toHits(answer(JSON.stringify(results)), "handbook", 5).map((hit) => hit.score)).toEqual([
+      1,
+      1 / 2,
+      1 / 3,
+    ]);
+  });
+
+  it("judges the scores only on the hits it keeps", () => {
+    const results = [{ id: "doc-1", score: 0.9 }, { id: "doc-2", score: 0.4 }, { id: "doc-3" }];
+    expect(toHits(answer(JSON.stringify(results)), "handbook", 2).map((hit) => hit.score)).toEqual([
+      0.9, 0.4,
+    ]);
+  });
+
   it("keeps at most `limit` hits", () => {
     const many = Array.from({ length: 30 }, (_, index) => ({ id: `doc-${index}` }));
     expect(toHits(answer(JSON.stringify(many)), "handbook", 3)).toHaveLength(3);
