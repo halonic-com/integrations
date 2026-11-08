@@ -29,8 +29,10 @@ recording:
   userContent:
     - request.body.systemInstruction.parts[*].text
     - request.body.contents[*].parts[*].text # what the user and the model wrote, the model's thoughts too
-    - request.body.contents[*].parts[*].functionCall.args # tool arguments sent back, nested values too
-    - request.body.contents[*].parts[*].functionResponse.response # tool results
+    # Tool arguments and results: every value, nested ones too. The argument
+    # names stay; they are the tool's own, already in its schema.
+    - request.body.contents[*].parts[*].functionCall.args.*
+    - request.body.contents[*].parts[*].functionResponse.response.*
     - request.body.tools[*].functionDeclarations[*].description # can describe the user's own setup
     - response.body.candidates[*].content.parts[*].text
-    - response.body.candidates[*].content.parts[*].functionCall.args
+    - response.body.candidates[*].content.parts[*].functionCall.args.*

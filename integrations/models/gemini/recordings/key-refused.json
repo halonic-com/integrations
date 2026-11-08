@@ -1,0 +1,94 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "contents": [
+              {
+                "parts": [
+                  {
+                    "text": "<scrubbed:content>"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "generationConfig": {
+              "maxOutputTokens": 1024
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "x-goog-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 400,
+              "details": [
+                {
+                  "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+                  "domain": "googleapis.com",
+                  "metadata": {
+                    "field-1": "<scrubbed:content>"
+                  },
+                  "reason": "API_KEY_INVALID"
+                },
+                {
+                  "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+                  "locale": "en-US",
+                  "message": "<scrubbed:content>"
+                }
+              ],
+              "message": "<scrubbed:content>",
+              "status": "INVALID_ARGUMENT"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 400
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-gemini",
+  "scenario": "key-refused",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-goog-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.contents[0].parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.details[0].metadata",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.details[1].message",
+      "rule": "user-content"
+    }
+  ]
+}

@@ -1,0 +1,270 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "contents": [
+              {
+                "parts": [
+                  {
+                    "text": "<scrubbed:content>"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "generationConfig": {
+              "maxOutputTokens": 1024
+            },
+            "tools": [
+              {
+                "functionDeclarations": [
+                  {
+                    "description": "<scrubbed:content>",
+                    "name": "weather_forecast",
+                    "parametersJsonSchema": {
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "city"
+                      ],
+                      "type": "object"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "x-goog-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "functionCall": {
+                        "args": {
+                          "city": "<scrubbed:content>"
+                        },
+                        "id": "fakecall01",
+                        "name": "weather_forecast"
+                      },
+                      "thoughtSignature": "scrubbed-secret-1"
+                    }
+                  ],
+                  "role": "model"
+                },
+                "finishReason": "STOP",
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3-flash-preview",
+            "responseId": "fake-response-id",
+            "usageMetadata": {
+              "candidatesTokenCount": 18,
+              "promptTokenCount": 52,
+              "thoughtsTokenCount": 64,
+              "totalTokenCount": 134
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "contents": [
+              {
+                "parts": [
+                  {
+                    "text": "<scrubbed:content>"
+                  }
+                ],
+                "role": "user"
+              },
+              {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "args": {
+                        "city": "<scrubbed:content>"
+                      },
+                      "id": "fakecall01",
+                      "name": "weather_forecast"
+                    },
+                    "thoughtSignature": "scrubbed-secret-1"
+                  }
+                ],
+                "role": "model"
+              },
+              {
+                "parts": [
+                  {
+                    "functionResponse": {
+                      "id": "fakecall01",
+                      "name": "weather_forecast",
+                      "response": {
+                        "output": "<scrubbed:content>"
+                      }
+                    }
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "generationConfig": {
+              "maxOutputTokens": 1024
+            },
+            "tools": [
+              {
+                "functionDeclarations": [
+                  {
+                    "description": "<scrubbed:content>",
+                    "name": "weather_forecast",
+                    "parametersJsonSchema": {
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "city"
+                      ],
+                      "type": "object"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "x-goog-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "candidates": [
+              {
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<scrubbed:content>"
+                    }
+                  ],
+                  "role": "model"
+                },
+                "finishReason": "STOP",
+                "index": 0
+              }
+            ],
+            "modelVersion": "gemini-3-flash-preview",
+            "responseId": "fake-response-id",
+            "usageMetadata": {
+              "candidatesTokenCount": 12,
+              "promptTokenCount": 140,
+              "totalTokenCount": 152
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-gemini",
+  "scenario": "tool-call",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-goog-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.contents[0].parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.tools[0].functionDeclarations[0].description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.candidates[0].content.parts[0].functionCall.args.city",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.candidates[0].content.parts[0].thoughtSignature",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.x-goog-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.contents[0].parts[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.contents[1].parts[0].functionCall.args.city",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.contents[1].parts[0].thoughtSignature",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.contents[2].parts[0].functionResponse.response.output",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.tools[0].functionDeclarations[0].description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.candidates[0].content.parts[0].text",
+      "rule": "user-content"
+    }
+  ]
+}
