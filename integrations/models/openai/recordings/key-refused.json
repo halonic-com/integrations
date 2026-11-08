@@ -1,0 +1,60 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_completion_tokens": 1024,
+            "messages": [
+              {
+                "content": "<scrubbed:content>",
+                "role": "user"
+              }
+            ],
+            "model": "gpt-5-mini"
+          }
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": "invalid_api_key",
+              "message": "Incorrect API key provided.",
+              "param": null,
+              "type": "invalid_request_error"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 401
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-openai",
+  "scenario": "key-refused",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content",
+      "rule": "user-content"
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_completion_tokens": 1024,
+            "messages": [
+              {
+                "content": "<scrubbed:content>",
+                "role": "user"
+              }
+            ],
+            "model": "gpt-5-mini",
+            "tools": [
+              {
+                "function": {
+                  "description": "<scrubbed:content>",
+                  "name": "weather_forecast",
+                  "parameters": {
+                    "properties": {
+                      "city": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "city"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "type": "function"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "choices": [
+              {
+                "finish_reason": "tool_calls",
+                "index": 0,
+                "logprobs": null,
+                "message": {
+                  "annotations": [],
+                  "content": null,
+                  "refusal": null,
+                  "role": "assistant",
+                  "tool_calls": [
+                    {
+                      "function": {
+                        "arguments": "{\"city\":\"<scrubbed:content>\"}",
+                        "name": "weather_forecast"
+                      },
+                      "id": "call_FAKE0000000000000000001",
+                      "type": "function"
+                    }
+                  ]
+                }
+              }
+            ],
+            "created": 1767225600,
+            "id": "chatcmpl-FAKE000000000000000000001",
+            "model": "gpt-5-mini-2025-08-07",
+            "object": "chat.completion",
+            "service_tier": "default",
+            "system_fingerprint": null,
+            "usage": {
+              "completion_tokens": 18,
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "prompt_tokens": 380,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "total_tokens": 398
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-openai",
+  "scenario": "tool-call",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.tools[0].function.description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.choices[0].message.tool_calls[0].function.arguments",
+      "rule": "user-content"
+    }
+  ]
+}

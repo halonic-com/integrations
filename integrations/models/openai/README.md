@@ -52,3 +52,8 @@ refusal), its `tool_calls` with the arguments parsed, `usage` from
   `quota-exceeded`, `unavailable`, `unexpected-response`). OpenAI's own
   error text is never passed on; at most its error code, such as
   `(insufficient_quota)`.
+- **Recordings** in `recordings/` were written by hand, not recorded:
+  `pnpm record` and an OpenAI test account weren't available yet. They
+  follow OpenAI's documented response shapes in the recorder's format,
+  scrubbed as the recorder would scrub them. Replace them with real
+  recordings once both are available.
