@@ -91,3 +91,37 @@ export function connectToFakeDrive(
   const { wait, waits } = recordingWait();
   return { connection: drive.connect({ http, wait }), urls, waits };
 }
+
+/** One answer of {@link connectToFakeAnswers}. */
+export interface FakeAnswer {
+  status: number;
+  body: string;
+}
+
+/**
+ * Connects the integration to a fake Drive that gives `answers` in turn,
+ * for a tool that sends more than one request, such as a read that works
+ * and a change that fails. `requests` keeps each URL and the body sent.
+ */
+export function connectToFakeAnswers(...answers: FakeAnswer[]): {
+  connection: IntegrationConnection;
+  requests: { url: string; body: string | undefined }[];
+} {
+  const requests: { url: string; body: string | undefined }[] = [];
+  const http: HttpClient = {
+    async fetch(url, init) {
+      requests.push({ url, body: init?.body });
+      const answer = answers.shift();
+      if (answer === undefined) {
+        throw new Error(`The tool sent more requests than the test expected: ${url}`);
+      }
+      return {
+        ok: answer.status >= 200 && answer.status < 300,
+        status: answer.status,
+        headers: { get: () => null },
+        text: async () => answer.body,
+      };
+    },
+  };
+  return { connection: drive.connect({ http, wait: recordingWait().wait }), requests };
+}
