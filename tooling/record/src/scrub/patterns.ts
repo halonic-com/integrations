@@ -98,8 +98,25 @@ export function looksRandom(run: string): boolean {
   }
   // Lower-case tokens (base36 and similar) need plenty of digits, and no
   // slashes, so a lower-case path like /v1/users/me/messages isn't caught.
+  // Nor a name made of words and numbers, like the model name
+  // claude-haiku-4-5-20251001: a token mixes letters and digits in its parts.
   const digitShare = digits / value.length;
-  return upper === 0 && !value.includes("/") && digitShare >= 0.2 && digitShare <= 0.8;
+  return (
+    upper === 0 &&
+    !value.includes("/") &&
+    !isWordsAndNumbers(value) &&
+    digitShare >= 0.2 &&
+    digitShare <= 0.8
+  );
+}
+
+/**
+ * True when every part between `-`, `_` and `.` is a word or a number.
+ * A word is at most 12 letters, so an ID like sess-1699999999-qwhzkxmvbtrplnfdgsyc
+ * with a long random run of letters still counts as a token.
+ */
+function isWordsAndNumbers(value: string): boolean {
+  return value.split(/[-_.]/).every((part) => /^(?:[a-z]{1,12}|\d+)$/.test(part));
 }
 
 function isLongHex(value: string): boolean {
