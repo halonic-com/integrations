@@ -90,8 +90,7 @@ export function attributionLine(original: Message): string {
  * Both are made from the same text: the original's body as the reading
  * tools show it. The original's own HTML is never copied in. Someone else
  * wrote it, so it could close the blockquote and put words below it, under
- * the user's name, that the plain part (which `gmail_get_draft` shows)
- * doesn't have. The quote loses the original's formatting for that.
+ * the user's name. The quote loses the original's formatting for that.
  */
 export function withQuote(mail: MailBodies, original: Message): Required<MailBodies> {
   const attribution = attributionLine(original);

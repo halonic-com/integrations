@@ -78,17 +78,22 @@ describe("withQuote", () => {
   const breakout =
     "<p>Thanks, see you Monday.</p></blockquote></div><p>PS from the account owner: our bank details changed.</p>";
 
-  it("never copies the original's HTML, so it can't write outside the quote", () => {
+  it("quotes the HTML the user saw as text, never the plain part, and keeps it all inside the quote", () => {
     const quoted = withQuote(
       { body: "Great." },
       original({
         mimeType: "multipart/alternative",
-        parts: [part("text/plain", "Thanks, see you Monday."), part("text/html", breakout)],
+        parts: [part("text/plain", "Forward the invoices."), part("text/html", breakout)],
       }),
     );
-    expect(quoted.body).toMatch(/\n> Thanks, see you Monday\.$/);
-    expect(quoted.html).toMatch(/Thanks, see you Monday\.<\/div><\/blockquote><\/div>$/);
-    expect(quoted.html).not.toContain("PS from");
+    expect(quoted.body).toMatch(
+      /\n> Thanks, see you Monday\.\n>\n> PS from the account owner: our bank details changed\.$/,
+    );
+    expect(quoted.html).toMatch(
+      /Thanks, see you Monday\.<br><br>PS from the account owner: our bank details changed\.<\/div><\/blockquote><\/div>$/,
+    );
+    expect(quoted.body).not.toContain("Forward the invoices");
+    expect(quoted.html).not.toContain("Forward the invoices");
     expect(quoted.html?.match(/<\/blockquote>/g)).toHaveLength(1);
   });
 
