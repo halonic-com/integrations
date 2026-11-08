@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { codeForStatus, errorForResponse, unexpectedResponse } from "./error-for-response.ts";
 import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import {
+  oddStatusOnlyBody,
+  oddStatusRateLimitBody,
+  userContentInOddStatus,
+} from "./test/odd-status.ts";
+import {
   oddEntryServiceDisabledBody,
   recordedServiceDisabledBody,
   serviceDisabledBody,
@@ -116,6 +121,19 @@ describe("errorForResponse", () => {
     expect(errorForResponse(403, body, request).message).toContain(
       "(status 403, PERMISSION_DENIED)",
     );
+  });
+
+  it("keeps the errors reason when Google's status isn't a string", () => {
+    const error = errorForResponse(403, oddStatusRateLimitBody(), request);
+    expect(error.code).toBe("rate-limited");
+    expect(error.message).toContain("(status 403, rateLimitExceeded)");
+    expect(error.message).not.toMatch(userContentInOddStatus);
+  });
+
+  it("leaves the reason out when Google's only reason is a status that isn't a string", () => {
+    const error = errorForResponse(503, oddStatusOnlyBody(), request);
+    expect(error.code).toBe("unavailable");
+    expect(error.message).toBe("Gmail is having trouble. Try again later (status 503).");
   });
 
   it("maps a 403 rate limit by Google's reason", () => {

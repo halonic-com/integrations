@@ -27,10 +27,14 @@ const errorEntrySchema = z.object({ reason: z.string().optional() }).catch({ rea
  */
 export const errorEntriesSchema = z.array(errorEntrySchema).optional().catch(undefined);
 
-/** Only the fields we read. Every other field, `message` included, is ignored. */
+/**
+ * Only the fields we read. Every other field, `message` included, is ignored.
+ * A `status` that isn't a string reads as missing, like an odd `errors`
+ * entry, so it doesn't cost us the reason in `errors`.
+ */
 const errorBodySchema = z.object({
   error: z.object({
-    status: z.string().optional(),
+    status: z.string().optional().catch(undefined),
     errors: errorEntriesSchema,
   }),
 });
