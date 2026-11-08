@@ -575,9 +575,12 @@ a network, without keys and the same way every time.
 - **Declare every field that holds the user's own content** in the sheet's
   `recording.userContent`: mail bodies and subjects, file contents and
   names, chat text, model prompts, answers and reasoning. The recorder
-  never guesses these; an undeclared field stays as it was. Paths start at
-  `request.body` or `response.body`: `response.body.files[*].name`,
-  `response.body.content[*].text`. A path that ends at an object or a list
+  never guesses these; an undeclared field stays as it was. The one
+  exception is Google's error text, which the recorder removes for every
+  Google integration, so Google sheets don't list it
+  ([`tools/google/shared`](../../integrations/tools/google/shared/README.md#recordings)).
+  Paths start at `request.body` or `response.body`:
+  `response.body.files[*].name`, `response.body.content[*].text`. A path that ends at an object or a list
   scrubs every value inside it, field names included, so
   `response.body.content[*].input` covers a tool's nested arguments. Add
   `secretFields` for a field that carries a secret under a name that
