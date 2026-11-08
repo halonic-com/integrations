@@ -215,6 +215,8 @@ recording:
     - response.body.sendAs[*].displayName
     - response.body.sendAs[*].sendAsEmail
     - response.body.sendAs[*].replyToAddress
+    # messages.list: the search, in the request URL's query string
+    - request.query.q
     # messages.send and drafts.create: the whole outgoing message
     - request.body.raw
     - request.body.message.raw
