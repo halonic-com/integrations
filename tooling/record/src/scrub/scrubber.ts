@@ -6,6 +6,7 @@ import { FieldPaths } from "./field-paths.ts";
 import { scrubHeaders } from "./headers.ts";
 import { KnownSecrets } from "./known-secrets.ts";
 import type { ScrubPolicy } from "./policy.ts";
+import { QueryPaths } from "./query-paths.ts";
 import { ReportBuilder, type ScrubReport } from "./report.ts";
 import { serviceErrorPaths } from "./service-errors.ts";
 import { scrubUrl } from "./url.ts";
@@ -46,7 +47,10 @@ export function scrubExchanges(
     report: new ReportBuilder(),
     matchedUserContent: new Set(),
   };
-  const requestUserContent = new FieldPaths(policy.userContent, "request");
+  const requestUserContent: RequestUserContent = {
+    query: new QueryPaths(policy.userContent),
+    body: new FieldPaths(policy.userContent, "request"),
+  };
   const scrubbed = exchanges.map((exchange, index) =>
     scrubExchange(exchange, `exchanges[${index}]`, requestUserContent, context),
   );
@@ -54,6 +58,12 @@ export function scrubExchanges(
     (path) => !context.matchedUserContent.has(path),
   );
   return { exchanges: scrubbed, report: context.report.build(unmatched) };
+}
+
+/** The declared user-content paths that reach into a request. */
+interface RequestUserContent {
+  readonly query: QueryPaths;
+  readonly body: FieldPaths;
 }
 
 /**
@@ -75,7 +85,7 @@ function responseUserContent(
 function scrubExchange(
   exchange: CapturedExchange,
   where: string,
-  requestUserContent: FieldPaths,
+  requestUserContent: RequestUserContent,
   context: ScrubContext,
 ): RecordedExchange {
   const { request, response } = exchange;
@@ -92,9 +102,9 @@ function scrubExchange(
     transport: "http",
     request: {
       method: request.method.toUpperCase(),
-      url: scrubUrl(request.url, `${where}.request.url`, context),
+      url: scrubUrl(request.url, `${where}.request.url`, context, requestUserContent.query),
       headers: scrubHeaders(request.headers, `${where}.request.headers`, context),
-      body: scrubBody(requestBody, `${where}.request.body`, requestUserContent, context),
+      body: scrubBody(requestBody, `${where}.request.body`, requestUserContent.body, context),
     },
     response: {
       status: response.status,

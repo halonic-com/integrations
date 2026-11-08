@@ -44,12 +44,29 @@ describe("findLeaks", () => {
     expect(findLeaks(`{"raw":"${encoded}"}`, [])).toEqual([{ kind: "email", offset: 8 }]);
   });
 
+  it("looks inside URL-encoded text, such as a search in a query string", () => {
+    const url = `https://mail.example.com/v1/messages?q=${encodeURIComponent(`from:${FAKE.email}`)}`;
+    expect(findLeaks(`{"url":"${url}"}`, [])).toEqual([{ kind: "email", offset: 8 }]);
+  });
+
+  it("looks inside a URL encoded twice, as in a URL inside a query value", () => {
+    const next = `https://mail.example.com/?q=${encodeURIComponent(FAKE.email)}`;
+    const url = `https://login.example.com/?next=${encodeURIComponent(next)}`;
+    expect(kinds(`{"url":"${url}"}`)).toEqual(["email"]);
+  });
+
+  it("counts an address once when it is both plain and encoded in one run", () => {
+    const value = `${FAKE.email}%20${encodeURIComponent(FAKE.otherEmail)}`;
+    expect(kinds(`{"x":"${value}"}`)).toEqual(["email"]);
+  });
+
   it("accepts the scrubber's own stand-ins", () => {
     const scrubbed = JSON.stringify({
       authorization: "Bearer <scrubbed:secret>",
       cookie: "<scrubbed:secret>",
       nextPageToken: "scrubbed-secret-1",
       url: "https://api.example.com/?key=%3Cscrubbed%3Asecret%3E",
+      search: "https://api.example.com/?q=from%3Aperson1%40example.com&n=%2B447700900001",
       replyTo: "support@mail.example.com",
       from: "person1@example.com",
       phone: "+447700900001",

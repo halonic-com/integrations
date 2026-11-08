@@ -33,6 +33,9 @@ export interface ScrubPolicy {
    * any field name: `response.body.messages[*].snippet`. A form field is
    * `request.body.<name>`; a stream event's data is `response.body[*].data`.
    * The path `request.body` alone means the whole body.
+   *
+   * A query parameter of the request URL is `request.query.<name>`, such as
+   * `request.query.q` for a search. It names one parameter, without wildcards.
    */
   readonly userContent: readonly string[];
 

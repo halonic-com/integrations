@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FAKE, rulesUsed, testContext } from "../test/fakes.ts";
 import { RecordingRefused } from "./context.ts";
+import { QueryPaths } from "./query-paths.ts";
 import { scrubUrl } from "./url.ts";
 
 describe("scrubUrl", () => {
@@ -64,6 +65,36 @@ describe("scrubUrl", () => {
       "https://login.example.com/done?token=scrubbed-secret-1",
     );
     expect(rulesUsed(context)).toEqual(["secret-field"]);
+  });
+
+  it("replaces a query parameter the sheet declares as user content", () => {
+    const context = testContext();
+    const declared = new QueryPaths(["request.query.q"]);
+    const url = "https://api.example.com/search?q=subject%3Adinner&maxResults=10";
+    expect(scrubUrl(url, "url", context, declared)).toBe(
+      "https://api.example.com/search?q=%3Cscrubbed%3Acontent%3E&maxResults=10",
+    );
+    expect(context.report.build([]).replacements).toEqual([
+      { rule: "user-content", where: "url.query.q" },
+    ]);
+    expect([...context.matchedUserContent]).toEqual(["request.query.q"]);
+  });
+
+  it("keeps an empty user-content parameter empty, and counts the path as used", () => {
+    const context = testContext();
+    const url = "https://api.example.com/search?q=";
+    expect(scrubUrl(url, "url", context, new QueryPaths(["request.query.q"]))).toBe(url);
+    expect(rulesUsed(context)).toEqual([]);
+    expect([...context.matchedUserContent]).toEqual(["request.query.q"]);
+  });
+
+  it("doesn't apply the declared query parameters to a URL inside a query value", () => {
+    const context = testContext();
+    const next = "https://login.example.com/done?q=kept";
+    const url = `https://api.example.com/auth?next=${encodeURIComponent(next)}`;
+    const scrubbed = scrubUrl(url, "url", context, new QueryPaths(["request.query.q"]));
+    expect(new URL(scrubbed).searchParams.get("next")).toBe(next);
+    expect(context.matchedUserContent.size).toBe(0);
   });
 
   it("leaves an ordinary URL exactly as it was", () => {

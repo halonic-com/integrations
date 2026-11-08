@@ -150,6 +150,20 @@ describe("prepareRecording", () => {
     expect(JSON.stringify(prepared)).not.toContain(FAKE.plainKey);
   });
 
+  it("refuses to save when a rule misses an address in a query string", () => {
+    const search: CapturedExchange = {
+      ...listMessages,
+      request: {
+        method: "GET",
+        url: `https://mail.example.com/v1/messages?q=${encodeURIComponent(`from:${FAKE.email}`)}`,
+        headers: [],
+      },
+      response: { status: 200, headers: [], body: "" },
+    };
+    const prepared = prepareRecording(input([search]), scrubNothing);
+    expect(prepared).toMatchObject({ ok: false, reason: "leak", leaks: [{ kind: "email" }] });
+  });
+
   it("refuses a declared user-content path that matched nothing", () => {
     const typo = {
       ...input([listMessages]),

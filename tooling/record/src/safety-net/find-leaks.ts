@@ -9,6 +9,7 @@ import {
   PLACEHOLDER,
   TOKEN_SHAPES,
 } from "../scrub/patterns.ts";
+import { decodePercentText, PERCENT_ENCODED_RUN } from "./percent-encoding.ts";
 import { findSecretFields } from "./secret-fields.ts";
 
 /** What the text scan finds, at a character offset. */
@@ -40,7 +41,8 @@ const FAKE_KEY_MARKER = /^halonic-fake/i;
  *
  * It looks for the key values the kit added (and their encodings and
  * pieces), the fake-key marker, known token shapes, e-mail addresses and
- * phone numbers, and does the same inside base64 text. It is deliberately
+ * phone numbers, and does the same inside base64 text and URL-encoded text
+ * (`from%3Aperson%40mail.test` in a query string). It is deliberately
  * separate from the scrubber's rules: it scans the whole file as one string,
  * so it also catches what a rule never looked at. Then it reads the file and
  * checks that every value under a secret name is a stand-in.
@@ -61,7 +63,37 @@ function scanText(text: string, knownSecrets: readonly string[]): TextLeak[] {
       leaks.push(...scan(decoded.text, secrets).map((leak) => ({ ...leak, offset: run.index })));
     }
   }
+  leaks.push(...scanPercentEncoded(text, secrets, leaks));
   return leaks.sort((a, b) => a.offset - b.offset);
+}
+
+/**
+ * Leaks that only show once URL-encoded text is decoded, such as an address
+ * whose `@` is written `%40`. The place is the start of the encoded run. A
+ * kind the plain scan already found inside the run isn't counted again.
+ */
+function scanPercentEncoded(
+  text: string,
+  secrets: KnownSecrets,
+  plainLeaks: readonly TextLeak[],
+): TextLeak[] {
+  const leaks: TextLeak[] = [];
+  for (const run of text.matchAll(PERCENT_ENCODED_RUN)) {
+    const start = run.index;
+    const end = start + run[0].length;
+    const foundPlain = new Set(
+      plainLeaks
+        .filter((leak) => leak.offset >= start && leak.offset < end)
+        .map((leak) => leak.kind),
+    );
+    for (const leak of scan(decodePercentText(run[0]), secrets)) {
+      if (!foundPlain.has(leak.kind)) {
+        foundPlain.add(leak.kind);
+        leaks.push({ kind: leak.kind, offset: start });
+      }
+    }
+  }
+  return leaks;
 }
 
 type TextLeak = Extract<Leak, { offset: number }>;

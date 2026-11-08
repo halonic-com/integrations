@@ -117,6 +117,32 @@ describe("scrubExchanges", () => {
     expect(report.unmatchedUserContent).toEqual(["response.body.mesages[*].subject"]);
   });
 
+  it("replaces a declared query parameter of the request URL", () => {
+    const search: CapturedExchange = {
+      request: {
+        method: "GET",
+        url: `https://mail.example.com/v1/messages?q=${encodeURIComponent("subject:dinner")}`,
+        headers: [],
+      },
+      response: { status: 200, headers: JSON_HEADERS, body: '{"messages":[]}' },
+    };
+    const policy = definePolicy({ userContent: ["request.query.q"] });
+    const { exchanges, report } = scrubExchanges([search], { policy });
+    expect(exchanges[0]?.request.url).toBe(
+      "https://mail.example.com/v1/messages?q=%3Cscrubbed%3Acontent%3E",
+    );
+    expect(report.replacements).toEqual([
+      { rule: "user-content", where: "exchanges[0].request.url.query.q" },
+    ]);
+    expect(report.unmatchedUserContent).toEqual([]);
+  });
+
+  it("lists a declared query parameter that no request had", () => {
+    const policy = definePolicy({ userContent: [...mailPolicy.userContent, "request.query.q"] });
+    const { report } = scrubExchanges(mailExchanges(), { policy });
+    expect(report.unmatchedUserContent).toEqual(["request.query.q"]);
+  });
+
   it("refuses the whole recording when one body can't be parsed", () => {
     const exchanges = mailExchanges();
     const htmlPage: CapturedExchange = {

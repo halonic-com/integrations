@@ -1,5 +1,7 @@
 import { RecordingRefused, type ScrubContext, secretStandIn } from "./context.ts";
+import { USER_CONTENT } from "./fakes.ts";
 import { PLACEHOLDER } from "./patterns.ts";
+import { NO_QUERY_PATHS, type QueryPaths } from "./query-paths.ts";
 import { isSecretName } from "./secret-names.ts";
 import { scrubText } from "./text.ts";
 
@@ -9,6 +11,8 @@ import { scrubText } from "./text.ts";
  *   anyway, and a stand-in like `x@host` would read as an e-mail address)
  * - query parameters with secret-like names (`key`, `api_key`,
  *   `access_token`, `sig`, `code` and the integration's own) get a secret stand-in
+ * - query parameters the sheet declares as user content (`request.query.q`)
+ *   get the user-content placeholder
  * - a query value that is itself a web URL goes through these rules too
  * - every other part (path segments, parameter names and values, the
  *   fragment) goes through the free-text rules
@@ -16,11 +20,16 @@ import { scrubText } from "./text.ts";
  * The host stays: it's declared in the permission sheet and is public.
  * A URL that can't be parsed stops the recording.
  */
-export function scrubUrl(url: string, where: string, context: ScrubContext): string {
+export function scrubUrl(
+  url: string,
+  where: string,
+  context: ScrubContext,
+  userContent: QueryPaths = NO_QUERY_PATHS,
+): string {
   const parsed = parseUrl(url, where);
   scrubUserinfo(parsed, where, context);
   parsed.pathname = scrubPath(parsed.pathname, `${where}.path`, context);
-  scrubQuery(parsed, where, context);
+  scrubQuery(parsed, where, userContent, context);
   if (parsed.hash !== "") {
     parsed.hash = scrubText(safeDecode(parsed.hash), `${where}.fragment`, context);
   }
@@ -83,7 +92,7 @@ function scrubPath(pathname: string, where: string, context: ScrubContext): stri
     .join("/");
 }
 
-function scrubQuery(url: URL, where: string, context: ScrubContext): void {
+function scrubQuery(url: URL, where: string, userContent: QueryPaths, context: ScrubContext): void {
   if (url.search === "") {
     return;
   }
@@ -100,6 +109,11 @@ function scrubQuery(url: URL, where: string, context: ScrubContext): void {
       context.report.add("secret-field", location);
       return [name, secretStandIn(value, context)];
     }
+    const declared = userContent.match(rawName);
+    if (declared !== undefined) {
+      context.matchedUserContent.add(declared);
+      return [name, replaceUserContent(value, location, context)];
+    }
     return [name, scrubQueryValue(value, location, context)];
   });
   const changed = scrubbed.some(([name, value], index) => {
@@ -110,6 +124,15 @@ function scrubQuery(url: URL, where: string, context: ScrubContext): void {
   if (changed) {
     url.search = new URLSearchParams(scrubbed).toString();
   }
+}
+
+/** An empty value stays empty: there is nothing in it to remove. */
+function replaceUserContent(value: string, where: string, context: ScrubContext): string {
+  if (value === "") {
+    return value;
+  }
+  context.report.add("user-content", where);
+  return USER_CONTENT.text;
 }
 
 /**

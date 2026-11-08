@@ -580,17 +580,18 @@ a network, without keys and the same way every time.
   Google integration, so Google sheets don't list it
   ([`tools/google/shared`](../../integrations/tools/google/shared/README.md#recordings)).
   Paths start at `request.body` or `response.body`:
-  `response.body.files[*].name`, `response.body.content[*].text`. A path that ends at an object or a list
-  scrubs every value inside it, field names included, so
+  `response.body.files[*].name`, `response.body.content[*].text`. A
+  search or other user text in the request URL's query string is
+  `request.query.<name>`, such as `request.query.q`. A path that ends at
+  an object or a list scrubs every value inside it, field names included, so
   `response.body.content[*].input` covers a tool's nested arguments. Add
   `secretFields` for a field that carries a secret under a name that
   doesn't say so, and `allowContentTypes` for a body that isn't JSON, form
   data or an event stream.
-- **Content outside a body can't be declared yet.** Paths can't reach the
-  query string, the URL path or the response headers, so a search query in
-  the URL or a file name in `Content-Disposition` is saved as it is. Record
-  those scenarios only with text you made up: an invented search term, a
-  test file with an invented name.
+- **Content in the URL path or the headers can't be declared yet.** Paths
+  can't reach them, so a file name in the URL path or in
+  `Content-Disposition` is saved as it is. Record those scenarios only
+  with text you made up, such as a test file with an invented name.
 - **Read every recording before you commit it,** top to bottom, headers
   and URLs included. Any real name, address, subject or sentence that
   survived means a `userContent` path is missing: add it and record again.
@@ -609,8 +610,8 @@ format and the full list of scrub rules.
 >   your own tests.
 > - Today one missed `userContent` path publishes that field. The recorder
 >   is to turn this around: scrub every string by default and keep only
->   the fields marked safe, and reach query strings, URL paths and response
->   headers. Until then, the reader of the recording is the last check.
+>   the fields marked safe, and reach URL paths and response headers.
+>   Until then, the reader of the recording is the last check.
 
 ## 10. What an integration must never do
 
