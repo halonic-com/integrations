@@ -52,7 +52,12 @@ setting act on it.
   listings.
 - **Results** are cut: at most 100 files per search, 1,000 items per tree
   and 100,000 characters per read, with `nextPageToken`, `truncated` or
-  `nextOffset` when there is more.
+  `nextOffset` when there is more. Characters are UTF-16 code units, so an
+  emoji counts as two.
+- **Reading a file** fetches its whole text for every part, so a later
+  part downloads the file again. A file over the kit's 10 MiB response
+  limit can't be read at all. Files that aren't text, Word, Excel and
+  PowerPoint files among them, return their details only.
 - **Retries:** the Google library retries a read at most twice, after a
   `429` or a `5xx`, waiting with the host's `wait`. Creating, updating and
   moving are never retried: a timeout doesn't prove nothing changed.
@@ -77,6 +82,9 @@ something else:
   `drive_search` takes a `pageToken` and returns `nextPageToken`;
   `drive_tree` makes at most 25 listings and reads one page per folder,
   and says `truncated` when it stops early.
+- **Office files are binary.** The old `drive_read_file` read any type
+  containing `xml` as text, so a Word, Excel or PowerPoint file came back
+  as unreadable ZIP data. It now returns their details only.
 - **A fixed multipart boundary.** `drive_create_file` used a random one;
   it now picks one that isn't in the content, so the same call always
   sends the same request.
