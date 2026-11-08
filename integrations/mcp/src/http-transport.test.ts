@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { errorForStatus } from "./http-status.ts";
-import { maxResumes, StreamableHttpTransport } from "./http-transport.ts";
+import { maxResumesWithoutProgress, StreamableHttpTransport } from "./http-transport.ts";
 import { McpSession } from "./session.ts";
-import { endpoint, type FakeExchange, FakeServer } from "./test/fake-server.ts";
+import { endpoint, type FakeEvent, type FakeExchange, FakeServer } from "./test/fake-server.ts";
 
 const clientInfo = { name: "halonic", version: "0.1.0" };
 const auth = { secret: "mcp-server-key", as: "bearer" } as const;
@@ -53,20 +53,17 @@ const callRequest = {
   params: { name: "echo", arguments: {} },
 };
 const callAnswer = { jsonrpc: "2.0", id: 2, result: { content: [{ type: "text", text: "done" }] } };
+const progress = { jsonrpc: "2.0", method: "notifications/progress", params: {} };
 
 /** A tool call whose answer stream the server cuts after its first events. */
-function cutCall(firstEvents: { id?: string; data?: unknown }[], drop: boolean): FakeExchange {
+function cutCall(firstEvents: FakeEvent[], drop: boolean): FakeExchange {
   return {
     request: { method: "POST", headers: session, body: callRequest },
     response: { status: 200, headers: sse, body: { kind: "sse", events: firstEvents, drop } },
   };
 }
 
-function resumeFrom(
-  lastEventId: string,
-  events: { id?: string; data?: unknown }[],
-  drop = false,
-): FakeExchange {
+function resumeFrom(lastEventId: string, events: FakeEvent[], drop = false): FakeExchange {
   return {
     request: { method: "GET", headers: { ...session, "last-event-id": lastEventId } },
     response: { status: 200, headers: sse, body: { kind: "sse", events, drop } },
@@ -152,7 +149,6 @@ describe("StreamableHttpTransport", () => {
     });
 
     it("resumes from the newest id each time", async () => {
-      const progress = { jsonrpc: "2.0", method: "notifications/progress", params: {} };
       const { server, mcp } = await connect([
         cutCall([{ id: "e1" }], true),
         resumeFrom("e1", [{ id: "e2", data: progress }], true),
@@ -162,10 +158,46 @@ describe("StreamableHttpTransport", () => {
       server.assertAllUsed();
     });
 
-    it(`gives up after ${maxResumes} resumes and passes the drop through`, async () => {
-      const resumes = Array.from({ length: maxResumes }, () =>
-        resumeFrom("e1", [{ id: "e1" }], true),
+    it("asks again for an answer the connection dropped in the middle of", async () => {
+      const { server, mcp } = await connect([
+        {
+          request: { method: "POST", headers: session, body: callRequest },
+          response: {
+            status: 200,
+            headers: sse,
+            body: {
+              kind: "sse",
+              events: [{ id: "e1", data: progress }],
+              cutEvent: { id: "e2", data: callAnswer },
+            },
+          },
+        },
+        resumeFrom("e1", [{ id: "e2", data: callAnswer }]),
+      ]);
+      expect((await mcp.callTool("echo", {})).isError).toBe(false);
+      server.assertAllUsed();
+    });
+
+    it("keeps resuming a long call as long as each stream brings a new event", async () => {
+      const closes = Array.from({ length: maxResumesWithoutProgress + 2 }, (_, index) =>
+        resumeFrom(`e${index}`, [{ id: `e${index + 1}` }]),
       );
+      const { server, mcp } = await connect([
+        cutCall([{ id: "e0" }], false),
+        ...closes,
+        resumeFrom(`e${closes.length}`, [{ id: "last", data: callAnswer }]),
+      ]);
+      expect((await mcp.callTool("echo", {})).isError).toBe(false);
+      server.assertAllUsed();
+    });
+
+    it(`gives up after ${maxResumesWithoutProgress} resumes in a row without a new event`, async () => {
+      const resumes = [
+        resumeFrom("e1", [], true),
+        ...Array.from({ length: maxResumesWithoutProgress - 1 }, () =>
+          resumeFrom("e1", [{ id: "e1" }], true),
+        ),
+      ];
       const { server, mcp } = await connect([cutCall([{ id: "e1" }], true), ...resumes]);
       await expect(mcp.callTool("echo", {})).rejects.toThrow("connection reset");
       server.assertAllUsed();

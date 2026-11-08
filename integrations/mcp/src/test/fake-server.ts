@@ -27,11 +27,18 @@ export type FakeBody =
   | { readonly kind: "text"; readonly text: string }
   | {
       readonly kind: "sse";
-      /** `data` is sent as JSON; leave it out for an event with empty data, as servers send to set an id. */
-      readonly events: readonly { readonly id?: string; readonly data?: unknown }[];
+      readonly events: readonly FakeEvent[];
       /** The connection drops after the last event instead of ending. */
       readonly drop?: boolean;
+      /** Sent after the events without its closing blank line; the connection then drops. */
+      readonly cutEvent?: FakeEvent;
     };
+
+/** `data` is sent as JSON; leave it out for an event with empty data, as servers send to set an id. */
+export interface FakeEvent {
+  readonly id?: string;
+  readonly data?: unknown;
+}
 
 export const endpoint = "https://mcp.example.com/mcp";
 
@@ -89,7 +96,9 @@ function toResponse(response: FakeExchange["response"]): HttpResponse {
   );
   const text = bodyText(response.body);
   const encoded = new TextEncoder().encode(text);
-  const drop = response.body.kind === "sse" && response.body.drop === true;
+  const drop =
+    response.body.kind === "sse" &&
+    (response.body.drop === true || response.body.cutEvent !== undefined);
   let sent = false;
   return {
     ok: response.status >= 200 && response.status < 300,
@@ -121,16 +130,16 @@ function bodyText(body: FakeBody): string {
       return JSON.stringify(body.value);
     case "text":
       return body.text;
-    case "sse":
-      return body.events
-        .map(
-          (event) =>
-            `${event.id === undefined ? "" : `id: ${event.id}\n`}data:${eventData(event.data)}\n\n`,
-        )
-        .join("");
+    case "sse": {
+      const complete = body.events.map((event) => `${eventLines(event)}\n`).join("");
+      return body.cutEvent === undefined ? complete : complete + eventLines(body.cutEvent);
+    }
   }
 }
 
-function eventData(data: unknown): string {
-  return data === undefined ? "" : ` ${JSON.stringify(data)}`;
+/** The lines of one event, without the blank line that completes it. */
+function eventLines(event: FakeEvent): string {
+  const id = event.id === undefined ? "" : `id: ${event.id}\n`;
+  const data = event.data === undefined ? "" : ` ${JSON.stringify(event.data)}`;
+  return `${id}data:${data}\n`;
 }

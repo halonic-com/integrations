@@ -32,9 +32,10 @@ server's `ping` and refuses every other request from the server.
   never lower a tool's risk on their own.
 - `tools/call` is never retried, because a tool can send or delete.
 - An answer stream that ends or drops before the answer is resumed with a
-  `GET` and `Last-Event-ID`, at most 3 times, and only when the server
-  gave its events ids. The `retry:` pause is not honoured yet: the kit has
-  no timer for integrations.
+  `GET` and `Last-Event-ID`, only when the server gave its events ids. It
+  gives up after 3 resumes in a row that brought no new event, so a long
+  call the server closes on purpose keeps going. The `retry:` pause is not
+  honoured yet: the kit has no timer for integrations.
 - No standing `GET` stream for messages outside a request yet, so a
   `tools/list_changed` notice arrives only during a request.
 

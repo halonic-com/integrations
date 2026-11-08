@@ -20,11 +20,14 @@ export interface StreamableHttpOptions {
 }
 
 /**
- * How often one request may resume its answer stream. Resuming is a `GET`
- * that changes nothing, so it is safe to repeat, but never without end
- * (guide, section 4, rules 9 and 10).
+ * How often in a row one request may resume its answer stream without
+ * getting a new event. Resuming is a `GET` that changes nothing, so it is
+ * safe to repeat, but never without end (guide, section 4, rules 9 and 10).
+ * A resume that brings a new event id starts the count again: a server on
+ * 2025-11-25 may close the stream on purpose during a long call and expect
+ * us to come back.
  */
-export const maxResumes = 3;
+export const maxResumesWithoutProgress = 3;
 
 /**
  * The streamable HTTP transport
@@ -36,9 +39,10 @@ export const maxResumes = 3;
  * id, which we send back with every later message.
  *
  * When an answer stream ends or drops before the answer, and the server
- * gave its events ids, we resume with a `GET` and `Last-Event-ID`, at most
- * {@link maxResumes} times. A server that wants a pause first (`retry:`)
- * gets none: the kit has no timer for integrations yet.
+ * gave its events ids, we resume with a `GET` and `Last-Event-ID`, until
+ * {@link maxResumesWithoutProgress} resumes in a row brought no new event.
+ * A server that wants a pause first (`retry:`) gets none: the kit has no
+ * timer for integrations yet.
  */
 export class StreamableHttpTransport implements McpTransport {
   readonly #http: HttpClient;
@@ -97,24 +101,38 @@ export class StreamableHttpTransport implements McpTransport {
    */
   async *#readAnswerStream(firstBody: ByteStream, id: number, signal: AbortSignalLike | undefined) {
     let body = firstBody;
-    for (let resumes = 0; ; resumes += 1) {
+    // The id of the last complete event over all streams of this request.
+    let lastEventId = "";
+    let resumesWithoutProgress = 0;
+    while (true) {
       const events = new EventStream(body);
-      const canResume = () =>
-        events.lastEventId !== "" && resumes < maxResumes && signal?.aborted !== true;
+      let drop: { readonly error: unknown } | undefined;
       try {
         for await (const message of messagesIn(events)) {
           yield message;
           if (isAnswerTo(message, id)) return;
         }
       } catch (error) {
+        if (error instanceof McpError) throw error;
+        drop = { error };
+      }
+      if (events.lastEventId !== "" && events.lastEventId !== lastEventId) {
+        lastEventId = events.lastEventId;
+        resumesWithoutProgress = 0;
+      }
+      const canResume =
+        lastEventId !== "" &&
+        resumesWithoutProgress < maxResumesWithoutProgress &&
+        signal?.aborted !== true;
+      if (!canResume) {
         // Errors from the kit, such as its timeout, pass through unchanged
-        // when we can't resume (guide, section 7, rule 7).
-        if (error instanceof McpError || !canResume()) throw error;
+        // (guide, section 7, rule 7). A stream that just ended makes the
+        // session say the server stopped before it answered.
+        if (drop !== undefined) throw drop.error;
+        return;
       }
-      if (!canResume()) {
-        return; // the session says the server stopped before it answered
-      }
-      body = await this.#resume(events.lastEventId, signal);
+      resumesWithoutProgress += 1;
+      body = await this.#resume(lastEventId, signal);
     }
   }
 
