@@ -23,8 +23,8 @@ googleScopes:
 
 tokens: [] # Halonic's Google sign-in keeps the refresh token, not Gmail
 
-# Every text the model reads, word for word as in the code. Arguments the
-# code doesn't describe aren't listed.
+# Every text the model reads, word for word as in the code, and every
+# argument a tool takes: an approval shows nothing the sheet hides.
 tools:
   - name: gmail_triage
     description: >-
@@ -34,6 +34,7 @@ tools:
       attachments. Read a long body in full with gmail_read_message.
     arguments:
       query: "Gmail search query (default: is:unread in:inbox)."
+      maxMessages: Messages to read (default 10).
       bodyChars: Body characters per message (lowered automatically for many messages).
       includeInline: Also list small inline images such as signature logos.
       pageToken: nextPageToken from the previous call, for more results.
@@ -47,6 +48,7 @@ tools:
       estimate of how many messages match.
     arguments:
       query: "Gmail search query (default: in:inbox)."
+      maxResults: Messages to return (default 15).
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
     untrusted: true # senders, subjects and snippets are written by other people
@@ -56,6 +58,7 @@ tools:
       and its attachments with name, type, size and partId. Long bodies come
       in pages: when nextBodyOffset is present, call again with bodyOffset.
     arguments:
+      messageId: The message's id, from gmail_search or gmail_triage.
       maxBodyChars: Body characters to return (default 20000).
       bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
       includeInline: Also list small inline images such as signature logos.
@@ -68,6 +71,7 @@ tools:
       maxMessages messages; when nextMessageOffset is present, call again
       with messageOffset for the rest.
     arguments:
+      threadId: The thread's id, threadId from gmail_search or gmail_triage.
       maxBodyChars: Body characters to return per message (default 4000).
       bodyOffset: Where to start in each body; use nextBodyOffset from the previous read.
       includeInline: Also list small inline images such as signature logos.
@@ -85,6 +89,7 @@ tools:
       attachment names. Long bodies come in pages: when nextBodyOffset is
       present, call again with bodyOffset.
     arguments:
+      draftId: The draft's id, from gmail_create_draft.
       maxBodyChars: Body characters to return (default 20000).
       bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
     risk: read
@@ -94,6 +99,10 @@ tools:
       Adds or removes labels on messages. Mark read: remove "UNREAD".
       Archive: remove "INBOX". Star: add "STARRED". Use label ids from
       gmail_list_labels for custom labels.
+    arguments:
+      messageIds: Ids of the messages to change (at most 1000).
+      addLabelIds: 'Label ids to add. "TRASH" and "SPAM" are refused.'
+      removeLabelIds: Label ids to remove.
     risk: write
     untrusted: false # returns only a count
   - name: gmail_create_draft
@@ -103,6 +112,8 @@ tools:
       gmail_send_draft.
     arguments:
       to: 'Recipient addresses, e.g. "Name <someone@example.com>".'
+      cc: Copy recipients; every recipient sees them.
+      bcc: "Hidden recipients: they get the mail, and the other recipients don't see them."
       subject: 'Subject. When replying and left empty, "Re: <original subject>" is used.'
       body: >-
         Plain-text body. End it with the last sentence of the message: no
@@ -123,6 +134,8 @@ tools:
       reply in a thread, pass replyToMessageId.
     arguments:
       to: 'Recipient addresses, e.g. "Name <someone@example.com>".'
+      cc: Copy recipients; every recipient sees them.
+      bcc: "Hidden recipients: they get the mail, and the other recipients don't see them."
       subject: 'Subject. When replying and left empty, "Re: <original subject>" is used.'
       body: >-
         Plain-text body. End it with the last sentence of the message: no
@@ -130,15 +143,16 @@ tools:
         appended, and it already carries the closing.
       html: Optional HTML body, sent alongside the plain-text body.
       replyToMessageId: >-
-        Gmail message id to reply to; keeps the reply in the same thread and
-        quotes the original below the signature, so do not paste the
-        original into the body.
-      quoteOriginal: Include the quoted original when replying (default true).
+        Gmail message id to reply to; keeps the reply in the same thread. The
+        original is quoted below the signature only with quoteOriginal.
+      quoteOriginal: Include the quoted original when replying (default false).
       signature: Append the account's Gmail signature (default true).
     risk: send
     untrusted: false # returns only ids
   - name: gmail_send_draft
     description: Sends an existing draft by draftId. Sending cannot be undone.
+    arguments:
+      draftId: The draft's id, from gmail_create_draft.
     risk: send
     untrusted: false # returns only ids
 

@@ -23,7 +23,7 @@ secret (`google-account`), and the kit adds the access token to requests to
 | `gmail_read_thread`   | `read`  | a conversation, oldest first, in pages                           |
 | `gmail_list_labels`   | `read`  | label ids and names                                              |
 | `gmail_get_draft`     | `read`  | a draft as it will be sent, `bcc` included                       |
-| `gmail_modify_labels` | `write` | adds and removes labels: read, archive, star                     |
+| `gmail_modify_labels` | `write` | adds and removes labels: read, archive, star; never Trash, Spam  |
 | `gmail_create_draft`  | `write` | a draft in the account's Drafts folder, with signature and quote |
 | `gmail_send`          | `send`  | sends a mail; can't be undone                                    |
 | `gmail_send_draft`    | `send`  | sends an existing draft; can't be undone                         |
@@ -68,6 +68,14 @@ something else:
 - **Limits on every list:** `gmail_search` returns at most 25 messages (was
   50); `gmail_read_thread` and `gmail_get_draft` return their content in
   pages; search and triage return `nextPageToken`.
+- **`gmail_send` quotes the original of a reply only when asked**
+  (`quoteOriginal: true`). An approval shows the arguments, not the quoted
+  text, so a reply sent straight away doesn't carry text the approver
+  hasn't seen. `gmail_create_draft` still quotes by default:
+  `gmail_get_draft` shows the whole draft before it's sent.
+- **`gmail_modify_labels` refuses to add `TRASH` or `SPAM`.** Gmail deletes
+  trashed mail for good after 30 days, and spam is reported to Google;
+  neither is a label change the user expects from this tool.
 - **The signature is read on every send**, not kept in a cache for ten
   minutes: an integration keeps no state between calls. If it can't be
   read, the tool fails before anything is sent, instead of sending without
