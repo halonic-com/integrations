@@ -2,6 +2,14 @@
 // of repo-specific imports, so it can move into the shared kit for
 // "Offer to Halonic" (I6) without a rewrite.
 
+export {
+  type PreparedRecording,
+  prepareRecording,
+  RECORDING_FORMAT,
+  type RecordingFile,
+  type RecordingInput,
+} from "./recording/prepare-recording.ts";
+export { findLeaks, type Leak, type LeakKind } from "./safety-net/find-leaks.ts";
 export { RecordingRefused } from "./scrub/context.ts";
 export type {
   CapturedExchange,
