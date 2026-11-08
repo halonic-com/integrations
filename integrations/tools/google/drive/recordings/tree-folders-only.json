@@ -1,0 +1,52 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=%27root%27+in+parents+and+trashed+%3D+false+and+mimeType+%3D+%27application%2Fvnd.google-apps.folder%27&pageSize=300&orderBy=folder%2Cname&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "folder-designs-06",
+                "mimeType": "application/vnd.google-apps.folder",
+                "modifiedTime": "2026-11-01T10:00:00.000Z",
+                "name": "<scrubbed:content>"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "tree-folders-only",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].name",
+      "rule": "user-content"
+    }
+  ]
+}

@@ -50,6 +50,11 @@ export function inFolder(folderId: string): string {
   return `${quoted(folderId)} in parents`;
 }
 
+/** Files of one type, such as folders. */
+export function hasType(type: string): string {
+  return `mimeType = ${quoted(type)}`;
+}
+
 /** Files whose name or contents hold the text. */
 export function nameOrContentHas(text: string): string {
   return `(name contains ${quoted(text)} or fullText contains ${quoted(text)})`;

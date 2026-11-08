@@ -71,7 +71,7 @@ function ownerAddresses(file: DriveFile): string[] {
 }
 
 /** A size Drive sent that isn't a whole number of bytes is left out rather than guessed. */
-function sizeInBytes(size: string | undefined): number | undefined {
+export function sizeInBytes(size: string | undefined): number | undefined {
   if (size === undefined || !/^\d+$/.test(size)) {
     return undefined;
   }

@@ -27,6 +27,8 @@ export interface ListFilesRequest {
   /** Drive refuses an order together with a full-text search, so it is optional. */
   orderBy?: string | undefined;
   pageToken?: string | undefined;
+  /** The file fields to ask for; `listedFileFields` when left out. */
+  fields?: string | undefined;
 }
 
 /**
@@ -49,7 +51,7 @@ export class DriveClient {
       pageSize: request.pageSize,
       orderBy: request.orderBy,
       pageToken: request.pageToken,
-      fields: `nextPageToken,files(${listedFileFields})`,
+      fields: `nextPageToken,files(${request.fields ?? listedFileFields})`,
       ...allDrives,
     });
     return await this.#google.getJson(url, fileListSchema, signal);

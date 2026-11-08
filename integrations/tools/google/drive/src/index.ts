@@ -4,12 +4,18 @@ import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { getFileTool } from "./tools/get-file.ts";
 import { readFileTool } from "./tools/read-file.ts";
 import { searchTool } from "./tools/search.ts";
+import { treeTool } from "./tools/tree.ts";
 
 /**
  * The same tools, in the same order, as in integration.yaml. The rest of
  * the sheet's tools follow in the next pull requests.
  */
-const tools: readonly ToolImplementation<DriveClient>[] = [searchTool, getFileTool, readFileTool];
+const tools: readonly ToolImplementation<DriveClient>[] = [
+  treeTool,
+  searchTool,
+  getFileTool,
+  readFileTool,
+];
 
 export const drive: Integration = {
   name: "tool-google-drive",
