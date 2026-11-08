@@ -1,0 +1,24 @@
+{
+  "name": "@halonicjs/integration-shared",
+  "private": true,
+  "type": "module",
+  "description": "A library, not an integration: code that integrations of different providers share, such as reading a streamed answer.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "ravi"
+  }
+}
