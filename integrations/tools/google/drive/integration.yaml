@@ -15,14 +15,23 @@ secrets:
     hosts: [www.googleapis.com]
     as: bearer
 
-# Not settled yet: the Google sign-in will read the scopes each service
-# needs from its sheet; the field name may change. The tools search, read,
-# update and move files the user already has, which only the full drive
-# scope allows: drive.file reaches only files Halonic created or the user
-# opened with it, and drive.readonly can't write. No tool calls Drive's
-# sharing (permissions) or delete endpoints.
+# Studio builds the Google setup steps from googleScopes, googleApis and
+# googleCheck. The tools work on files the user already has, which only the
+# full drive scope allows: drive.file reaches only files Halonic created or
+# the user opened with it, and drive.readonly can't write. No tool calls
+# Drive's sharing (permissions) or delete endpoints.
 googleScopes:
-  - https://www.googleapis.com/auth/drive
+  - scope: https://www.googleapis.com/auth/drive
+    reason: >-
+      Finds, reads, creates, updates and moves your Drive files; it never
+      shares or deletes them.
+googleApis:
+  - api: drive.googleapis.com
+    name: Google Drive API
+# Returns only who is signed in (name, e-mail address, photo), no files.
+googleCheck:
+  method: GET
+  url: https://www.googleapis.com/drive/v3/about?fields=user
 
 tokens: [] # Halonic's Google sign-in keeps the refresh token, not Drive
 
