@@ -109,6 +109,17 @@ describe("scrubJson", () => {
     expect(context.matchedUserContent).toEqual(new Set(declared));
   });
 
+  it("keeps an empty string empty, as it holds no content", () => {
+    const declared = ["response.body.snippet", "response.body.arguments.*"];
+    const context = testContext();
+    const paths = new FieldPaths(declared, "response");
+    expect(scrubJson({ snippet: "", arguments: "" }, "body", paths, context)).toEqual({
+      snippet: "",
+      arguments: "",
+    });
+    expect(context.matchedUserContent).toEqual(new Set(declared));
+  });
+
   it("replaces all of a value whose shape the declared path can't follow", () => {
     const declared = "response.body.rows[*]";
     const context = testContext();

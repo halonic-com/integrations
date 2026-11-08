@@ -9,6 +9,7 @@ import type { ScrubPolicy } from "./policy.ts";
 import { QueryPaths } from "./query-paths.ts";
 import { ReportBuilder, type ScrubReport } from "./report.ts";
 import { serviceErrorPaths } from "./service-errors.ts";
+import { StreamedJson } from "./streamed-json.ts";
 import { scrubUrl } from "./url.ts";
 
 export interface ScrubOptions {
@@ -51,8 +52,9 @@ export function scrubExchanges(
     query: new QueryPaths(policy.userContent),
     body: new FieldPaths(policy.userContent, "request"),
   };
+  const streamedJson = new StreamedJson(policy.streamedJson);
   const scrubbed = exchanges.map((exchange, index) =>
-    scrubExchange(exchange, `exchanges[${index}]`, requestUserContent, context),
+    scrubExchange(exchange, `exchanges[${index}]`, requestUserContent, streamedJson, context),
   );
   const unmatched = [...new Set(policy.userContent)].filter(
     (path) => !context.matchedUserContent.has(path),
@@ -86,16 +88,15 @@ function scrubExchange(
   exchange: CapturedExchange,
   where: string,
   requestUserContent: RequestUserContent,
+  streamedJson: StreamedJson,
   context: ScrubContext,
 ): RecordedExchange {
   const { request, response } = exchange;
   const allowed = context.policy.allowContentTypes;
   const requestBody = parseBody(request.body, request.headers, allowed, `${where}.request.body`);
-  const responseBody = parseBody(
-    response.body,
-    response.headers,
-    allowed,
-    `${where}.response.body`,
+  // Streamed JSON is joined before any rule runs, so the rules see whole JSON.
+  const responseBody = streamedJson.join(
+    parseBody(response.body, response.headers, allowed, `${where}.response.body`),
   );
   const responsePaths = responseUserContent(context.policy, request.url, responseBody);
   return {
