@@ -1,0 +1,149 @@
+id: tool-google-drive
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [connector]
+
+# The Drive API v3 and its upload path (/upload/drive/v3) both live here.
+# The host also serves Gmail, Calendar and other Google APIs, so it doesn't
+# keep the google-account token to Drive; the drive scope below does.
+hosts:
+  - www.googleapis.com
+
+secrets:
+  google-account:
+    purpose: Access to the Google account you connect, through the Google sign-in.
+    hosts: [www.googleapis.com]
+    as: bearer
+
+# Not settled yet: the Google sign-in will read the scopes each service
+# needs from its sheet; the field name may change. The tools search, read,
+# update and move files the user already has, which only the full drive
+# scope allows: drive.file reaches only files Halonic created or the user
+# opened with it, and drive.readonly can't write. No tool calls Drive's
+# sharing (permissions) or delete endpoints.
+googleScopes:
+  - https://www.googleapis.com/auth/drive
+
+tokens: [] # Halonic's Google sign-in keeps the refresh token, not Drive
+
+# Every text the model reads, word for word as in the code.
+tools:
+  - name: drive_tree
+    description: >-
+      Lists a folder and its subfolders a few levels deep in one call: path,
+      id, type, size and modified time per item (folders end in "/"). When
+      truncated is true, list a subfolder on its own for the rest.
+    arguments:
+      folderId: 'Folder id, a shared drive id, or "root" for My Drive.'
+      depth: Levels of subfolders to list (default 3).
+      maxItems: Items to return at most (default 300).
+      foldersOnly: Only list folders (for filing decisions).
+    risk: read
+    untrusted: true # file names in shared folders are chosen by other people
+  - name: drive_search
+    description: >-
+      Finds files. Use text for a name and full-text search, folderId to list
+      a folder, or query for Drive query syntax. Trashed files are left out.
+      Returns id, name, type, size, modified time, owners, parents and link
+      per file.
+    arguments:
+      text: Words to find in file names and contents.
+      folderId: Only files directly inside this folder.
+      query: 'Drive query syntax, such as "mimeType = ''application/pdf''".'
+      pageSize: Files to return (default 25).
+      pageToken: nextPageToken from the previous search, for more results.
+    risk: read
+    untrusted: true # names and owners of shared files come from other people
+  - name: drive_get_file
+    description: >-
+      Returns a file's details: name, type, size, modified time, owners,
+      parents, link and whether it is in the trash.
+    arguments:
+      fileId: The file's id, from drive_search or drive_tree.
+    risk: read
+    untrusted: true # a shared file's name comes from someone else
+  - name: drive_read_file
+    description: >-
+      Returns a file's contents as text: Google Docs as Markdown, Sheets as
+      CSV (first sheet), Slides as text, Drawings as SVG and text files as
+      they are. Binary files, such as PDFs and images, return their details
+      only. Long files come in parts: when nextOffset is present, call again
+      with offset.
+    arguments:
+      fileId: The file's id, from drive_search or drive_tree.
+      maxChars: Characters to return (default 20000).
+      offset: Where to start; use nextOffset from the previous read.
+    risk: read
+    untrusted: true # shared files are written by other people
+  - name: drive_create_file
+    description: >-
+      Creates a file from text content, at the top of My Drive or inside
+      folderId. Set convertTo "document" (with mimeType text/markdown,
+      text/html or text/plain) to get a Google Doc, or "spreadsheet" (with
+      text/csv) to get a Google Sheet. Returns its id, name, type and link.
+    arguments:
+      name: The new file's name.
+      content: The file's text.
+      mimeType: Type of the content you pass (default text/plain).
+      folderId: Folder to create it in; people who can see that folder can see the file.
+      convertTo: Turn the content into a Google Doc or Sheet.
+    risk: send # folderId may be a folder other people can see
+    untrusted: false # returns the id, the name it was given, the type and a link
+  - name: drive_update_file
+    description: >-
+      Replaces the content of an existing file, or of a Google Doc or Sheet
+      when given text/html, text/plain or text/csv. Everyone the file is
+      shared with sees the new content. Returns its id, name, type and link.
+    arguments:
+      fileId: The file's id, from drive_search or drive_tree.
+      content: The new text, replacing all of the old.
+      mimeType: Type of the content you pass (default text/plain).
+    risk: send # the file may be shared with other people
+    untrusted: true # returns the existing file's name, which someone else may have chosen
+  - name: drive_create_folder
+    description: >-
+      Creates a folder, at the top of My Drive or inside parentId. Returns
+      its id, name and link.
+    arguments:
+      name: The new folder's name.
+      parentId: Folder to create it in; people who can see that folder can see the new one.
+    risk: send # parentId may be a folder other people can see
+    untrusted: false # returns the id, the name it was given and a link
+  - name: drive_move_file
+    description: >-
+      Moves a file into toFolderId, optionally renaming it. The file is then
+      visible to the people who can see that folder. Returns its id, name,
+      parents and link.
+    arguments:
+      fileId: The file's id, from drive_search or drive_tree.
+      toFolderId: The folder to move it into.
+      newName: A new name for the file.
+    risk: send # moving into a shared folder changes who can see the file
+    untrusted: true # returns the existing file's name, which someone else may have chosen
+
+needs: []
+
+# Fields that hold the user's own content, for the recorder.
+recording:
+  userContent:
+    # files.get, files.create, files.update: one file. `owners[*].*` scrubs
+    # every value of each owner but keeps the field names, so a replay still
+    # shows which field the tools read.
+    - response.body.name
+    - response.body.owners[*].*
+    # files.list: a page of files
+    - response.body.files[*].name
+    - response.body.files[*].owners[*].*
+    # files.create (a folder) and files.update (a rename)
+    - request.body.name
+  # Exports and downloads: Docs as Markdown, Sheets as CSV, Slides and text
+  # files as plain text, Drawings as SVG. Uploads: a file's text in a
+  # multipart body (create) or on its own (update). Text bodies have no
+  # fields, so record them only with made-up files.
+  allowContentTypes:
+    - text/markdown
+    - text/csv
+    - text/plain
+    - text/html
+    - image/svg+xml
+    - multipart/related

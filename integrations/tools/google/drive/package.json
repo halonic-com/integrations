@@ -1,0 +1,27 @@
+{
+  "name": "@halonicjs/integration-tool-google-drive",
+  "private": true,
+  "type": "module",
+  "description": "Google Drive tools: find, list and read files, and create, update and move them in the connected Google account.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/integration-tool-google-shared": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "ravi"
+  }
+}
