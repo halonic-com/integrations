@@ -1,0 +1,27 @@
+{
+  "name": "@halonicjs/integration-tool-google-calendar",
+  "private": true,
+  "type": "module",
+  "description": "Google Calendar tools: list calendars and events, and create, change and delete events in the connected Google account.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/integration-tool-google-shared": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "tomas"
+  }
+}
