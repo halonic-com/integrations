@@ -91,7 +91,7 @@ export function codeForStatus(status: number): AnthropicErrorCode {
   if (status === 400 || status === 413 || status === 422) return "bad-arguments";
   if (status === 401) return "not-signed-in";
   if (status === 403) return "not-allowed";
-  if (status === 404) return "not-found";
+  if (status === 404 || status === 410) return "not-found"; // 410: Gone
   if (status === 408 || status === 429) return "rate-limited";
   return "unavailable"; // 500, 529 (overloaded) and anything else
 }

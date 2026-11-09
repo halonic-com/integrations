@@ -478,6 +478,8 @@ describe("errorForStatus", () => {
     [403, false, "not-allowed"],
     [404, false, "not-found"],
     [404, true, "session-expired"],
+    [410, false, "not-found"],
+    [410, true, "not-found"],
     [408, false, "rate-limited"],
     [429, false, "rate-limited"],
     [500, false, "unavailable"],
