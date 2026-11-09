@@ -49,7 +49,7 @@ jobs:
       # High and critical advisories in shipped dependencies fail; dev
       # tooling findings are reported by the daily scheduled run (plan 10.2).
       - name: Dependency audit (shipped code)
-        run: pnpm audit --prod --audit-level high
+        run: pnpm check:audit --prod --audit-level high
 
   terms:
     # Runs no third-party code: only the repo's own script on Node, so the

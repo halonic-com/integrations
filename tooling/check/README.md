@@ -8,10 +8,11 @@ with the TypeScript parser, not regular expressions.
 - **Layer:** tooling
 - **Owner:** ravi
 - **Commands:** `pnpm verify [--full]`, `pnpm check [rule …]`, `pnpm check:terms`,
-  `pnpm check:licences`, `pnpm check:pr-title`
+  `pnpm check:licences`, `pnpm check:audit`, `pnpm check:pr-title`
 - **Settings:** `policy.json` (published packages, file size),
   `dependencies.json` (approved external dependencies),
   `licences.json` (licence allow-lists),
+  `advisories-ignored.json` (ignored security advisories, each with a reason and expiry),
   `terms-allowed-phrases.txt`
 
 What each rule checks, and how to fix a failure, is in
@@ -42,6 +43,12 @@ so both repos check the same things. What differs:
   the sheet fields the rule asks for, and only the YAML the sheets use, so
   the check needs no YAML library. It goes when `halonic validate` checks
   sheets.
+
+- `advisories-ignored.json`, `src/lib/advisories.ts`,
+  `src/rules/advisories.ts`, `src/cli/audit.ts` and
+  `src/test/advisories.test.ts` come from the main repo at commit
+  `175bd68` (#330). The test changes `pnpm-workspace.yaml` through
+  `extraFiles`, because this repo's fixture has no `workspaceYaml` option.
 
 Every other file is unchanged. A fix to a shared file goes into the main
 repo first and is then copied here.

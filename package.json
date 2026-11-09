@@ -20,6 +20,7 @@
     "check": "node tooling/check/src/cli/check.ts",
     "check:terms": "node tooling/check/src/cli/terms.ts",
     "check:licences": "node tooling/check/src/cli/licences.ts",
+    "check:audit": "node tooling/check/src/cli/audit.ts",
     "check:pr-title": "node tooling/check/src/cli/pr-title.ts",
     "format": "biome format --write ."
   },

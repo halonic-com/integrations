@@ -7,13 +7,14 @@ typecheck, lint and test for the packages your change affects.
 The checks are the main repo's (`halonic-com/halonic`), adapted to this
 repo's two layers. When a check changes there, change it here too.
 
-| Command               | What it does                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| `pnpm verify`         | everything below, for the affected packages (`--full` for every package, as CI does) |
-| `pnpm check [rule …]` | our own repo checks (table below); with rule names, only those                       |
-| `pnpm check:terms`    | the personal-terms guard; skipped locally unless you have the list                   |
-| `pnpm check:licences` | every installed package's licence against `tooling/check/licences.json`              |
-| `pnpm check:pr-title` | the pull request title (used as the squash commit message)                           |
+| Command                      | What it does                                                                                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm verify`                | everything below, for the affected packages (`--full` for every package, as CI does)                                                                  |
+| `pnpm check [rule …]`        | our own repo checks (table below); with rule names, only those                                                                                        |
+| `pnpm check:terms`           | the personal-terms guard; skipped locally unless you have the list                                                                                    |
+| `pnpm check:licences`        | every installed package's licence against `tooling/check/licences.json`                                                                               |
+| `pnpm check:audit [options]` | `pnpm audit` with the ignored advisories from `tooling/check/advisories-ignored.json` (see [Ignoring an advisory](#ignoring-an-advisory)); CI runs it |
+| `pnpm check:pr-title`        | the pull request title (used as the squash commit message)                                                                                            |
 
 ## `pnpm check` rules
 
@@ -22,6 +23,7 @@ repo's two layers. When a check changes there, change it here too.
 | `packages`       | a package's name doesn't follow from its folder; it isn't `private` (unless listed under `published` in `tooling/check/policy.json`); it doesn't declare `"halonic": { "layer", "owner" }`; an integration exports more than `.`; an internal dependency isn't `workspace:*`                                                                                          |
 | `layers`         | a dependency or an import breaks the layer table below; a relative import leaves its package; an import goes past another package's `exports`; an integration uses Node APIs outside its tests                                                                                                                                                                        |
 | `dependencies`   | an external dependency isn't in `tooling/check/dependencies.json`, is used outside its `allowedIn` packages, doesn't use a `catalog:` version, or is dev tooling outside `devDependencies`. See [dependencies.md](dependencies.md)                                                                                                                                    |
+| `advisories`     | `tooling/check/advisories-ignored.json` has an unknown field, a missing or thin reason, a bad advisory ID or date, a repeated advisory, an expired entry or one expiring more than 90 days out; or an advisory is ignored anywhere else (`auditConfig` and `ignoreGhsas` in the workspace file, an `--ignore` on an audit command in a workflow or `package.json`)    |
 | `names`          | a file or path contains a package name in the `@halonic` or `@studio` npm scope. Both scopes belong to someone else                                                                                                                                                                                                                                                   |
 | `file-size`      | a source file has more than 500 lines (a warning above 300; a warning for functions above 60). Generated files and fixtures are exempt                                                                                                                                                                                                                                |
 | `lockfile`       | a `pnpm-lock.yaml` entry has no sha512 hash, or comes from a tarball URL, git, a local folder or another registry. The only exception is the Node runtime from `devEngines`, which must come from the Node.js release hosts with a hash per platform                                                                                                                  |
@@ -36,6 +38,44 @@ dependencies must use a licence from the `shipped` list in
 list. `OR` needs one allowed side, `AND` both. A package whose licence
 field is wrong upstream goes under `corrections`, after Julian has
 checked it by hand.
+
+## Ignoring an advisory
+
+`pnpm audit` fails the daily run and the pull request check on a high or
+critical advisory in shipped code. When the fix doesn't exist yet, or
+the code can't be reached, the decision is written down in
+`tooling/check/advisories-ignored.json`, the only place an advisory can be
+ignored. `pnpm check:audit` reads it and passes each ID to `pnpm audit
+--ignore`; `pnpm check` rejects an ignore anywhere else. The file format
+and the rules are the main repo's, so an entry means the same in both.
+
+To add an entry, open a pull request that adds this and nothing else:
+
+```json
+{
+  "ignored": [
+    {
+      "ghsa": "GHSA-xxxx-xxxx-xxxx",
+      "cve": "CVE-2026-12345",
+      "package": "name-of-the-package",
+      "reason": "Why this is safe for now and what we are waiting for.",
+      "expires": "2027-01-31"
+    }
+  ]
+}
+```
+
+- `cve` is optional; every other field is required and no others are allowed.
+- `reason` is plain language: why we can live with it and what ends it
+  (a fix release, a replacement). At least 20 characters.
+- `expires` is a real day, `YYYY-MM-DD`, at most 90 days from today.
+- Each advisory appears once.
+
+The file is part of the guard, so Liam reviews the pull request. At
+expiry the entry stops working: `pnpm check` and `pnpm check:audit` fail
+until the dependency is fixed (remove the entry) or someone renews it in a new
+pull request with a fresh reason and date. A renewal is a new decision, not
+an edit of the date alone.
 
 ## Package names and layers
 
@@ -91,7 +131,7 @@ for every other job and fails if any failed.
 
 | Job                          | What                                                                                                             |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Fast gates                   | pull request title, `pnpm check`, licences, formatting, `pnpm audit` for shipped dependencies                    |
+| Fast gates                   | pull request title, `pnpm check`, licences, formatting, `pnpm check:audit` for shipped dependencies              |
 | Personal-terms guard         | the guard over the change; runs only our own script, no dependencies, so the secret never meets third-party code |
 | Secret scan                  | `gitleaks` over the pull request's commits, from a digest-pinned image                                           |
 | Workflow lint                | `zizmor` over `.github/`                                                                                         |
