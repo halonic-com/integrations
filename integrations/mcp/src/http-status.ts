@@ -6,7 +6,8 @@ import { McpError } from "./errors.ts";
  * the server's text.
  *
  * @param hasSession whether we sent an `Mcp-Session-Id`: then `404` means
- *   the server forgot the session, not that the address is wrong
+ *   the server forgot the session, not that the address is wrong. `410`
+ *   always means not found.
  */
 export function errorForStatus(status: number, hasSession: boolean): McpError {
   switch (status) {
@@ -24,6 +25,9 @@ export function errorForStatus(status: number, hasSession: boolean): McpError {
       return hasSession
         ? new McpError("session-expired", "The MCP server ended the session. Connect again.")
         : new McpError("not-found", "There is no MCP server at this address.");
+    // Gone: unlike 404, it never means that the session ended.
+    case 410:
+      return new McpError("not-found", "There is no MCP server at this address.");
     case 408:
     case 429:
       return new McpError("rate-limited", "The MCP server is busy. Try again later.");

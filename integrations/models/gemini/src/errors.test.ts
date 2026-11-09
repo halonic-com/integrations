@@ -16,6 +16,7 @@ describe("codeForStatus", () => {
     [401, "not-signed-in"],
     [403, "not-allowed"],
     [404, "not-found"],
+    [410, "not-found"],
     [408, "rate-limited"],
     [429, "rate-limited"],
     [500, "unavailable"],
