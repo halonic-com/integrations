@@ -32,6 +32,7 @@ recording:
     - request.body.messages[*].content[*].text # what the user and the model wrote
     - request.body.messages[*].content[*].content # tool results sent back
     - request.body.messages[*].content[*].input # tool arguments sent back, nested values too
+    - request.body.messages[*].content[*].thinking # reasoning sent back through `replay`
     - request.body.tools[*].description # can describe the user's own setup
     - response.body.content[*].text
     - response.body.content[*].thinking # the model's reasoning about the user's content
