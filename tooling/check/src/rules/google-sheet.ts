@@ -26,7 +26,8 @@ const sheetFile = /^integrations\/(?:.+\/)?integration\.yaml$/;
  *   a scope Google calls restricted, so Studio can tag it.
  * - `googleApis`: `{ api, name }` per API the user switches on in the
  *   Google Cloud Console; at least one whenever `googleScopes` is set. The
- *   name is Google's name for the API, with no `:` and at most 80 characters.
+ *   name is Google's name for the API: up to 80 letters, digits, spaces and
+ *   `( ) & ' / . , -`, starting with a letter or digit.
  * - `googleCheck`: one `GET` without a body to a host of the sheet and of
  *   the `google-account` secret, which the host sends after sign-in to see
  *   that the API is on.
