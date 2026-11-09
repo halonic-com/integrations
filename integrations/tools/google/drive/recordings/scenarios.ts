@@ -1,3 +1,4 @@
+import { GoogleError, type GoogleErrorCode } from "@halonicjs/integration-tool-google-shared";
 import { drive } from "../src/index.ts";
 import type { IntegrationConnection, Scenario } from "../src/kit.ts";
 
@@ -23,6 +24,21 @@ const folderType = "application/vnd.google-apps.folder";
 
 /** What the tree calls read from Drive. Never the owners or a request body. */
 const treeOnly = ["response.body.name", "response.body.owners[*].*", "request.body.name"];
+
+/**
+ * The codes that can be Google's answer to "may a shared drive be listed by
+ * its id alone?". An expired token, a rate limit or an outage isn't an
+ * answer, so the scenario must fail on those instead of saving them.
+ */
+const sharedDriveAnswers: readonly GoogleErrorCode[] = [
+  "bad-arguments",
+  "not-allowed",
+  "not-found",
+];
+
+function isSharedDriveAnswer(error: unknown): boolean {
+  return error instanceof GoogleError && sharedDriveAnswers.includes(error.code);
+}
 
 /** The one folder with this name, as `drive_search` returns it. */
 async function findFolder(
@@ -66,7 +82,8 @@ export const scenarios: readonly Scenario[] = [
     // Question 3: whether listing a shared drive by its id works without
     // `corpora=drive` and `driveId`. A top-level folder's parent is the
     // shared drive. Google's answer is recorded either way, so a refusal is
-    // kept as well: that refusal is the answer.
+    // kept as well: that refusal is the answer. Any other error fails the
+    // scenario.
     name: "tree-live-shared-drive",
     unusedUserContent: [...treeOnly, "response.body.files[*].owners[*].*"],
     async run(connection) {
@@ -77,8 +94,8 @@ export const scenarios: readonly Scenario[] = [
       }
       try {
         await connection.callTool("drive_tree", { folderId: sharedDriveId, depth: 1 });
-      } catch {
-        // Kept in the recording; see above.
+      } catch (error) {
+        if (!isSharedDriveAnswer(error)) throw error;
       }
     },
   },
