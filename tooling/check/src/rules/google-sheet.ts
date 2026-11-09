@@ -25,7 +25,9 @@ const sheetFile = /^integrations\/(?:.+\/)?integration\.yaml$/;
  *   scope URL and the reason is shown to the user. `restricted: true` marks
  *   a scope Google calls restricted, so Studio can tag it.
  * - `googleApis`: `{ api, name }` per API the user switches on in the
- *   Google Cloud Console; at least one whenever `googleScopes` is set.
+ *   Google Cloud Console; at least one whenever `googleScopes` is set. The
+ *   name is Google's name for the API: up to 80 letters, digits, spaces and
+ *   `( ) & ' / . , -`, starting with a letter or digit.
  * - `googleCheck`: one `GET` without a body to a host of the sheet and of
  *   the `google-account` secret, which the host sends after sign-in to see
  *   that the API is on.
@@ -142,6 +144,12 @@ class SheetChecker {
           `${where}: api is the service name the Console uses, such as drive.googleapis.com.`,
         );
       }
+      if (name === "googleApis" && isText(entry["name"]) && !isGoogleApiName(entry["name"])) {
+        this.error(
+          field,
+          `${where}: name is Google's name for the API, such as Google Drive API: up to 80 letters, digits, spaces and ( ) & ' / . , - starting with a letter or digit, so no ":".`,
+        );
+      }
     }
   }
 
@@ -233,6 +241,16 @@ function isText(value: SheetValue | undefined): value is string {
 /** A Google API's service name, such as `gmail.googleapis.com`. */
 function isGoogleApi(api: string): boolean {
   return /^[a-z][a-z0-9-]*\.googleapis\.com$/.test(api);
+}
+
+/**
+ * Google's name for an API, such as `Gmail API` or `Cloud Pub/Sub API`. The
+ * same rule as `GOOGLE_API_NAME_PATTERN` in `@halonicjs/format`, which the
+ * Google setup record uses too, so a name this check takes is never refused
+ * later.
+ */
+function isGoogleApiName(name: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9 ()&'/.,-]{0,79}$/.test(name);
 }
 
 /** The sign-in scopes Google names without a URL. */

@@ -103,6 +103,30 @@ googleCheck: { method: GET, url: https://mail.googleapis.com/mail/v1/users/me/pr
     ]);
   });
 
+  it("accepts an API name with a slash, a dot or a comma", () => {
+    const pubSub = apis.replace("name: Example Mail API", "name: Cloud Pub/Sub API");
+    const versioned = apis.replace("name: Example Mail API", "name: 'Ledger API v1.2, beta'");
+    expect(messagesFor(sheet(googleSecret, scopes, pubSub))).toEqual([]);
+    expect(messagesFor(sheet(googleSecret, scopes, versioned))).toEqual([]);
+  });
+
+  it("refuses an API name with a colon, a leading space or more than 80 characters", () => {
+    const message =
+      "googleApis entry 1: name is Google's name for the API, such as Google Drive API: up to 80 letters, digits, spaces and ( ) & ' / . , - starting with a letter or digit, so no \":\".";
+    const longest = "L".repeat(80);
+    for (const odd of [
+      '"https://example.com/mail"',
+      '"Mail: API"',
+      '" Example Mail API"',
+      `${longest}L`,
+    ]) {
+      const oddApis = apis.replace("name: Example Mail API", `name: ${odd}`);
+      expect(messagesFor(sheet(googleSecret, scopes, oddApis)), odd).toEqual([message]);
+    }
+    const longestApis = apis.replace("name: Example Mail API", `name: ${longest}`);
+    expect(messagesFor(sheet(googleSecret, scopes, longestApis))).toEqual([]);
+  });
+
   it("accepts restricted: true on a scope and nothing else", () => {
     const restricted = `${scopes}    restricted: true\n`;
     const flow = `googleScopes:
