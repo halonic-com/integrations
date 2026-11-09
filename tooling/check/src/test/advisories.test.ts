@@ -88,8 +88,13 @@ describe("tooling/check: advisories-ignored.json", () => {
 });
 
 describe("tooling/check: advisories rule", () => {
-  it("passes for the real file and an empty list", () => {
+  it("passes for an empty list", () => {
     expect(withFile('{ "ignored": [] }')).toEqual([]);
+  });
+
+  it("passes for the real advisories-ignored.json", () => {
+    const real = readFileSync(new URL("../../advisories-ignored.json", import.meta.url), "utf8");
+    expect(withFile(real)).toEqual([]);
   });
 
   it("names the file for an expired entry", () => {
@@ -119,5 +124,14 @@ describe("tooling/check: advisories rule", () => {
     const hits = withFile('{ "ignored": [] }', { "packages/x/package.json": script });
     expect(hits).toHaveLength(1);
     expect(hits[0]).toContain("Advisories are ignored only in");
+  });
+
+  it("flags every advisory-ignoring audit flag but not --ignore-workspace", () => {
+    const hits = (command: string): number =>
+      withFile('{ "ignored": [] }', { ".github/workflows/x.yml": `run: ${command}\n` }).length;
+    expect(hits("pnpm audit --ignore-registry-errors")).toBe(1);
+    expect(hits("pnpm audit --ignore-unfixable")).toBe(1);
+    expect(hits("pnpm audit --ignore GHSA-cfgh-2345-wxrv")).toBe(1);
+    expect(hits("pnpm audit --ignore-workspace")).toBe(0);
   });
 });

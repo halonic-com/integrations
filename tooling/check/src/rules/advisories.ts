@@ -7,8 +7,11 @@ export const advisoriesPath = "tooling/check/advisories-ignored.json";
 
 /** pnpm settings that ignore an advisory; only `advisories-ignored.json` may. */
 const ignoreSettings = /\b(?:auditConfig|ignoreGhsas|ignoreCves|ignoreUnfixable)\b/;
-/** An ignore flag on an audit command, in a workflow or a script. */
-const ignoreFlag = /\baudit\b.*--ignore/;
+/**
+ * An ignore flag on an audit command, in a workflow or a script. Not
+ * `--ignore-workspace`, which is a pnpm option and ignores no advisory.
+ */
+const ignoreFlag = /\baudit\b.*--ignore(?!-workspace)/;
 
 /**
  * Advisories are ignored in exactly one file, with a reason and an expiry
