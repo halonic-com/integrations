@@ -58,11 +58,13 @@ export const scenarios: readonly Scenario[] = [
   {
     /**
      * Shows that Google takes a rebuilt function call after a model switch,
-     * in three requests:
-     * 1. Gemini 2.5 with the skip signature, and no id on the call or its
-     *    response: the id was made up by model-gemini for a Gemini 2.5 answer.
-     * 2. Gemini 3 with another provider's id on the call and its response.
-     * 3. Gemini 3 with no id on either, as after a switch from Gemini 2.5.
+     * with the skip signature, in two requests:
+     * 1. Another provider's id on the call and its response.
+     * 2. No id on either, as after a switch from Gemini 2.5, whose ids
+     *    model-gemini makes up and never sends.
+     *
+     * Gemini 2.5 itself isn't recorded: Google no longer offers it to new
+     * accounts, so a test account can't call it.
      */
     name: "model-switch",
     unusedUserContent: [
@@ -72,7 +74,6 @@ export const scenarios: readonly Scenario[] = [
     async run(connection) {
       const provider = providerOf(connection);
       const cases = [
-        { model: "gemini-2.5-flash", toolCallId: "gemini-call-0" },
         { model: "gemini-3-flash-preview", toolCallId: "toolu_01ExampleSwitchedCall" },
         { model: "gemini-3-flash-preview", toolCallId: "gemini-call-0" },
       ];
