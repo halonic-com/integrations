@@ -158,8 +158,11 @@ the keys and checked the host, and a redirect as one exchange per hop.
 Its exchanges go straight to `prepareRecording`, with the key values the kit
 placed as `knownSecrets`; they are never written anywhere as they are.
 
-Each response is read in full before the integration gets it, so a streamed
-answer arrives at once.
+It answers as soon as the real transport does and keeps each piece of the
+body as the kit reads it, so the kit's timeouts and size limit work the same
+while recording. The recorded body is what the kit read: a body the kit
+cancels, such as a redirect hop's, is kept only as far as it got. Take the
+exchanges once the scenario has finished.
 
 ## The safety net
 

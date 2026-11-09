@@ -23,16 +23,40 @@ function jsonAnswer(value: unknown, status = 200): Response {
   });
 }
 
+/** A body whose pieces arrive only when the test sends them. */
+function slowBody() {
+  const encoder = new TextEncoder();
+  let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>({
+    start(c) {
+      controller = c;
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  return {
+    stream,
+    send: (text: string) => controller?.enqueue(encoder.encode(text)),
+    end: () => controller?.close(),
+    /** Lets the reader take what was sent. */
+    sent: () => new Promise((resolve) => setTimeout(resolve, 0)),
+    cancelled: () => cancelled,
+  };
+}
+
 describe("createRecordingTransport", () => {
   it("captures the request as sent, key included, and the response", async () => {
     const service = fakeService(() => jsonAnswer({ id: "m1" }));
     const recording = createRecordingTransport(service.transport);
 
-    await recording.transport.fetch("https://mail.example.com/v1/send", {
+    const response = await recording.transport.fetch("https://mail.example.com/v1/send", {
       method: "POST",
       headers: { authorization: `Bearer ${FAKE.apiKey}`, "content-type": "application/json" },
       body: JSON.stringify({ raw: "Hello" }),
     });
+    await response.text();
 
     expect(recording.exchanges()).toEqual([
       {
@@ -75,7 +99,7 @@ describe("createRecordingTransport", () => {
     expect(await response.json()).toEqual({ id: "m1" });
   });
 
-  it("keeps the URL the answer came from, which the kit logs", async () => {
+  it("keeps the URL the answer came from, as fetch does", async () => {
     const answer = jsonAnswer({});
     Object.defineProperty(answer, "url", { value: "https://mail.example.com/v1/after" });
     const recording = createRecordingTransport(fakeService(() => answer).transport);
@@ -133,17 +157,54 @@ describe("createRecordingTransport", () => {
     ]);
   });
 
-  it("reads a streamed answer in full, and the integration still gets it all", async () => {
-    const stream = "event: delta\ndata: {}\n\nevent: done\ndata: {}\n\n";
+  it("answers before the body has arrived, and records it as the kit reads it", async () => {
+    const pieces = slowBody();
     const recording = createRecordingTransport(
-      fakeService(() => new Response(stream, { headers: { "content-type": "text/event-stream" } }))
-        .transport,
+      fakeService(
+        () => new Response(pieces.stream, { headers: { "content-type": "text/event-stream" } }),
+      ).transport,
     );
 
     const response = await recording.transport.fetch("https://api.example.com/v1/stream");
+    const text = response.text();
+    pieces.send("event: delta\ndata: {}\n\n");
+    await pieces.sent();
 
-    expect(await response.text()).toBe(stream);
+    expect(recording.exchanges()[0]?.response.body).toBe("event: delta\ndata: {}\n\n");
+
+    pieces.send("event: done\ndata: {}\n\n");
+    pieces.end();
+    const stream = "event: delta\ndata: {}\n\nevent: done\ndata: {}\n\n";
+    expect(await text).toBe(stream);
     expect(recording.exchanges()[0]?.response.body).toBe(stream);
+  });
+
+  it("records a body the kit cancels only as far as it got, and cancels the real one", async () => {
+    const pieces = slowBody();
+    const recording = createRecordingTransport(
+      fakeService(() => new Response(pieces.stream, { status: 302 })).transport,
+    );
+
+    const response = await recording.transport.fetch("https://mail.example.com/v1/old");
+    await response.body?.cancel();
+
+    expect(pieces.cancelled()).toBe(true);
+    expect(recording.exchanges()[0]?.response).toEqual({ status: 302, headers: [] });
+  });
+
+  it("doesn't read ahead of the kit when the body arrived with the headers", async () => {
+    const recording = createRecordingTransport(
+      fakeService(() => new Response("<html>Moved</html>", { status: 302 })).transport,
+    );
+
+    const response = await recording.transport.fetch("https://mail.example.com/v1/old");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await response.body?.cancel();
+
+    expect(recording.exchanges()[0]?.response).toEqual({
+      status: 302,
+      headers: [["content-type", "text/plain;charset=UTF-8"]],
+    });
   });
 
   it("keeps the exchanges in call order", async () => {
@@ -152,12 +213,35 @@ describe("createRecordingTransport", () => {
       fakeService(() => jsonAnswer({ page: ++page })).transport,
     );
 
-    await recording.transport.fetch("https://mail.example.com/v1/list?page=1");
-    await recording.transport.fetch("https://mail.example.com/v1/list?page=2");
+    for (const url of [
+      "https://mail.example.com/v1/list?page=1",
+      "https://mail.example.com/v1/list?page=2",
+    ]) {
+      await (await recording.transport.fetch(url)).text();
+    }
 
     expect(recording.exchanges().map((exchange) => exchange.response.body)).toEqual([
       '{"page":1}',
       '{"page":2}',
+    ]);
+  });
+
+  it("keeps call order when calls run at the same time and finish the other way round", async () => {
+    const answers = [Promise.withResolvers<Response>(), Promise.withResolvers<Response>()];
+    let call = 0;
+    const recording = createRecordingTransport({
+      fetch: () => (answers[call++] as PromiseWithResolvers<Response>).promise,
+    });
+
+    const first = recording.transport.fetch("https://mail.example.com/v1/a");
+    const second = recording.transport.fetch("https://mail.example.com/v1/b");
+    answers[1]?.resolve(jsonAnswer({}));
+    answers[0]?.resolve(jsonAnswer({}));
+    await Promise.all([first, second]);
+
+    expect(recording.exchanges().map((exchange) => exchange.request.url)).toEqual([
+      "https://mail.example.com/v1/a",
+      "https://mail.example.com/v1/b",
     ]);
   });
 
@@ -189,9 +273,10 @@ describe("createRecordingTransport", () => {
         .transport,
     );
 
-    await recording.transport.fetch("https://mail.example.com/v1/messages", {
+    const response = await recording.transport.fetch("https://mail.example.com/v1/messages", {
       headers: { authorization: `Bearer ${FAKE.plainKey}` },
     });
+    await response.json();
     const prepared = prepareRecording({
       integration: "example-mail",
       scenario: "list-messages",
