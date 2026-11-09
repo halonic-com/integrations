@@ -1,0 +1,118 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1&fields=nextPageToken%2Citems%28id%2Csummary%2CsummaryOverride%2CtimeZone%2CaccessRole%2Cprimary%29"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "items": [
+              {
+                "accessRole": "owner",
+                "id": "alex@example.com",
+                "primary": true,
+                "summary": "<scrubbed:content>",
+                "timeZone": "Europe/Berlin"
+              }
+            ],
+            "nextPageToken": "scrubbed-secret-1"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1&pageToken=scrubbed-secret-1&fields=nextPageToken%2Citems%28id%2Csummary%2CsummaryOverride%2CtimeZone%2CaccessRole%2Cprimary%29"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "items": [
+              {
+                "accessRole": "reader",
+                "id": "person1@example.com",
+                "summary": "<scrubbed:content>",
+                "summaryOverride": "<scrubbed:content>",
+                "timeZone": "Europe/London"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "list-calendars-two-pages",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.nextPageToken",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.items[0].summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.url.query.pageToken",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.items[0].id",
+      "rule": "email"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.items[0].summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.items[0].summaryOverride",
+      "rule": "user-content"
+    }
+  ]
+}

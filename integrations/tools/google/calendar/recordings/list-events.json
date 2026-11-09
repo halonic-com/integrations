@@ -1,0 +1,83 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=2026-11-10T00%3A00%3A00%2B01%3A00&timeMax=2026-11-13T00%3A00%3A00%2B01%3A00&maxResults=25&singleEvents=true&orderBy=startTime&fields=nextPageToken%2Citems%28id%2Csummary%2Cstart%2Cend%2Clocation%2Cstatus%2CeventType%29"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "items": [
+              {
+                "end": {
+                  "dateTime": "2026-11-10T09:15:00+01:00",
+                  "timeZone": "Europe/Berlin"
+                },
+                "eventType": "default",
+                "id": "standup_1110",
+                "location": "<scrubbed:content>",
+                "start": {
+                  "dateTime": "2026-11-10T09:00:00+01:00",
+                  "timeZone": "Europe/Berlin"
+                },
+                "status": "confirmed",
+                "summary": "<scrubbed:content>"
+              },
+              {
+                "end": {
+                  "date": "2026-11-12"
+                },
+                "eventType": "outOfOffice",
+                "id": "dayoff",
+                "start": {
+                  "date": "2026-11-11"
+                },
+                "status": "confirmed",
+                "summary": "<scrubbed:content>"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "list-events",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.items[0].summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.items[0].location",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.items[1].summary",
+      "rule": "user-content"
+    }
+  ]
+}
