@@ -15,7 +15,7 @@ const config: ProviderConfig = { id: "claude", type: "anthropic", local: false, 
 const streamedContent = [
   "response.body[*].data.content_block.text",
   "response.body[*].data.content_block.thinking",
-  "response.body[*].data.content_block.input",
+  "response.body[*].data.content_block.input.*",
   "response.body[*].data.delta.text",
   "response.body[*].data.delta.thinking",
   "response.body[*].data.delta.partial_json",
@@ -37,11 +37,11 @@ export const scenarios: readonly Scenario[] = [
     name: "answer-text", // saved as recordings/answer-text.json
     unusedUserContent: [
       "request.body.messages[*].content[*].content",
-      "request.body.messages[*].content[*].input",
+      "request.body.messages[*].content[*].input.*",
       "request.body.messages[*].content[*].thinking",
       "request.body.tools[*].description",
       "response.body.content[*].thinking",
-      "response.body.content[*].input",
+      "response.body.content[*].input.*",
       ...streamedContent,
     ],
     async run(connection) {
@@ -60,6 +60,10 @@ export const scenarios: readonly Scenario[] = [
      * HAL-316: a tool loop on a model that thinks by default. The second
      * call sends the first answer back through `replay`, thinking blocks and
      * their signatures included, and Anthropic has to accept it.
+     *
+     * These models think adaptively: on a plain "umbrella in Ghent?" none of
+     * them thought before the tool call, not even Fable 5.1. So the question
+     * makes the model work out the city before it can call the tool.
      */
     name: "tool-loop-thinking",
     unusedUserContent: streamedContent,
@@ -69,7 +73,12 @@ export const scenarios: readonly Scenario[] = [
       const tools = [weatherForecast];
       const messages: ChatMessage[] = [
         { role: "system", content: "Use the tools you are given." },
-        { role: "user", content: "Should I take an umbrella in Ghent tomorrow?" },
+        {
+          role: "user",
+          content:
+            "Of Ghent, Bruges and Antwerp, take the city whose name shares the most " +
+            "distinct letters with 'Brussels'. Should I take an umbrella there tomorrow?",
+        },
       ];
 
       const toolTurn = await provider.chat({ model, messages, tools, params: { maxTokens: 4096 } });
