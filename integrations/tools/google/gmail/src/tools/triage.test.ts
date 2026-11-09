@@ -4,10 +4,10 @@ import { callTool, connectToRecording } from "../test/replay.ts";
 import { bodyCharsPerMessage } from "./triage.ts";
 
 /**
- * The search as the recording holds it: the recorder scrubs `q`
- * (`request.query.q` in the sheet), and the replay compares whole URLs.
+ * Any search: the recordings hold `q` as the placeholder (`request.query.q`
+ * in the sheet), and the replay scrubs the sent URL the same way.
  */
-const recordedQuery = "<scrubbed:content>";
+const query = "invoice newer_than:7d";
 
 describe("gmail_triage", () => {
   it("searches unread inbox mail by default", async () => {
@@ -25,10 +25,10 @@ describe("gmail_triage", () => {
 
   it("searches and reads each match in one call", async () => {
     const { connection, replay } = connectToRecording("triage-two-messages");
-    const result = await callTool(connection, "gmail_triage", { query: recordedQuery });
+    const result = await callTool(connection, "gmail_triage", { query });
     replay.assertAllUsed();
     expect(result).toMatchObject({
-      query: recordedQuery,
+      query,
       resultSizeEstimate: 2,
       bodyCharsPerMessage: 2_000,
       messages: [

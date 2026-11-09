@@ -344,7 +344,11 @@ recording.assertAllUsed();
 ```
 
 - Each call must be the next exchange's method and URL. An unexpected call
-  fails, and `assertAllUsed` fails when an exchange wasn't used.
+  fails, and `assertAllUsed` fails when an exchange wasn't used. A recorded
+  URL is scrubbed, so the replay first scrubs the sent URL by the same
+  rules: a query parameter the policy declares, such as `request.query.q`,
+  matches its placeholder whatever the test searches for, and one it doesn't
+  declare fails.
 - The key must be in the header the request asks the kit to put it in, and
   in no other. A header the integration sets must have the recorded value,
   when the recording kept it. A stand-in the recording has in a request
@@ -357,8 +361,8 @@ recording.assertAllUsed();
   `request.body.messages[0].role` or `line 6`. Stand-ins match whatever their
   number, and a text body needs no `allowContentTypes`: its recorded content
   type is allowed.
-- Without the policy, a field the recorder replaced as user content doesn't
-  match. Pass the request paths of the `recording` section in
+- Without the policy, a field or query parameter the recorder replaced as
+  user content doesn't match. Pass the request paths of the `recording` section in
   `integration.yaml`.
 - Check what the integration sent, unscrubbed, through `sent`: a JSON body
   parsed, any other body as text. A recording can't show user content, such

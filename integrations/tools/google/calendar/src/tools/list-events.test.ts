@@ -7,8 +7,11 @@ import {
   googleError,
 } from "../test/replay.ts";
 
-/** What the recorder left of the text searched for. A replay must send the same. */
-const recordedText = "<scrubbed:content>";
+/**
+ * Any text: the recordings hold `q` as the placeholder (`request.query.q`
+ * in the sheet), and the replay scrubs the sent URL the same way.
+ */
+const text = "dentist";
 
 describe("calendar_list_events", () => {
   it("lists a time range's events, timed and all-day, earliest first", async () => {
@@ -48,7 +51,7 @@ describe("calendar_list_events", () => {
     const result = await callTool(connection, "calendar_list_events", {
       calendarId: "person1@example.com",
       timeMin: "2026-11-01T00:00:00Z",
-      text: recordedText,
+      text,
       maxResults: 1,
     });
     replay.assertAllUsed();
@@ -62,7 +65,7 @@ describe("calendar_list_events", () => {
     const { connection, replay } = connectToRecording("list-events-no-match");
     const result = await callTool(connection, "calendar_list_events", {
       timeMin: "2026-11-10T00:00:00+01:00",
-      text: recordedText,
+      text,
     });
     replay.assertAllUsed();
     expect(result).toEqual({ events: [] });

@@ -1,11 +1,10 @@
 import { parseBody, scrubBody } from "../scrub/body.ts";
-import { RecordingRefused, type ScrubContext } from "../scrub/context.ts";
+import type { ScrubContext } from "../scrub/context.ts";
 import type { HeaderEntry, RecordedBody, RecordedRequest } from "../scrub/exchange.ts";
-import { Fakes, SECRET, USER_CONTENT } from "../scrub/fakes.ts";
+import { SECRET } from "../scrub/fakes.ts";
 import { FieldPaths } from "../scrub/field-paths.ts";
-import { KnownSecrets } from "../scrub/known-secrets.ts";
-import type { ScrubPolicy } from "../scrub/policy.ts";
-import { ReportBuilder } from "../scrub/report.ts";
+import { sameText, shown, userContentHint } from "./compare-text.ts";
+import { asReplayError } from "./replay-context.ts";
 
 /** Where a body difference is reported from, in the same terms as a `userContent` path. */
 const BODY = "request.body";
@@ -16,23 +15,15 @@ const BODY = "request.body";
  * A recorded body is scrubbed, so the sent body is scrubbed first, by the
  * same rules and with the integration's policy, and the two are then
  * compared: JSON by value, form data and text (such as a multipart upload)
- * line by line. One instance serves one replay, so stand-ins stay stable
- * across its calls, as they do in a recording.
+ * line by line. One instance serves one replay, with the replay's context.
  */
 export class RequestBodies {
   private readonly context: ScrubContext;
   private readonly userContent: FieldPaths;
 
-  constructor(policy: ScrubPolicy) {
-    this.context = {
-      policy,
-      // The replay never adds a key to a body, so there is none to look for.
-      knownSecrets: new KnownSecrets([]),
-      fakes: new Fakes(),
-      report: new ReportBuilder(),
-      matchedUserContent: new Set(),
-    };
-    this.userContent = new FieldPaths(policy.userContent, "request");
+  constructor(context: ScrubContext) {
+    this.context = context;
+    this.userContent = new FieldPaths(context.policy.userContent, "request");
   }
 
   /**
@@ -67,12 +58,7 @@ export class RequestBodies {
       const parsed = parseBody(sent, headers, allowed, BODY);
       return scrubBody(parsed, BODY, this.userContent, this.context);
     } catch (error) {
-      if (error instanceof RecordingRefused) {
-        throw new Error(
-          `The request body can't be read the way the recorder reads it: ${error.message}`,
-        );
-      }
-      throw error;
+      throw asReplayError("request body", error);
     }
   }
 }
@@ -198,37 +184,4 @@ function valueDifference(recorded: unknown, sent: unknown, path: string): string
 
 function isFields(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-/**
- * Two texts match when they are equal apart from the numbers in stand-ins.
- * The recorder numbered stand-ins over requests and responses with the
- * service's own values; a replay only sees the requests, so its numbers can
- * run differently.
- */
-function sameText(recorded: string | undefined, sent: string | undefined): boolean {
-  if (recorded === undefined || sent === undefined) {
-    return recorded === sent;
-  }
-  return withoutStandInNumbers(recorded) === withoutStandInNumbers(sent);
-}
-
-function withoutStandInNumbers(text: string): string {
-  return text
-    .replace(/scrubbed-secret-\d+/g, "scrubbed-secret-n")
-    .replace(/person\d+@example\.com/g, "person-n@example.com")
-    .replace(/\+447700900\d{3}/g, "+447700900nnn");
-}
-
-function shown(value: unknown): string {
-  return value === undefined ? "nothing" : JSON.stringify(value);
-}
-
-/** A hint when the recording has user content where the request has something else. */
-function userContentHint(recorded: unknown, sent: unknown): string {
-  const placeholder = typeof recorded === "string" && recorded.includes(USER_CONTENT.text);
-  if (!placeholder || sent === undefined) {
-    return "";
-  }
-  return " If it is the user's own content, pass the integration's recording policy to replay.";
 }
