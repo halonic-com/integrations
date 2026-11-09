@@ -59,7 +59,9 @@ tools:
     arguments:
       text: Words to find in file names and contents.
       folderId: Only files directly inside this folder.
-      query: 'Drive query syntax, such as "mimeType = ''application/pdf''".'
+      query: >-
+        Drive query syntax with strings in single quotes, such as "mimeType =
+        'application/pdf'".
       pageSize: Files to return (default 25).
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
