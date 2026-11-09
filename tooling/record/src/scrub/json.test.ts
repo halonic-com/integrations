@@ -24,6 +24,25 @@ describe("scrubJson", () => {
     expect(scrubJson(usage, "body", noUserContent, testContext())).toEqual(usage);
   });
 
+  it("keeps the modality in a model's token usage details", () => {
+    const usage = {
+      usageMetadata: {
+        promptTokenCount: 96,
+        promptTokensDetails: [{ modality: "TEXT", tokenCount: 96 }],
+      },
+    };
+    const context = testContext();
+    expect(scrubJson(usage, "body", noUserContent, context)).toEqual(usage);
+    expect(rulesUsed(context)).toEqual([]);
+  });
+
+  it("still replaces a secret-named field inside token usage details", () => {
+    const details = { prompt_tokens_details: { token: "abc", modality: "TEXT" } };
+    expect(scrubJson(details, "body", noUserContent, testContext())).toEqual({
+      prompt_tokens_details: { token: "scrubbed-secret-1", modality: "TEXT" },
+    });
+  });
+
   it("keeps token_type, which names a scheme", () => {
     expect(scrubJson({ token_type: "Bearer" }, "body", noUserContent, testContext())).toEqual({
       token_type: "Bearer",

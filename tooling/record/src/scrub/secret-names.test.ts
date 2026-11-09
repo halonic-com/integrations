@@ -15,12 +15,18 @@ describe("isSecretName", () => {
     expect(isSecretName(name, "json", [])).toBe(true);
   });
 
-  it.each(["token_type", "passage", "compass", "Access-Control-Allow-Credentials", "keyboard"])(
-    "says %s is not a secret",
-    (name) => {
-      expect(isSecretName(name, "json", [])).toBe(false);
-    },
-  );
+  it.each([
+    "token_type",
+    "passage",
+    "compass",
+    "Access-Control-Allow-Credentials",
+    "keyboard",
+    "promptTokensDetails",
+    "candidatesTokensDetails",
+    "prompt_tokens_details",
+  ])("says %s is not a secret", (name) => {
+    expect(isSecretName(name, "json", [])).toBe(false);
+  });
 
   it("treats code as a secret only in URLs and form data", () => {
     expect(isSecretName("code", "query-or-form", [])).toBe(true);
@@ -38,6 +44,10 @@ describe("isSecretName", () => {
     [{ error: { code: 404 } }, "json"],
   ])("judges the fields of %j as %s", (fields, kind) => {
     expect(jsonFieldKind(fields)).toBe(kind);
+  });
+
+  it("lets a declared name win over the token usage exception", () => {
+    expect(isSecretName("promptTokensDetails", "json", ["promptTokensDetails"])).toBe(true);
   });
 
   it("adds the names the integration declares, in any spelling", () => {

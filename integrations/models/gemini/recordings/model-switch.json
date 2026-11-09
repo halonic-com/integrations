@@ -103,18 +103,18 @@
               }
             ],
             "modelVersion": "gemini-3-flash-preview",
-            "responseId": "6xXyasXQLruR28oPkP_WoAM",
+            "responseId": "kDHyasGmLZievdIPhsWGwQI",
             "usageMetadata": {
-              "candidatesTokenCount": 12,
+              "candidatesTokenCount": 11,
               "promptTokenCount": 96,
               "promptTokensDetails": [
                 {
-                  "modality": "scrubbed-secret-2",
+                  "modality": "TEXT",
                   "tokenCount": 96
                 }
               ],
               "serviceTier": "standard",
-              "totalTokenCount": 108
+              "totalTokenCount": 107
             }
           }
         },
@@ -230,18 +230,18 @@
               }
             ],
             "modelVersion": "gemini-3-flash-preview",
-            "responseId": "7BXyatC5I5fKkdUPl9SxoA8",
+            "responseId": "kTHyaqG3Ic7y7M8P7sOPOQ",
             "usageMetadata": {
-              "candidatesTokenCount": 13,
+              "candidatesTokenCount": 12,
               "promptTokenCount": 96,
               "promptTokensDetails": [
                 {
-                  "modality": "scrubbed-secret-2",
+                  "modality": "TEXT",
                   "tokenCount": 96
                 }
               ],
               "serviceTier": "standard",
-              "totalTokenCount": 109
+              "totalTokenCount": 108
             }
           }
         },
@@ -308,11 +308,6 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.usageMetadata.promptTokensDetails[0].modality",
-      "rule": "secret-field"
-    },
-    {
-      "count": 1,
       "path": "exchanges[1].request.headers.x-goog-api-key",
       "rule": "secret-header"
     },
@@ -345,11 +340,6 @@
       "count": 1,
       "path": "exchanges[1].response.body.candidates[0].content.parts[0].text",
       "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[1].response.body.usageMetadata.promptTokensDetails[0].modality",
-      "rule": "secret-field"
     }
   ]
 }
