@@ -67,26 +67,14 @@ async function recordScenario(
 
   const recording = createRecordingTransport(input.network);
   const { host, refusals } = createRecordingHost(input.sheet, input.values, recording.transport);
-  let thrown: unknown;
-  let threw = false;
-  try {
-    const connection = input.integration.connect(host);
-    try {
-      await scenario.run(connection);
-    } finally {
-      await connection.close?.();
-    }
-  } catch (error) {
-    thrown = error;
-    threw = true;
-  }
+  const result = await runScenario(input.integration, host, scenario);
 
   const [refusal] = refusals();
   if (refusal !== undefined) {
     return failed(`the host refused a request the sheet doesn't allow: ${refusal.message}`);
   }
-  if (threw) {
-    return failed(`the scenario failed:\n${errorText(thrown)}`);
+  if (result.threw) {
+    return failed(`the scenario failed:\n${errorText(result.error)}`);
   }
 
   const prepared = prepareRecording({
@@ -106,6 +94,38 @@ async function recordScenario(
   return failed(
     `the safety net found what the scrubber missed: ${prepared.leaks.map(describeLeak).join(", ")}`,
   );
+}
+
+type RunResult = { readonly threw: false } | { readonly threw: true; readonly error: unknown };
+
+/**
+ * Connects, runs the scenario and closes the connection. When more than one
+ * step throws, the first error is kept: a failing `close` after a failing
+ * scenario mustn't hide why the scenario failed.
+ */
+async function runScenario(
+  integration: ScenarioModule["integration"],
+  host: IntegrationHost,
+  scenario: Scenario<Connection>,
+): Promise<RunResult> {
+  let result: RunResult = { threw: false };
+  const keepFirst = (error: unknown) => {
+    if (!result.threw) {
+      result = { threw: true, error };
+    }
+  };
+  try {
+    const connection = integration.connect(host);
+    try {
+      await scenario.run(connection);
+    } catch (error) {
+      keepFirst(error);
+    }
+    await connection.close?.();
+  } catch (error) {
+    keepFirst(error);
+  }
+  return result;
 }
 
 /** A leak's kind and place. It never holds the value. */

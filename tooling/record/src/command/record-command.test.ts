@@ -130,6 +130,22 @@ describe("pnpm record", () => {
     expect(existsSync(recordingFile("answer-text"))).toBe(false);
   });
 
+  it("shows the scenario's own error when closing the connection fails too", async () => {
+    writeFileSync(
+      join(folder, "recordings", "scenarios.ts"),
+      scenariosFile.replace(
+        "close: async () => {}",
+        'close: async () => { throw new Error("closing broke"); }',
+      ),
+    );
+
+    const { code, output } = await run(["model-example", "key-refused"]);
+
+    expect(code).toBe(1);
+    expect(output).toContain(`invalid key ${HIDDEN}`);
+    expect(output).not.toContain("closing broke");
+  });
+
   it("fails a scenario that asked for a host outside the sheet, even when it caught the refusal", async () => {
     const { code, output } = await run(["model-example", "other-host"]);
 

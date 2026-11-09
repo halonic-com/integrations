@@ -3,16 +3,26 @@
  *
  * The file is integration code: no Node APIs, no `fetch`, only the
  * connection it gets. It is never exported from the integration's package.
- * This module imports nothing, so the integration tsconfig can typecheck it.
+ *
+ * It imports nothing from tooling, because the guard treats it as runtime
+ * code and integrations ship without tooling. Each integration copies this
+ * type into its own `src/kit.ts`, with its own connection type, and the
+ * command checks the shape when it loads the file.
  *
  * @example
+ * // integrations/models/example/src/kit.ts
+ * export interface Scenario {
+ *   readonly name: string;
+ *   readonly unusedUserContent?: readonly string[];
+ *   run(connection: IntegrationConnection): Promise<void>;
+ * }
+ *
  * // integrations/models/example/recordings/scenarios.ts
- * import type { Scenario } from "@halonicjs/tooling-record/scenario";
  * import { example } from "../src/index.ts";
- * import type { IntegrationConnection } from "../src/kit.ts";
+ * import type { Scenario } from "../src/kit.ts";
  *
  * export const integration = example;
- * export const scenarios: readonly Scenario<IntegrationConnection>[] = [
+ * export const scenarios: readonly Scenario[] = [
  *   {
  *     name: "answer-text",
  *     async run(connection) {

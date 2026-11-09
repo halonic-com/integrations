@@ -156,27 +156,43 @@ It exports the integration and a list of scenarios. Each scenario uses the
 connection the way a user would: it calls a tool, or `chat` on the model
 provider. The file is integration code, so it gets no Node APIs and no
 `fetch`, only the connection. It is never exported from the package, and
-the integration's `tsconfig.json` includes it so it is typechecked. The
-`Scenario` type is in `@halonicjs/tooling-record/scenario`.
+the integration's `tsconfig.json` includes it so it is typechecked.
+
+It imports nothing from tooling either: `pnpm check` treats it as runtime
+code, and integrations ship without tooling packages. The `Scenario` type
+goes in the integration's own `src/kit.ts`, next to the kit types copied
+there, with the integration's own connection type. Copy it from
+`integrations/models/anthropic/src/kit.ts` when you write an integration's
+first scenarios. `pnpm record` checks the shape again when it loads the file.
 
 ```ts
-import type { Scenario } from "@halonicjs/tooling-record/scenario";
+// integrations/models/anthropic/src/kit.ts
+export interface Scenario {
+  readonly name: string;
+  readonly unusedUserContent?: readonly string[];
+  run(connection: IntegrationConnection): Promise<void>;
+}
+```
+
+```ts
+// integrations/models/anthropic/recordings/scenarios.ts, shortened
 import { anthropic } from "../src/index.ts";
-import type { IntegrationConnection } from "../src/kit.ts";
+import type { Scenario } from "../src/kit.ts";
 
 export const integration = anthropic;
-export const scenarios: readonly Scenario<IntegrationConnection>[] = [
+export const scenarios: readonly Scenario[] = [
   {
     name: "answer-text", // saved as recordings/answer-text.json
+    unusedUserContent: ["request.body.tools[*].description" /* , ... */],
     async run(connection) {
       const provider = connection.createLlmProvider?.({
-        id: "anthropic",
+        id: "claude",
         type: "anthropic",
         local: false,
         options: {},
       });
       await provider?.chat({
-        model: "claude-haiku-4-5",
+        model: "claude-haiku-4-5-20251001",
         messages: [{ role: "user", content: "Say hello." }],
       });
     },
@@ -208,7 +224,10 @@ pnpm record integrations/tools/mcp/http   # every scenario
 - **Nothing is saved unless every scenario passes.** A scenario fails when it
   throws, when the host refused a request, or when `prepareRecording` refuses
   the result. Every printed line has each `HALONIC_RECORD_*` value removed,
-  so no message or stack trace shows a key or a server address.
+  so no message or stack trace shows a key or a server address. A URL
+  setting's bare host name is removed too, so with
+  `HALONIC_RECORD_SETTING_URL=http://localhost:8080/mcp` every `localhost`
+  in the output is hidden. That is on purpose.
 
 ## Capturing the traffic
 
