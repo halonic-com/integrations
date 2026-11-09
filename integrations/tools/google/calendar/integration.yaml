@@ -1,0 +1,154 @@
+id: tool-google-calendar
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [connector]
+
+# The Calendar API v3 has no host of its own: its discovery document names
+# https://www.googleapis.com/calendar/v3/. That host also serves Gmail,
+# Drive and other Google APIs, so it doesn't keep the google-account token
+# to Calendar; the calendar scopes below do.
+hosts:
+  - www.googleapis.com
+
+secrets:
+  google-account:
+    purpose: Access to the Google account you connect, through the Google sign-in.
+    hosts: [www.googleapis.com]
+    as: bearer
+
+# Studio builds the Google setup steps from googleScopes, googleApis and
+# googleCheck. calendar.events reads, creates, changes and deletes events on
+# every calendar the account can use, but can't list those calendars;
+# calendar.calendarlist.readonly does only that. calendar.readonly, which
+# also reads calendar settings and sharing, isn't needed next to them. The
+# full calendar scope, which also shares and deletes whole calendars, isn't
+# asked for.
+googleScopes:
+  - scope: https://www.googleapis.com/auth/calendar.calendarlist.readonly
+    reason: Sees which calendars you have, so the assistant can pick the right one.
+  - scope: https://www.googleapis.com/auth/calendar.events
+    reason: >-
+      Reads, creates, changes and deletes events in your calendars; it never
+      shares a calendar.
+googleApis:
+  - api: calendar-json.googleapis.com
+    name: Google Calendar API
+# Returns only the account's access role for its primary calendar, not its
+# id: the primary calendar's id is the account's e-mail address.
+googleCheck:
+  method: GET
+  url: https://www.googleapis.com/calendar/v3/users/me/calendarList/primary?fields=accessRole
+
+tokens: [] # Halonic's Google sign-in keeps the refresh token, not Calendar
+
+# Every text the model reads, word for word as in the code.
+tools:
+  - name: calendar_list_calendars
+    description: >-
+      Lists the calendars in the account's calendar list: id, name, time
+      zone, the account's access role and whether it is the primary
+      calendar. Pass an id as calendarId to calendar_list_events.
+    arguments:
+      maxResults: Calendars to return (default 50).
+      pageToken: nextPageToken from the previous call, for more calendars.
+    risk: read
+    untrusted: true # calendars shared with the account are named by other people
+  - name: calendar_list_events
+    description: >-
+      Lists the events of one calendar in a time range, earliest first, with
+      each occurrence of a repeating event on its own. Returns id, title,
+      start, end, whether it lasts all day, location, status and type per
+      event. Read an event's description and guests with calendar_get_event.
+    arguments:
+      calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
+      timeMin: 'Only events that end after this time, with an offset, such as "2026-11-10T00:00:00+01:00".'
+      timeMax: Only events that start before this time, in the same form as timeMin.
+      text: Words to find in titles, descriptions, locations and guest names.
+      maxResults: Events to return (default 25).
+      pageToken: nextPageToken from the previous call, for more events.
+    risk: read
+    untrusted: true # invitations and shared calendars hold text other people wrote
+  - name: calendar_get_event
+    description: >-
+      Returns one event: title, start, end, whether it lasts all day,
+      location, description, status, type, organizer, guests with their
+      answers and link, and for an occurrence of a repeating event the
+      series id. A description is cut after 10,000 characters.
+    arguments:
+      eventId: The event's id, from calendar_list_events.
+      calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
+    risk: read
+    untrusted: true # invitations hold text other people wrote
+  - name: calendar_create_event
+    description: >-
+      Creates an event without guests. Nobody is e-mailed, but everyone who
+      can see the calendar sees the event. Returns its id, title, start, end
+      and link.
+    arguments:
+      calendarId: 'Calendar to add it to, from calendar_list_calendars, or "primary" (default).'
+      title: The event's title.
+      start: 'Start: a date such as "2026-11-10" for an all-day event, or a time with an offset such as "2026-11-10T09:00:00+01:00".'
+      end: End, in the same form as start. An all-day event ends on the day after its last day.
+      location: Where it takes place.
+      description: Notes for the event, as plain text.
+    risk: send # everyone the calendar is shared with sees the new event
+    untrusted: false # returns the id, the values it was given and a link
+  - name: calendar_update_event
+    description: >-
+      Changes an event's title, time, location or description; what you
+      leave out stays as it is. Guests aren't e-mailed, but they and
+      everyone who can see the calendar see the change. An occurrence's id
+      changes only that occurrence. Returns its id, title, start, end and
+      link.
+    arguments:
+      eventId: The event's id, from calendar_list_events.
+      calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
+      title: The new title.
+      start: 'New start: a date such as "2026-11-10" for an all-day event, or a time with an offset such as "2026-11-10T09:00:00+01:00". Pass end with it.'
+      end: New end, in the same form as start. Pass start with it.
+      location: The new location; an empty text removes it.
+      description: New notes as plain text; an empty text removes them.
+    risk: send # guests and people the calendar is shared with see the change
+    untrusted: true # returns the event's other fields, which someone else may have written
+  - name: calendar_delete_event
+    description: >-
+      Deletes an event. Guests aren't e-mailed. A repeating event's id
+      deletes every occurrence; an occurrence's id deletes only that one.
+      Returns the id.
+    arguments:
+      eventId: The event's id, from calendar_list_events.
+      calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
+    risk: send # an event the account organises disappears for its guests too
+    untrusted: false # returns only the id it was given
+
+needs: []
+
+# Fields that hold the user's own content, for the recorder.
+recording:
+  userContent:
+    # calendarList.list: calendar names (an event's title in events.list).
+    # A calendar's id can be an e-mail address, which the recorder
+    # replaces by itself.
+    - response.body.items[*].summary
+    - response.body.items[*].summaryOverride
+    # events.list: each event's place and link, and the text searched for.
+    # A link's `eid` is the event id and the calendar's address in base64,
+    # which no scan would see, so links are scrubbed too.
+    - response.body.items[*].location
+    - response.body.items[*].htmlLink
+    - request.query.q
+    # events.get, events.insert, events.patch: one event, its organizer and
+    # its guests. Only names and addresses: a guest's answer stays, so a
+    # replay still shows it. (events.list names the calendar in `summary`.)
+    - response.body.summary
+    - response.body.description
+    - response.body.location
+    - response.body.htmlLink
+    - response.body.organizer.email
+    - response.body.organizer.displayName
+    - response.body.attendees[*].email
+    - response.body.attendees[*].displayName
+    # events.insert and events.patch: what the tools send.
+    - request.body.summary
+    - request.body.description
+    - request.body.location
