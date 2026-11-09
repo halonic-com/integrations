@@ -33,6 +33,10 @@ function main(): number {
     cwd: root,
     stdio: "inherit",
   });
+  if (result.error) {
+    console.error(`audit: could not run pnpm: ${result.error.message}`);
+    return 1;
+  }
   return result.status ?? 1;
 }
 
