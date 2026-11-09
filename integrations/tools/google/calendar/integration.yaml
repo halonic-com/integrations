@@ -131,15 +131,14 @@ recording:
     # replaces by itself.
     - response.body.items[*].summary
     - response.body.items[*].summaryOverride
-    # events.list: each event's place and link, and the text searched for.
-    # A link's `eid` is the event id and the calendar's address in base64,
-    # which no scan would see, so links are scrubbed too.
+    # events.list: each event's place, and the text searched for.
     - response.body.items[*].location
-    - response.body.items[*].htmlLink
     - request.query.q
     # events.get, events.insert, events.patch: one event, its organizer and
     # its guests. Only names and addresses: a guest's answer stays, so a
-    # replay still shows it. (events.list names the calendar in `summary`.)
+    # replay still shows it. A link's `eid` is the event id and the
+    # calendar's address in base64, which no scan would see, so the link is
+    # scrubbed too.
     - response.body.summary
     - response.body.description
     - response.body.location
