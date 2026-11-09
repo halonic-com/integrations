@@ -5,6 +5,7 @@ import { checkAdvisories } from "./advisories.ts";
 import { checkDependencies } from "./dependencies.ts";
 import { checkFileSize } from "./file-size.ts";
 import { checkGoogleSheet } from "./google-sheet.ts";
+import { checkIntegrationTypes } from "./integration-types.ts";
 import { checkLayers } from "./layers.ts";
 import { checkLockfile } from "./lockfile.ts";
 import { checkNames } from "./names.ts";
@@ -23,4 +24,5 @@ export const rules: Readonly<Record<string, (context: CheckContext) => Report>> 
   "absolute-paths": checkAbsolutePaths,
   "google-sheet": checkGoogleSheet,
   tsconfig: checkTsconfig,
+  "integration-types": checkIntegrationTypes,
 };

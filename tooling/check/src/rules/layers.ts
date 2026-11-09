@@ -148,7 +148,15 @@ function relativeImportProblem(site: ImportSite, specifier: string): string | un
   if (!inside) {
     return `"${specifier}" reaches outside ${site.pkg.manifest.name}. Import the other package by name through its public entry point.`;
   }
+  if (!site.dev && isDevCode(resolved)) {
+    return `"${specifier}" is a test or config file. Library code ships, so it may not import test code, and a test file may load Node's types.`;
+  }
   return undefined;
+}
+
+/** True for a dev file, or a test folder imported through its index. */
+function isDevCode(resolved: string): boolean {
+  return isDevFile(resolved) || isTestFile(`${resolved}/`);
 }
 
 function builtinProblem(site: ImportSite, specifier: string): string | undefined {
