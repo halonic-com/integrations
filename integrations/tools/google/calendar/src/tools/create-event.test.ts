@@ -66,6 +66,8 @@ describe("calendar_create_event", () => {
   it.each([
     ["end", { ...lunch, end: undefined }],
     ["end", { ...lunch, end: "2026-11-12" }],
+    ["end", { ...lunch, end: "2026-11-12T12:00:00+01:00" }],
+    ["end", { ...lunch, start: "2026-11-20", end: "2026-11-20" }],
     ["start", { ...lunch, start: "noon" }],
     ["title", { ...lunch, title: "" }],
     ["(arguments)", { ...lunch, attendees: ["sam@example.com"] }],
