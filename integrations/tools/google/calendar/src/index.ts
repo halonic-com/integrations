@@ -1,18 +1,21 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { CalendarClient } from "./client.ts";
 import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
+import { createEventTool } from "./tools/create-event.ts";
+import { deleteEventTool } from "./tools/delete-event.ts";
 import { getEventTool } from "./tools/get-event.ts";
 import { listCalendarsTool } from "./tools/list-calendars.ts";
 import { listEventsTool } from "./tools/list-events.ts";
+import { updateEventTool } from "./tools/update-event.ts";
 
-/**
- * The same tools, in the same order, as in integration.yaml. The tools
- * that change events follow in the next pull request.
- */
+/** The same tools, in the same order, as in integration.yaml. */
 const tools: readonly ToolImplementation<CalendarClient>[] = [
   listCalendarsTool,
   listEventsTool,
   getEventTool,
+  createEventTool,
+  updateEventTool,
+  deleteEventTool,
 ];
 
 export const calendar: Integration = {

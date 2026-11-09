@@ -32,10 +32,7 @@ function sheetArguments(block: string): string[] {
 
 describe("integration.yaml", () => {
   it("declares the code's tools in the same order", () => {
-    // The sheet already lists the tools that change events; the code adds
-    // them in the next pull request, and this test then compares all six.
-    const built = toolBlocks.slice(0, calendar.tools.length);
-    expect(built.map((block) => block.split("\n")[0])).toEqual(
+    expect(toolBlocks.map((block) => block.split("\n")[0])).toEqual(
       calendar.tools.map((tool) => tool.name),
     );
   });

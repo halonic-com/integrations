@@ -1,0 +1,34 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "DELETE",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events/lunch01?sendUpdates=none"
+      },
+      "response": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {},
+        "status": 204
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "delete-event",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}

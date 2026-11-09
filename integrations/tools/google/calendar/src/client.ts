@@ -12,7 +12,9 @@ import {
   eventFields,
   listedEventFields,
 } from "./event.ts";
+import type { EventChanges } from "./event-changes.ts";
 import type { IntegrationHost } from "./kit.ts";
+import { writtenEventFields } from "./written-event.ts";
 
 /**
  * The Calendar API's base URL. It has no host of its own, so it shares
@@ -20,6 +22,14 @@ import type { IntegrationHost } from "./kit.ts";
  * https://developers.google.com/workspace/calendar/api/v3/reference
  */
 const calendarBaseUrl = "https://www.googleapis.com/calendar/v3/";
+
+/**
+ * Every request that changes an event says `sendUpdates=none`, so Google
+ * mails no invitation, update or cancellation to its guests. Inviting
+ * people by mail is a `send` of its own (README, "Not yet").
+ * https://developers.google.com/workspace/calendar/api/v3/reference/events/insert#parameters
+ */
+const noMail = { sendUpdates: "none" } as const;
 
 /** `calendar_get_event` returns at most this many guests; Google then sets `attendeesOmitted`. */
 export const maxGuests = 100;
@@ -104,5 +114,52 @@ export class CalendarClient {
       fields: eventFields,
     });
     return await this.#google.getJson(url, calendarEventSchema, signal);
+  }
+
+  /**
+   * One request, never retried: a timeout doesn't prove the event wasn't
+   * created, and a second try could create it twice.
+   */
+  async createEvent(
+    calendarId: string,
+    event: EventChanges,
+    signal?: AbortSignal,
+  ): Promise<CalendarEvent> {
+    const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events"], {
+      ...noMail,
+      fields: writtenEventFields,
+    });
+    return await this.#google.postJson(url, event, calendarEventSchema, signal);
+  }
+
+  /**
+   * One request, never retried: changes only the fields in `changes`, and
+   * leaves the rest of the event as it is.
+   * https://developers.google.com/workspace/calendar/api/v3/reference/events/patch
+   */
+  async updateEvent(
+    calendarId: string,
+    eventId: string,
+    changes: EventChanges,
+    signal?: AbortSignal,
+  ): Promise<CalendarEvent> {
+    const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events", eventId], {
+      ...noMail,
+      fields: writtenEventFields,
+    });
+    const request = {
+      method: "PATCH",
+      url,
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify(changes),
+      signal,
+    } as const;
+    return await this.#google.sendJson(request, calendarEventSchema);
+  }
+
+  /** One request, never retried. Google answers a delete with an empty body. */
+  async deleteEvent(calendarId: string, eventId: string, signal?: AbortSignal): Promise<void> {
+    const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events", eventId], noMail);
+    await this.#google.delete(url, signal);
   }
 }

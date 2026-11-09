@@ -12,14 +12,14 @@ import { z } from "zod";
  * Anything else is refused before a request is made; the Google library
  * also refuses `.` and `..`, which would change the path.
  */
-const calendarIdText = z
+export const calendarIdValueSchema = z
   .string()
   .min(1)
   .max(300)
   .regex(/^[A-Za-z0-9._@#+-]+$/);
 
 /** The calendar every tool that reads or changes events takes. */
-export const calendarIdSchema = calendarIdText
+export const calendarIdSchema = calendarIdValueSchema
   .default("primary")
   .describe(
     'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.',
@@ -42,3 +42,18 @@ export const pageTokenSchema = z.string().min(1).max(2_000);
 
 /** A date and time with an offset (`Z` counts), as Google takes it: RFC 3339. */
 export const dateTimeSchema = z.iso.datetime({ offset: true });
+
+/**
+ * When a new or changed event starts or ends: a date such as `2026-11-10`
+ * for an all-day event, or a date and time with an offset.
+ */
+export const eventTimeSchema = z.union([z.iso.date(), dateTimeSchema]);
+
+/** Google takes long titles; the limit keeps an argument the model writes bounded (guide, section 5). */
+export const titleSchema = z.string().min(1).max(1_000);
+
+/** A place: an address, a room or a link. */
+export const locationSchema = z.string().max(1_000);
+
+/** As long as `calendar_get_event` returns at most, so a changed description can be read back whole. */
+export const descriptionSchema = z.string().max(10_000);
