@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ChatMessage, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
+import type { ChatMessage, ChatParams, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
 
 /**
  * The Messages API request body, as far as we send it.
@@ -14,7 +14,12 @@ export interface AnthropicRequest {
   temperature?: number;
   top_p?: number;
   stop_sequences?: string[];
+  thinking?: { type: "adaptive" };
+  output_config?: { effort: Effort };
 }
+
+/** The effort levels `ChatParams` can ask for; Anthropic has more. */
+export type Effort = NonNullable<ChatParams["reasoningEffort"]>;
 
 export interface AnthropicMessage {
   role: "user" | "assistant";
@@ -58,8 +63,8 @@ const jsonInstruction = "Reply with a single JSON value and nothing else.";
 
 /**
  * Maps one `ChatRequest` to a Messages API body. `meta` is never sent, and
- * neither are `reasoningEffort` and `extra`, which aren't mapped yet;
- * `ChatParams` lets a provider ignore what it doesn't support.
+ * neither is `extra`, which isn't mapped yet; `ChatParams` lets a provider
+ * ignore what it doesn't support.
  *
  * `temperature` and `topP` are passed on as given. Most current models
  * (Opus 4.7 and later, Opus 5 and 5.5, Fable 5 and 5.1, Sonnet 5) refuse
@@ -80,7 +85,25 @@ export function toAnthropicRequest(request: ChatRequest): AnthropicRequest {
     ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
     ...(params.topP !== undefined ? { top_p: params.topP } : {}),
     ...(params.stop?.length ? { stop_sequences: params.stop } : {}),
+    ...(params.reasoningEffort !== undefined ? toThinking(params.reasoningEffort) : {}),
   };
+}
+
+/**
+ * `reasoningEffort` becomes Anthropic's `output_config.effort`, with
+ * adaptive thinking switched on. Effort alone sets how much the model
+ * writes; whether it thinks at all is the `thinking` setting, and Opus 4.6
+ * to 4.8 and Sonnet 4.6 don't think unless asked. Newer models think
+ * anyway, and there adaptive is what they would do without it.
+ *
+ * Haiku 4.5 and Sonnet 4.5 refuse `effort`, and Opus 4.5 refuses adaptive
+ * thinking, so for them a request with `reasoningEffort` fails with
+ * `bad-arguments`. Without `reasoningEffort` nothing is sent and each model
+ * keeps its own default.
+ * https://platform.claude.com/docs/en/build-with-claude/effort
+ */
+function toThinking(effort: Effort): Pick<AnthropicRequest, "thinking" | "output_config"> {
+  return { thinking: { type: "adaptive" }, output_config: { effort } };
 }
 
 /** Anthropic takes the system prompt apart from the messages, as one text. */

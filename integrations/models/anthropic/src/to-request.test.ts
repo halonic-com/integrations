@@ -123,12 +123,42 @@ describe("toAnthropicRequest", () => {
     expect(request.system).toBe("Be brief.\n\nReply with a single JSON value and nothing else.");
   });
 
-  it("never sends meta, reasoningEffort or extra", () => {
+  it("never sends meta or extra", () => {
     const request = toAnthropicRequest({
       ...question,
       meta: { agentId: "agent-1", runId: "run-1" },
-      params: { reasoningEffort: "high", extra: { metadata: { user_id: "x" } } },
+      params: { extra: { metadata: { user_id: "x" } } },
     });
     expect(Object.keys(request).sort()).toEqual(["max_tokens", "messages", "model"]);
+  });
+});
+
+describe("reasoningEffort", () => {
+  it.each(["low", "medium", "high"] as const)(
+    "sends %s as effort, with adaptive thinking",
+    (effort) => {
+      const request = toAnthropicRequest({ ...question, params: { reasoningEffort: effort } });
+      expect(request.thinking).toEqual({ type: "adaptive" });
+      expect(request.output_config).toEqual({ effort });
+    },
+  );
+
+  it("leaves thinking and effort to the model when not set", () => {
+    const request = toAnthropicRequest({ ...question, params: { maxTokens: 1024 } });
+    expect(request).not.toHaveProperty("thinking");
+    expect(request).not.toHaveProperty("output_config");
+  });
+
+  it("keeps the other settings next to it", () => {
+    const request = toAnthropicRequest({
+      ...question,
+      params: { reasoningEffort: "high", maxTokens: 32_000, stop: ["END"] },
+    });
+    expect(request).toMatchObject({
+      max_tokens: 32_000,
+      stop_sequences: ["END"],
+      thinking: { type: "adaptive" },
+      output_config: { effort: "high" },
+    });
   });
 });
