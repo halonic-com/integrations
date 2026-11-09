@@ -6,7 +6,7 @@ import { bodyText, readContent } from "./message-content.ts";
  * The body of an outgoing mail as Gmail on the web lays it out: the
  * caller's text, then the account's signature, then the quoted original
  * of a reply. The Gmail API sends a message exactly as given; only Gmail's
- * own compose window adds the signature and the quote, so they are added
+ * own compose screen adds the signature and the quote, so they are added
  * here, as the old connector did.
  */
 
