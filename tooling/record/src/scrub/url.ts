@@ -5,6 +5,26 @@ import { NO_QUERY_PATHS, type QueryPaths } from "./query-paths.ts";
 import { isSecretName } from "./secret-names.ts";
 import { scrubText } from "./text.ts";
 
+/*
+ * The replay imports this file, and integration tests typecheck it with the
+ * integration preset, which has no Web or Node globals. Node and the cloud
+ * runtimes all have these, so only the parts used here are declared.
+ */
+interface ParsedUrl {
+  username: string;
+  password: string;
+  pathname: string;
+  search: string;
+  hash: string;
+  readonly searchParams: Iterable<[string, string]>;
+  toString(): string;
+}
+declare const URL: {
+  new (url: string, base?: string): ParsedUrl;
+  canParse(url: string, base?: string): boolean;
+};
+declare const URLSearchParams: new (pairs: [string, string][]) => { toString(): string };
+
 /**
  * Scrubs a URL:
  * - a user name or password in it is removed (`fetch` refuses such URLs
@@ -64,7 +84,7 @@ export function scrubUrlReference(url: string, where: string, context: ScrubCont
   return scrubbed.startsWith(`${RELATIVE_BASE}/`) ? scrubbed.slice(RELATIVE_BASE.length) : scrubbed;
 }
 
-function parseUrl(url: string, where: string): URL {
+function parseUrl(url: string, where: string): ParsedUrl {
   try {
     return new URL(url);
   } catch {
@@ -72,7 +92,7 @@ function parseUrl(url: string, where: string): URL {
   }
 }
 
-function scrubUserinfo(url: URL, where: string, context: ScrubContext): void {
+function scrubUserinfo(url: ParsedUrl, where: string, context: ScrubContext): void {
   if (url.username === "" && url.password === "") {
     return;
   }
@@ -93,7 +113,12 @@ function scrubPath(pathname: string, where: string, context: ScrubContext): stri
     .join("/");
 }
 
-function scrubQuery(url: URL, where: string, userContent: QueryPaths, context: ScrubContext): void {
+function scrubQuery(
+  url: ParsedUrl,
+  where: string,
+  userContent: QueryPaths,
+  context: ScrubContext,
+): void {
   if (url.search === "") {
     return;
   }

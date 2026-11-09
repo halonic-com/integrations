@@ -4,16 +4,16 @@ import { gmail } from "../index.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 
 /**
- * The search as the recordings hold it: the recorder scrubs `q`
- * (`request.query.q` in the sheet), and the replay compares whole URLs.
+ * Any search: the recordings hold `q` as the placeholder (`request.query.q`
+ * in the sheet), and the replay scrubs the sent URL the same way.
  */
-const recordedQuery = "<scrubbed:content>";
+const query = "invoice newer_than:7d";
 
 describe("gmail_search", () => {
   it("lists one page, reads each message's summary and passes the page token on", async () => {
     const { connection, replay } = connectToRecording("search-two-messages");
     const result = await callTool(connection, "gmail_search", {
-      query: recordedQuery,
+      query,
       maxResults: 2,
     });
     replay.assertAllUsed();
@@ -49,7 +49,7 @@ describe("gmail_search", () => {
   it("asks for the next page with the token from the previous one", async () => {
     const { connection, replay } = connectToRecording("search-next-page");
     const result = await callTool(connection, "gmail_search", {
-      query: recordedQuery,
+      query,
       maxResults: 2,
       pageToken: "scrubbed-secret-1",
     });
@@ -61,7 +61,7 @@ describe("gmail_search", () => {
   it("returns an empty list, not an error, when nothing matches", async () => {
     const { connection, replay } = connectToRecording("search-no-match");
     const result = await callTool(connection, "gmail_search", {
-      query: recordedQuery,
+      query,
     });
     replay.assertAllUsed();
     expect(result).toEqual({ resultSizeEstimate: 0, messages: [] });
@@ -87,7 +87,7 @@ describe("gmail_search", () => {
 
   it("turns a refused sign-in into not-signed-in without Google's own text", async () => {
     const { connection } = connectToRecording("search-signed-out");
-    const call = connection.callTool("gmail_search", { query: recordedQuery });
+    const call = connection.callTool("gmail_search", { query });
     await expect(call).rejects.toBeInstanceOf(GoogleError);
     await expect(call).rejects.toMatchObject({ code: "not-signed-in" });
     // The recording holds Google's text as the placeholder, so it must not show up.

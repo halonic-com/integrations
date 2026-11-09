@@ -1,5 +1,7 @@
 import { type RecordingFile, recordingFileSchema } from "./format.ts";
+import { replayContext } from "./replay/replay-context.ts";
 import { RequestBodies } from "./replay/request-body.ts";
+import { RequestUrls } from "./replay/request-url.ts";
 import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
 
 /**
@@ -7,8 +9,9 @@ import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
  * will: each call must match the next exchange by method and URL, an
  * unexpected call fails, and `assertAllUsed` fails on an unused exchange.
  * The key, the headers the integration sets and the request body must match
- * the recording too (see `checkMatches`). Tests can also check what was sent
- * through `sent`.
+ * the recording too (see `checkMatches`). The URL and the body are scrubbed
+ * with the integration's policy before they are compared. Tests can also
+ * check what was sent through `sent`.
  *
  * For integration tests only: import it from `@halonicjs/tooling-record/replay`
  * in a devDependency. Replace with `@halonicjs/testing-integration` once it
@@ -105,9 +108,10 @@ export interface ReplayOptions {
   readonly unsetSecrets?: readonly string[];
   /**
    * The integration's recording policy, as in its `integration.yaml`. A
-   * recorded body is scrubbed, so the replay scrubs the sent body with the
-   * same rules before it compares the two. Without the policy, a field the
-   * recorder replaced as the user's own content doesn't match.
+   * recorded URL and body are scrubbed, so the replay scrubs the sent ones
+   * with the same rules before it compares them. Without the policy, a field
+   * or query parameter the recorder replaced as the user's own content
+   * doesn't match.
    */
   readonly policy?: ScrubPolicyInput;
 }
@@ -116,7 +120,11 @@ export interface ReplayOptions {
 export function replay(recording: unknown, options: ReplayOptions = {}): Replay {
   const { exchanges } = recordingFileSchema.parse(recording);
   const unset = new Set(options.unsetSecrets ?? []);
-  const bodies = new RequestBodies(definePolicy(options.policy));
+  const context = replayContext(definePolicy(options.policy));
+  const check: RequestChecks = {
+    urls: new RequestUrls(context),
+    bodies: new RequestBodies(context),
+  };
   const sent: SentRequest[] = [];
   const http: ReplayHttpClient = {
     async fetch(url, init = {}) {
@@ -125,7 +133,7 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
       if (exchange === undefined) {
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
-      checkMatches(exchange, url, init, unset, bodies);
+      checkMatches(exchange, url, init, unset, check);
       return toResponse(exchange.response);
     },
   };
@@ -152,26 +160,27 @@ function sentBody(body: string | undefined): unknown {
   }
 }
 
+/** The checks that scrub what was sent before they compare it, sharing one replay's stand-ins. */
+interface RequestChecks {
+  readonly urls: RequestUrls;
+  readonly bodies: RequestBodies;
+}
+
 function checkMatches(
   exchange: Exchange,
   url: string,
   init: ReplayRequestInit,
   unset: ReadonlySet<string>,
-  bodies: RequestBodies,
+  check: RequestChecks,
 ): void {
-  const method = init.method ?? "GET";
-  if (exchange.request.method !== method || exchange.request.url !== url) {
-    throw new Error(
-      `Expected ${exchange.request.method} ${exchange.request.url}, got ${method} ${url}`,
-    );
-  }
+  check.urls.check(exchange.request, init.method ?? "GET", url);
   const placed = [init.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
   checkKey(exchange.request.headers, placed);
   checkHeaders(exchange.request.headers, init.headers ?? {});
   const formKeyFields = new Set(
     placed.flatMap((placement) => (placement.as === "form" ? [placement.field] : [])),
   );
-  bodies.check(exchange.request, init.body, init.headers ?? {}, formKeyFields);
+  check.bodies.check(exchange.request, init.body, init.headers ?? {}, formKeyFields);
 }
 
 /**
