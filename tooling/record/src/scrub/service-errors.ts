@@ -1,4 +1,13 @@
 import type { JsonValue, RecordedBody } from "./exchange.ts";
+import { FieldPaths } from "./field-paths.ts";
+import type { ScrubPolicy } from "./policy.ts";
+
+/*
+ * The replay imports this file, and integration tests typecheck it with the
+ * integration preset, which has no Web or Node globals. Node and the cloud
+ * runtimes all have `URL`, so only the part used here is declared.
+ */
+declare const URL: new (url: string) => { hostname: string };
 
 /**
  * User-content paths the recorder adds by itself, for services whose error
@@ -82,6 +91,22 @@ export function serviceErrorPaths(url: string, responseBody: RecordedBody): read
   return serviceErrorFormats
     .filter((format) => format.servesHost(host) && format.isFormatOf(responseBody))
     .flatMap((format) => format.userContent);
+}
+/**
+ * The policy's response paths, then the error paths the recorder adds for
+ * this service's error format. The policy's come first, so a path the sheet
+ * declares itself is the one that matches and counts as used. The replay
+ * uses the same paths to check a recorded response.
+ */
+export function responseUserContent(
+  policy: ScrubPolicy,
+  url: string,
+  responseBody: RecordedBody,
+): FieldPaths {
+  return new FieldPaths(
+    [...policy.userContent, ...serviceErrorPaths(url, responseBody)],
+    "response",
+  );
 }
 
 function isObject(value: JsonValue | undefined): value is { [key: string]: JsonValue } {

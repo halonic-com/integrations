@@ -188,7 +188,8 @@ function asUserContent(value: JsonValue): JsonValue {
   return null;
 }
 
-function parseNestedJson(value: string): JsonValue | undefined {
+/** The JSON a string holds, when it holds an object or a list; `undefined` otherwise. */
+export function parseNestedJson(value: string): JsonValue | undefined {
   const trimmed = value.trim();
   if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) {
     return undefined;
