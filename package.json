@@ -18,6 +18,7 @@
   "scripts": {
     "verify": "node tooling/check/src/cli/verify.ts",
     "check": "node tooling/check/src/cli/check.ts",
+    "record": "node tooling/record/src/cli/record.ts",
     "check:terms": "node tooling/check/src/cli/terms.ts",
     "check:licences": "node tooling/check/src/cli/licences.ts",
     "check:audit": "node tooling/check/src/cli/audit.ts",
