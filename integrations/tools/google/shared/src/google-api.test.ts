@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import { type GoogleApiOptions, googleApi } from "./google-api.ts";
-import type { HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
+import type { AbortSignalLike, HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
 import { fakeWait } from "./test/fake-wait.ts";
 import { serviceDisabledBody } from "./test/service-disabled.ts";
 
@@ -255,7 +255,7 @@ describe("GoogleApi retries", () => {
 
   it("waits with the call's own signal", async () => {
     const http = new FakeHttp(response(503), response(200, "ok"));
-    const signals: (AbortSignal | undefined)[] = [];
+    const signals: (AbortSignalLike | undefined)[] = [];
     const google = googleApi(
       { http, wait: async (_ms, signal) => void signals.push(signal) },
       { secret: "google-account", service: "Gmail" },

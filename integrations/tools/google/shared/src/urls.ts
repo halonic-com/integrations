@@ -1,6 +1,19 @@
 import { z } from "zod";
 import { GoogleError } from "./errors.ts";
 
+/*
+ * The integration preset has no Web or Node globals. Node and the cloud
+ * runtimes all have `URL` and `URLSearchParams`, so only the parts used
+ * here are declared.
+ */
+interface URLSearchParams {
+  append(name: string, value: string): void;
+}
+declare const URL: new (
+  url: string,
+  base: string,
+) => { readonly href: string; readonly searchParams: URLSearchParams };
+
 /** The base URLs of the Google APIs our integrations call. Each ends in `/`. */
 export const googleBaseUrls = {
   gmail: "https://gmail.googleapis.com/gmail/v1/",

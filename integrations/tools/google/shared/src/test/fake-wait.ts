@@ -22,7 +22,8 @@ export function fakeWait(): FakeWait {
   const waits: number[] = [];
   return {
     waits,
-    wait: async (ms, signal) => {
+    // The host gets the call's real `AbortSignal`, so the fake can check it.
+    wait: async (ms: number, signal?: AbortSignal) => {
       signal?.throwIfAborted();
       waits.push(clampWaitMs(ms));
     },

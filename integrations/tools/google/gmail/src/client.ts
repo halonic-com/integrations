@@ -1,4 +1,5 @@
 import {
+  type AbortSignalLike,
   type GoogleApi,
   googleApi,
   googleBaseUrls,
@@ -87,7 +88,7 @@ export class GmailClient {
   }
 
   /** One request: the ids of one page of messages that match the query. */
-  async listMessages(request: ListMessagesRequest, signal?: AbortSignal): Promise<MessageList> {
+  async listMessages(request: ListMessagesRequest, signal?: AbortSignalLike): Promise<MessageList> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages"], {
       q: request.query,
       maxResults: request.maxResults,
@@ -97,7 +98,7 @@ export class GmailClient {
   }
 
   /** One request: a message's labels, snippet and the headers a summary shows. */
-  async getMessageSummary(messageId: string, signal?: AbortSignal): Promise<Message> {
+  async getMessageSummary(messageId: string, signal?: AbortSignalLike): Promise<Message> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", messageId], {
       format: "metadata",
       metadataHeaders: summaryHeaders,
@@ -106,7 +107,7 @@ export class GmailClient {
   }
 
   /** One request: a whole message, with every MIME part and its body. */
-  async getMessage(messageId: string, signal?: AbortSignal): Promise<Message> {
+  async getMessage(messageId: string, signal?: AbortSignalLike): Promise<Message> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", messageId], {
       format: "full",
     });
@@ -114,7 +115,7 @@ export class GmailClient {
   }
 
   /** One request: every message of a thread, whole. */
-  async getThread(threadId: string, signal?: AbortSignal): Promise<Thread> {
+  async getThread(threadId: string, signal?: AbortSignalLike): Promise<Thread> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "threads", threadId], {
       format: "full",
     });
@@ -122,7 +123,7 @@ export class GmailClient {
   }
 
   /** One request: every label of the mailbox, the system ones included. */
-  async listLabels(signal?: AbortSignal): Promise<Label[]> {
+  async listLabels(signal?: AbortSignalLike): Promise<Label[]> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "labels"]);
     return (await this.#google.getJson(url, labelListSchema, signal)).labels;
   }
@@ -132,7 +133,7 @@ export class GmailClient {
    * answers with an empty body, so `send` is used instead of `postJson`.
    * Not retried, like every request that changes something.
    */
-  async modifyLabels(change: LabelChange, signal?: AbortSignal): Promise<void> {
+  async modifyLabels(change: LabelChange, signal?: AbortSignalLike): Promise<void> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", "batchModify"]);
     await this.#google.send({
       method: "POST",
@@ -148,7 +149,7 @@ export class GmailClient {
   }
 
   /** One request: a draft with its whole message, the Bcc header included. */
-  async getDraft(draftId: string, signal?: AbortSignal): Promise<Draft> {
+  async getDraft(draftId: string, signal?: AbortSignalLike): Promise<Draft> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts", draftId], {
       format: "full",
     });
@@ -160,26 +161,26 @@ export class GmailClient {
    * or "" when it has none. Gmail sends from that address when a message
    * has no `From` header.
    */
-  async getSignature(signal?: AbortSignal): Promise<string> {
+  async getSignature(signal?: AbortSignalLike): Promise<string> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "settings", "sendAs"]);
     const { sendAs } = await this.#google.getJson(url, sendAsListSchema, signal);
     return sendAs.find((address) => address.isPrimary)?.signature?.trim() ?? "";
   }
 
   /** One request: saves a draft. Not retried, like every request that changes something. */
-  async createDraft(message: RawMessage, signal?: AbortSignal): Promise<CreatedDraft> {
+  async createDraft(message: RawMessage, signal?: AbortSignalLike): Promise<CreatedDraft> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts"]);
     return await this.#google.postJson(url, { message }, createdDraftSchema, signal);
   }
 
   /** One request: sends once. `postJson` never retries, so a timeout can't send the mail twice. */
-  async sendMessage(message: RawMessage, signal?: AbortSignal): Promise<SentMessage> {
+  async sendMessage(message: RawMessage, signal?: AbortSignalLike): Promise<SentMessage> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "messages", "send"]);
     return await this.#google.postJson(url, message, sentMessageSchema, signal);
   }
 
   /** One request: sends a draft once, never retried. Gmail removes the draft. */
-  async sendDraft(draftId: string, signal?: AbortSignal): Promise<SentMessage> {
+  async sendDraft(draftId: string, signal?: AbortSignalLike): Promise<SentMessage> {
     const url = googleUrl(googleBaseUrls.gmail, [...mailbox, "drafts", "send"]);
     return await this.#google.postJson(url, { id: draftId }, sentMessageSchema, signal);
   }

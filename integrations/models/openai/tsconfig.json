@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tooling/config/tsconfig/integration.json",
+  "extends": "@halonicjs/tooling-config/tsconfig/integration.json",
   "include": [
     "src",
     "recordings/scenarios.ts"
