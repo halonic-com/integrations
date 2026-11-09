@@ -7,10 +7,13 @@ const integrationPreset = "@halonicjs/tooling-config/tsconfig/integration.json";
 const nodePreset = "@halonicjs/tooling-config/tsconfig/node.json";
 const testFiles = "src/**/*.test.ts";
 const testFolder = "src/test";
+const libraryFolder = "src";
+const recordedScenarios = "recordings/scenarios.ts";
 
 /** The parts of a `tsconfig.json` this rule reads. */
 interface TsConfig {
   readonly extends?: unknown;
+  readonly compilerOptions?: unknown;
   readonly include?: unknown;
   readonly exclude?: unknown;
   readonly files?: unknown;
@@ -48,26 +51,58 @@ function checkLibraryConfig(context: CheckContext, pkg: WorkspacePackage, report
       `"extends" must be "${integrationPreset}", the preset without Node types. ${guide}`,
     );
   }
+  checkNoCompilerOptions(file, config, report);
   checkIncluded(file, config, report);
   checkExcluded(file, config, hasTestFolder(context, pkg), report);
 }
 
-/** The library config may not pull in the Vitest config or tests, which use Node types. */
+/**
+ * Options here override the preset, so `"types": ["node"]` or `"lib": ["dom"]`
+ * would bring Node or browser types back. The preset is the only source.
+ */
+function checkNoCompilerOptions(file: string, config: TsConfig, report: Report): void {
+  if (config.compilerOptions !== undefined) {
+    report.error(
+      file,
+      `Remove "compilerOptions": the integration preset sets them, and options here could bring Node types back. ${guide}`,
+    );
+  }
+}
+
+/**
+ * The library config lists exactly what it compiles. Without `include`, tsc
+ * compiles every file in the folder, the Vitest config and tests among them,
+ * which use Node types. So `include` is required, and it and `files` may only
+ * name `src`, paths in `src` other than tests, and the recorded scenarios.
+ */
 function checkIncluded(file: string, config: TsConfig, report: Report): void {
-  for (const entry of [...stringList(config.include), ...stringList(config.files)]) {
-    if (isVitestConfig(entry)) {
-      report.error(
-        file,
-        `Remove "${entry}": the Vitest config uses Node types. tsconfig.test.json covers it. ${guide}`,
-      );
-    }
-    if (isTestPath(entry)) {
-      report.error(
-        file,
-        `Remove "${entry}": tests may use Node types. tsconfig.test.json covers them. ${guide}`,
-      );
+  const include = stringList(config.include);
+  if (include.length === 0) {
+    report.error(
+      file,
+      `Add "include": ["${libraryFolder}"]. Without it tsc compiles every file in the folder. ${guide}`,
+    );
+  }
+  for (const entry of [...include, ...stringList(config.files)]) {
+    const problem = whyNotAllowed(entry);
+    if (problem !== undefined) {
+      report.error(file, `Remove "${entry}": ${problem} ${guide}`);
     }
   }
+}
+
+/** Says why the library config may not include an entry, or `undefined` if it may. */
+function whyNotAllowed(entry: string): string | undefined {
+  if (isVitestConfig(entry)) {
+    return "the Vitest config uses Node types. tsconfig.test.json covers it.";
+  }
+  if (isTestPath(entry)) {
+    return "tests may use Node types. tsconfig.test.json covers them.";
+  }
+  if (!isLibraryPath(entry)) {
+    return `only "${libraryFolder}", paths in it and "${recordedScenarios}" may be included.`;
+  }
+  return undefined;
 }
 
 /** Including `src` brings in the tests too, so the library config must exclude them. */
@@ -141,6 +176,17 @@ function isTestPath(entry: string): boolean {
   const path = normalise(entry);
   return (
     path === testFolder || path.startsWith(`${testFolder}/`) || /\.test\.[cm]?[jt]sx?$/.test(path)
+  );
+}
+
+/** `src`, a path in it, or the recorded scenarios, without `..` to climb back out. */
+function isLibraryPath(entry: string): boolean {
+  const path = normalise(entry);
+  if (path.split("/").includes("..")) {
+    return false;
+  }
+  return (
+    path === libraryFolder || path.startsWith(`${libraryFolder}/`) || path === recordedScenarios
   );
 }
 

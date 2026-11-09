@@ -63,6 +63,64 @@ describe("tooling/check: tsconfig", () => {
     expect(messages(listed)).toEqual([expect.stringContaining('Remove "vitest.config.ts"')]);
   });
 
+  it("fails when the library config has compilerOptions, which override the preset", () => {
+    for (const compilerOptions of [
+      { types: ["node"] },
+      { typeRoots: ["node_modules/@types"] },
+      { lib: ["dom"] },
+      {},
+    ]) {
+      const overridden = withConfigs({
+        "tsconfig.json": {
+          ...JSON.parse(integrationConfigs["tsconfig.json"] ?? ""),
+          compilerOptions,
+        },
+      });
+      expect(messages(overridden)).toEqual([expect.stringContaining('Remove "compilerOptions"')]);
+    }
+  });
+
+  it("fails when the library config has no include, so tsc compiles every file", () => {
+    for (const include of [undefined, []]) {
+      const unlisted = withConfigs({
+        "tsconfig.json": { extends: integrationPreset, include, exclude: ["src/**/*.test.ts"] },
+      });
+      expect(messages(unlisted)).toEqual([expect.stringContaining('Add "include"')]);
+    }
+  });
+
+  it("fails when the library config includes anything but src and the recorded scenarios", () => {
+    for (const entry of [
+      "**/*",
+      ".",
+      "./",
+      "*.ts",
+      "lib",
+      "recordings",
+      "src/../vitest.config.ts",
+    ]) {
+      const broad = withConfigs({
+        "tsconfig.json": {
+          extends: integrationPreset,
+          include: [entry],
+          exclude: ["src/**/*.test.ts"],
+        },
+      });
+      expect(messages(broad)).toEqual([expect.stringContaining(`Remove "${entry}"`)]);
+    }
+  });
+
+  it("allows src, paths in it and the recorded scenarios", () => {
+    const allowed = withConfigs({
+      "tsconfig.json": {
+        extends: integrationPreset,
+        include: ["./src/", "src/**/*.ts", "recordings/scenarios.ts"],
+        exclude: ["src/**/*.test.ts"],
+      },
+    });
+    expect(messages(allowed)).toEqual([]);
+  });
+
   it("requires the test files excluded, and src/test when there is one", () => {
     const noExclude = withConfigs({
       "tsconfig.json": { extends: integrationPreset, include: ["src"] },

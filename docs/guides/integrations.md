@@ -158,7 +158,9 @@ needs) instead of `src/tools/`.
 
 `tsconfig.json` extends `@halonicjs/tooling-config/tsconfig/integration.json`,
 includes `src` (and `recordings/scenarios.ts` if there is one) and excludes
-`src/**/*.test.ts` and `src/test`. It never includes `vitest.config.ts`.
+`src/**/*.test.ts` and `src/test`. It includes nothing else, never
+`vitest.config.ts`, and has no `compilerOptions`: those would override the
+preset and could bring Node types back.
 `tsconfig.test.json` extends `@halonicjs/tooling-config/tsconfig/node.json`
 and includes `src` and `vitest.config.ts`. The `typecheck` script runs both:
 `tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json`. That way a Node
