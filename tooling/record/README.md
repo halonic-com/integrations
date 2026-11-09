@@ -149,6 +149,21 @@ The error paths the recorder adds by itself never stop a recording this way.
 The error names the place (`exchanges[2].response.body`) and the reason,
 never a value.
 
+## Capturing the traffic
+
+`createRecordingTransport` wraps the real transport and keeps every
+exchange it carries. It goes under the kit, as the `transport` of
+`createIntegrationHost`, so it sees each request after the kit has placed
+the keys and checked the host, and a redirect as one exchange per hop.
+Its exchanges go straight to `prepareRecording`, with the key values the kit
+placed as `knownSecrets`; they are never written anywhere as they are.
+
+It answers as soon as the real transport does and keeps each piece of the
+body as the kit reads it, so the kit's timeouts and size limit work the same
+while recording. The recorded body is what the kit read: a body the kit
+cancels, such as a redirect hop's, is kept only as far as it got. Take the
+exchanges once the scenario has finished.
+
 ## The safety net
 
 After scrubbing, `prepareRecording` builds the exact file text and scans all
