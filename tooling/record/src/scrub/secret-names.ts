@@ -38,6 +38,14 @@ const AUTHORIZATION_CODE_NAMES = ["code"];
 const NOT_SECRET_NAMES = ["tokentype", "accesscontrolallowcredentials"];
 
 /**
+ * A name ending in one of these is a model's token usage, not a key: Gemini's
+ * `promptTokensDetails` and OpenAI's `prompt_tokens_details` hold counts and
+ * a modality such as `"TEXT"`. A field named `token` inside one is still a
+ * secret, because each field name is checked on its own.
+ */
+const TOKEN_USAGE_ENDINGS = ["tokensdetails"];
+
+/**
  * Where the name was found. `oauth-token-json` is a JSON object that sends an
  * OAuth grant (see `jsonFieldKind`). Header names follow the JSON rules:
  * `code` is never a secret there.
@@ -50,7 +58,7 @@ export function isSecretName(name: string, kind: FieldKind, declared: readonly s
   if (declared.some((declaredName) => normalize(declaredName) === normalized)) {
     return true;
   }
-  if (NOT_SECRET_NAMES.includes(normalized)) {
+  if (NOT_SECRET_NAMES.includes(normalized) || isTokenUsageName(normalized)) {
     return false;
   }
   if (SECRET_NAMES.includes(normalized)) {
@@ -71,6 +79,10 @@ export function isSecretName(name: string, kind: FieldKind, declared: readonly s
 export function jsonFieldKind(fields: object): "json" | "oauth-token-json" {
   const names = Object.keys(fields).map(normalize);
   return names.includes("granttype") ? "oauth-token-json" : "json";
+}
+
+function isTokenUsageName(normalized: string): boolean {
+  return TOKEN_USAGE_ENDINGS.some((ending) => normalized.endsWith(ending));
 }
 
 function normalize(name: string): string {
