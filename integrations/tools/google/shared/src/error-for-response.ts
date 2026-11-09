@@ -2,6 +2,14 @@ import { type DisabledApi, disabledApiIn } from "./disabled-api.ts";
 import { googleErrorReason } from "./error-reason.ts";
 import { GoogleApiDisabledError, GoogleError, type GoogleErrorCode } from "./errors.ts";
 
+/*
+ * The integration preset has no Web or Node globals. Node and the cloud
+ * runtimes all have `URL`, so only the parts used here are declared.
+ */
+declare const URL: {
+  parse(url: string): { host: string; pathname: string } | null;
+};
+
 /** The request an error answered. Used only to name it in the message. */
 export interface FailedRequest {
   /** The service's name for the user, such as `Gmail` or `Google Drive`. */

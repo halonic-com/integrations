@@ -14,7 +14,7 @@
  * Google library's `GoogleHost`, the part of the kit's host that library
  * uses, so `googleApi` accepts this host as it is.
  */
-import type { GoogleHost } from "@halonicjs/integration-tool-google-shared";
+import type { AbortSignalLike, GoogleHost } from "@halonicjs/integration-tool-google-shared";
 import type { z } from "zod";
 
 /** What calling a tool can do. Approvals and the "allow sending" check act on it. */
@@ -43,7 +43,7 @@ export type IntegrationHost = GoogleHost;
 /** One integration connected through its host. */
 export interface IntegrationConnection {
   /** Calls one of the integration's tools and returns its text result. */
-  callTool(name: string, args: Record<string, unknown>, signal?: AbortSignal): Promise<string>;
+  callTool(name: string, args: Record<string, unknown>, signal?: AbortSignalLike): Promise<string>;
   /** Releases what the connection holds. Safe to call twice. */
   close(): Promise<void>;
 }
@@ -79,7 +79,7 @@ export interface ToolImplementation<Client, Arguments extends z.ZodType = z.ZodT
   readonly declaration: IntegrationTool;
   readonly arguments: Arguments;
   // Method syntax on purpose: it lets a list hold tools with different arguments.
-  run(client: Client, args: z.infer<Arguments>, signal?: AbortSignal): Promise<unknown>;
+  run(client: Client, args: z.infer<Arguments>, signal?: AbortSignalLike): Promise<unknown>;
 }
 
 /** Builds the integration's error for a refused call (guide, section 7). */
@@ -95,7 +95,7 @@ const maxEchoedNameLength = 64;
 export async function runTool<Client>(
   tools: readonly ToolImplementation<Client>[],
   client: Client,
-  call: { name: string; args: Record<string, unknown>; signal?: AbortSignal | undefined },
+  call: { name: string; args: Record<string, unknown>; signal?: AbortSignalLike | undefined },
   makeError: MakeError,
 ): Promise<string> {
   const tool = tools.find((candidate) => candidate.declaration.name === call.name);

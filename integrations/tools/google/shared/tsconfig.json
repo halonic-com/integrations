@@ -1,7 +1,10 @@
 {
-  "extends": "../../../../tooling/config/tsconfig/integration.json",
+  "extends": "@halonicjs/tooling-config/tsconfig/integration.json",
   "include": [
-    "src",
-    "vitest.config.ts"
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/test"
   ]
 }

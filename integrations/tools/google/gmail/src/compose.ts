@@ -1,3 +1,4 @@
+import type { AbortSignalLike } from "@halonicjs/integration-tool-google-shared";
 import { z } from "zod";
 import type { GmailClient, RawMessage } from "./client.ts";
 import { type MailBodies, withQuote, withSignature } from "./mail-body.ts";
@@ -81,7 +82,7 @@ export function replySubject(original: Message): string {
 export async function composeMail(
   client: GmailClient,
   args: ComposeArguments,
-  signal?: AbortSignal,
+  signal?: AbortSignalLike,
 ): Promise<RawMessage> {
   const original =
     args.replyToMessageId === undefined

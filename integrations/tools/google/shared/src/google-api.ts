@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { errorForResponse, type FailedRequest, unexpectedResponse } from "./error-for-response.ts";
-import type { GoogleHost, HttpRequestInit, HttpResponse } from "./http.ts";
+import type { AbortSignalLike, GoogleHost, HttpRequestInit, HttpResponse } from "./http.ts";
 import { isRepeatable, isRetryableStatus, maxRetries, retryDelayMs } from "./retry-policy.ts";
 
 /** How a Google integration sets up its {@link GoogleApi}. */
@@ -18,7 +18,7 @@ export interface GoogleRequest {
   readonly url: string;
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: string;
-  readonly signal?: AbortSignal | undefined;
+  readonly signal?: AbortSignalLike | undefined;
   /**
    * Only for a request that changes something and that Google makes safe to
    * repeat, such as with an idempotency key. Never set it for a request
@@ -49,13 +49,13 @@ export class GoogleApi {
   async getJson<Schema extends z.ZodType>(
     url: string,
     schema: Schema,
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<z.infer<Schema>> {
     return await this.sendJson({ method: "GET", url, signal }, schema);
   }
 
   /** Reads a body as text with a `GET`, such as a Drive download or export. */
-  async getText(url: string, signal?: AbortSignal): Promise<string> {
+  async getText(url: string, signal?: AbortSignalLike): Promise<string> {
     const response = await this.send({ method: "GET", url, signal });
     return await response.text();
   }
@@ -68,7 +68,7 @@ export class GoogleApi {
     url: string,
     body: unknown,
     schema: Schema,
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<z.infer<Schema>> {
     const request: GoogleRequest = {
       method: "POST",
@@ -98,7 +98,7 @@ export class GoogleApi {
   }
 
   /** Sends a `DELETE`. Never retried. Google answers it with an empty body. */
-  async delete(url: string, signal?: AbortSignal): Promise<void> {
+  async delete(url: string, signal?: AbortSignalLike): Promise<void> {
     await this.send({ method: "DELETE", url, signal });
   }
 

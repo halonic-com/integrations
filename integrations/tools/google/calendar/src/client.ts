@@ -1,4 +1,5 @@
 import {
+  type AbortSignalLike,
   type GoogleApi,
   googleApi,
   googleUrl,
@@ -74,7 +75,7 @@ export class CalendarClient {
   /** One request: a page of the account's calendar list. */
   async listCalendars(
     page: { maxResults: number; pageToken?: string | undefined },
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<CalendarList> {
     const url = googleUrl(calendarBaseUrl, ["users", "me", "calendarList"], {
       maxResults: page.maxResults,
@@ -90,7 +91,7 @@ export class CalendarClient {
    * lets Google sort them by start time.
    * https://developers.google.com/workspace/calendar/api/v3/reference/events/list
    */
-  async listEvents(request: ListEventsRequest, signal?: AbortSignal): Promise<EventList> {
+  async listEvents(request: ListEventsRequest, signal?: AbortSignalLike): Promise<EventList> {
     const url = googleUrl(calendarBaseUrl, ["calendars", request.calendarId, "events"], {
       timeMin: request.timeMin,
       timeMax: request.timeMax,
@@ -108,7 +109,7 @@ export class CalendarClient {
   async getEvent(
     calendarId: string,
     eventId: string,
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<CalendarEvent> {
     const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events", eventId], {
       maxAttendees: maxGuests,
@@ -125,7 +126,7 @@ export class CalendarClient {
   async createEvent(
     calendarId: string,
     event: EventChanges,
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<CalendarEvent> {
     const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events"], {
       ...noMail,
@@ -143,7 +144,7 @@ export class CalendarClient {
     calendarId: string,
     eventId: string,
     changes: EventChanges,
-    signal?: AbortSignal,
+    signal?: AbortSignalLike,
   ): Promise<CalendarEvent> {
     const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events", eventId], {
       ...noMail,
@@ -160,7 +161,7 @@ export class CalendarClient {
   }
 
   /** One request, never retried. Google answers a delete with an empty body. */
-  async deleteEvent(calendarId: string, eventId: string, signal?: AbortSignal): Promise<void> {
+  async deleteEvent(calendarId: string, eventId: string, signal?: AbortSignalLike): Promise<void> {
     const url = googleUrl(calendarBaseUrl, ["calendars", calendarId, "events", eventId], noMail);
     await this.#google.delete(url, signal);
   }

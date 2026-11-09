@@ -20,6 +20,15 @@
  */
 export const maxIntegrationWaitMs = 30_000;
 
+/**
+ * The parts of an `AbortSignal` we use: we only pass it on. The integration
+ * TypeScript preset has no Web types, so a real `AbortSignal` is checked
+ * against this shape. When the kit is published, this becomes `AbortSignal`.
+ */
+export interface AbortSignalLike {
+  readonly aborted: boolean;
+}
+
 /** Where the kit puts a secret. Google only needs a bearer token. */
 export interface SecretPlacement {
   /** The secret's name in the permission sheet, such as `google-account`. */
@@ -32,7 +41,7 @@ export interface HttpRequestInit {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
-  signal?: AbortSignal | undefined;
+  signal?: AbortSignalLike | undefined;
   auth?: SecretPlacement;
 }
 
@@ -73,5 +82,5 @@ export interface GoogleHost {
    *
    * @throws `signal.reason` when `signal` aborts during the wait or is already aborted
    */
-  wait(ms: number, signal?: AbortSignal): Promise<void>;
+  wait(ms: number, signal?: AbortSignalLike): Promise<void>;
 }
