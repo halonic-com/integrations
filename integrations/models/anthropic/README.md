@@ -16,17 +16,18 @@ it (`anthropic-key`) and never sees its value.
 money and can run for minutes, so the workflow decides whether to try
 again.
 
-| `ChatRequest`                      | Messages API                                                     |
-| ---------------------------------- | ---------------------------------------------------------------- |
-| `system` messages                  | `system`, joined by blank lines                                  |
-| `user` and `assistant` messages    | `messages`; messages in a row from the same side become one turn |
-| assistant `toolCalls`              | `tool_use` blocks                                                |
-| `tool` messages                    | `tool_result` blocks in a user turn                              |
-| `tools`                            | `tools` with `input_schema`                                      |
-| `maxTokens`                        | `max_tokens`, 16,000 when not set (the API requires one)         |
-| `temperature`, `topP`, `stop`      | `temperature`, `top_p`, `stop_sequences`                         |
-| `responseFormat: "json"`           | an instruction in `system` (see below)                           |
-| `meta`, `reasoningEffort`, `extra` | not sent                                                         |
+| `ChatRequest`                   | Messages API                                                     |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `system` messages               | `system`, joined by blank lines                                  |
+| `user` and `assistant` messages | `messages`; messages in a row from the same side become one turn |
+| assistant `toolCalls`           | `tool_use` blocks                                                |
+| `tool` messages                 | `tool_result` blocks in a user turn                              |
+| `tools`                         | `tools` with `input_schema`                                      |
+| `maxTokens`                     | `max_tokens`, 16,000 when not set (the API requires one)         |
+| `temperature`, `topP`, `stop`   | `temperature`, `top_p`, `stop_sequences`                         |
+| `responseFormat: "json"`        | an instruction in `system` (see below)                           |
+| `reasoningEffort`               | `output_config.effort`, with `thinking: { type: "adaptive" }`    |
+| `meta`, `extra`                 | not sent                                                         |
 
 The answer maps back to `ChatResponse`: text blocks joined, `tool_use`
 blocks as `toolCalls`, the whole ordered content as `replay`, `usage` with
@@ -68,6 +69,19 @@ the turn is rebuilt from `content` and `toolCalls`.
   values other than the default. A workflow that sets them for one of these
   models gets `bad-arguments`. Haiku 4.5, Opus 4.6 and Sonnet 4.6 still
   accept them.
+- **Thinking:** without `reasoningEffort`, nothing about thinking is
+  sent and each model keeps its default: current models (Opus 5 and later,
+  Sonnet 5 and 5.5, Fable 5 and later) think adaptively, while Opus 4.6 to
+  4.8 and Sonnet 4.6 don't think. With it, `low`, `medium` and `high` go
+  out as Anthropic's
+  [effort](https://platform.claude.com/docs/en/build-with-claude/effort)
+  levels and adaptive thinking is switched on, so the 4.6 to 4.8 models
+  think too. Effort is soft guidance: on an easy question the model can
+  still skip thinking. Anthropic's `xhigh` and `max` can't be asked for,
+  because `ChatParams` stops at `high`. Haiku 4.5 and Sonnet 4.5 refuse
+  effort and Opus 4.5 refuses adaptive thinking, so with `reasoningEffort`
+  they fail with `bad-arguments`. Keep `reasoningEffort` the same for a
+  whole conversation: changing it starts a new prompt cache.
 - **Spend:** `Usage` has no field for the prompt cache, so cache reads and
   writes count as plain input tokens.
 - **Errors** are `AnthropicError` with a short code (`bad-arguments`,
