@@ -135,7 +135,7 @@ export function eventDetails(event: CalendarEvent): EventDetails {
 }
 
 /** A date for an all-day event, a date and time for any other. */
-function timeText(time: EventTime | undefined): string | undefined {
+export function timeText(time: EventTime | undefined): string | undefined {
   return time?.date ?? time?.dateTime;
 }
 

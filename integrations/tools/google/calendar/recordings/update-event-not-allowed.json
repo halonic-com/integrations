@@ -1,0 +1,69 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "description": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "method": "PATCH",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events/standup_1110?sendUpdates=none&fields=id%2Csummary%2Cstart%2Cend%2ChtmlLink"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 403,
+              "errors": [
+                {
+                  "domain": "calendar",
+                  "message": "<scrubbed:content>",
+                  "reason": "forbiddenForNonOrganizer"
+                }
+              ],
+              "message": "<scrubbed:content>"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 403
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "update-event-not-allowed",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.errors[0].message",
+      "rule": "user-content"
+    }
+  ]
+}

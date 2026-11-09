@@ -1,0 +1,87 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "description": "<scrubbed:content>",
+            "end": {
+              "dateTime": "2026-11-12T13:30:00+01:00"
+            },
+            "location": "<scrubbed:content>",
+            "start": {
+              "dateTime": "2026-11-12T12:30:00+01:00"
+            },
+            "summary": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json; charset=utf-8"
+        },
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=none&fields=id%2Csummary%2Cstart%2Cend%2ChtmlLink"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "end": {
+              "dateTime": "2026-11-12T13:30:00+01:00",
+              "timeZone": "Europe/Berlin"
+            },
+            "htmlLink": "<scrubbed:content>",
+            "id": "lunch01",
+            "start": {
+              "dateTime": "2026-11-12T12:30:00+01:00",
+              "timeZone": "Europe/Berlin"
+            },
+            "summary": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "create-event",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.location",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.htmlLink",
+      "rule": "user-content"
+    }
+  ]
+}
