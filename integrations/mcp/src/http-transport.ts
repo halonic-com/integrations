@@ -57,6 +57,13 @@ export const minResumePauseMs = 1_000;
 export const maxResumePauseMs = maxIntegrationWaitMs;
 
 /**
+ * The statuses besides `2xx` that end a session without an error when we
+ * send `DELETE`. `404` and `410`: the session is already gone. `405`: the
+ * server doesn't let clients end sessions and ends them itself.
+ */
+const sessionAlreadyEndedStatuses: ReadonlySet<number> = new Set([404, 405, 410]);
+
+/**
  * The streamable HTTP transport
  * (https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http).
  *
@@ -125,9 +132,7 @@ export class StreamableHttpTransport implements McpTransport {
     const response = await this.#fetch("DELETE", {}, undefined, signal);
     this.#sessionId = undefined;
     await discardBody(response);
-    // 404: the session is already gone. 405: the server doesn't let clients
-    // end sessions and ends them itself. Both are fine.
-    if (!response.ok && response.status !== 404 && response.status !== 405) {
+    if (!response.ok && !sessionAlreadyEndedStatuses.has(response.status)) {
       throw errorForStatus(response.status, false);
     }
   }
