@@ -1,0 +1,125 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events/standup_1110?maxAttendees=100&fields=id%2Csummary%2Cstart%2Cend%2Clocation%2Cstatus%2CeventType%2Cdescription%2Corganizer%28email%2CdisplayName%29%2Cattendees%28email%2CdisplayName%2CresponseStatus%2Coptional%29%2CattendeesOmitted%2ChtmlLink%2CrecurringEventId"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "attendees": [
+              {
+                "email": "<scrubbed:content>",
+                "responseStatus": "accepted"
+              },
+              {
+                "displayName": "<scrubbed:content>",
+                "email": "<scrubbed:content>",
+                "responseStatus": "accepted"
+              },
+              {
+                "email": "<scrubbed:content>",
+                "optional": true,
+                "responseStatus": "needsAction"
+              }
+            ],
+            "description": "<scrubbed:content>",
+            "end": {
+              "dateTime": "2026-11-10T09:15:00+01:00",
+              "timeZone": "Europe/Berlin"
+            },
+            "eventType": "default",
+            "htmlLink": "<scrubbed:content>",
+            "id": "standup_1110",
+            "location": "<scrubbed:content>",
+            "organizer": {
+              "displayName": "<scrubbed:content>",
+              "email": "<scrubbed:content>"
+            },
+            "recurringEventId": "standup",
+            "start": {
+              "dateTime": "2026-11-10T09:00:00+01:00",
+              "timeZone": "Europe/Berlin"
+            },
+            "status": "confirmed",
+            "summary": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "get-event",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.summary",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.location",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.htmlLink",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.organizer.email",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.organizer.displayName",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.attendees[0].email",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.attendees[1].email",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.attendees[1].displayName",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.attendees[2].email",
+      "rule": "user-content"
+    }
+  ]
+}

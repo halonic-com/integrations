@@ -1,0 +1,60 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events/missing?maxAttendees=100&fields=id%2Csummary%2Cstart%2Cend%2Clocation%2Cstatus%2CeventType%2Cdescription%2Corganizer%28email%2CdisplayName%29%2Cattendees%28email%2CdisplayName%2CresponseStatus%2Coptional%29%2CattendeesOmitted%2ChtmlLink%2CrecurringEventId"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "errors": [
+                {
+                  "domain": "global",
+                  "message": "<scrubbed:content>",
+                  "reason": "notFound"
+                }
+              ],
+              "message": "<scrubbed:content>"
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=UTF-8"
+        },
+        "status": 404
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-calendar",
+  "scenario": "get-event-not-found",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.message",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error.errors[0].message",
+      "rule": "user-content"
+    }
+  ]
+}
