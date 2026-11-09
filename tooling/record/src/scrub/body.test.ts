@@ -149,4 +149,27 @@ describe("scrubBody", () => {
       ],
     });
   });
+
+  it("keeps the stream end marker when a declared path goes into the event data", () => {
+    const stream = 'data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n';
+    const body = parseBody(stream, sse, [], "b");
+    const declared = "response.body[*].data.choices[*].delta.content";
+    const context = testContext();
+    expect(scrubBody(body, "b", new FieldPaths([declared], "response"), context)).toEqual({
+      kind: "sse",
+      value: [
+        { event: "message", data: { choices: [{ delta: { content: "<scrubbed:content>" } }] } },
+        { event: "message", data: "[DONE]" },
+      ],
+    });
+  });
+
+  it("still replaces other stream data that isn't JSON where a declared path goes into it", () => {
+    const body = parseBody("data: Dinner on Friday?\n\n", sse, [], "b");
+    const paths = new FieldPaths(["response.body[*].data.text"], "response");
+    expect(scrubBody(body, "b", paths, testContext())).toEqual({
+      kind: "sse",
+      value: [{ event: "message", data: "<scrubbed:content>" }],
+    });
+  });
 });
