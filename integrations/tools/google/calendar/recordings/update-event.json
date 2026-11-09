@@ -64,11 +64,6 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].request.body.location",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
       "path": "exchanges[0].response.body.summary",
       "rule": "user-content"
     },

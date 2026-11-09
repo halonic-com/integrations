@@ -46,7 +46,7 @@ class JsonWalk {
   visit(value: JsonValue, path: ValuePath, secret = false): JsonValue {
     const declared = this.userContent.match(path);
     if (declared !== undefined) {
-      this.markUserContent(declared, path);
+      this.markUserContent(declared, path, value);
       return asUserContent(value);
     }
     if (typeof value === "string") {
@@ -72,7 +72,7 @@ class JsonWalk {
   ): JsonValue {
     const unreachable = this.userContent.cannotEnter(path, value);
     if (unreachable !== undefined) {
-      this.markUserContent(unreachable, path);
+      this.markUserContent(unreachable, path, value);
       return asUserContent(value);
     }
     if (Array.isArray(value)) {
@@ -131,16 +131,23 @@ class JsonWalk {
   private visitPlainString(value: string, path: ValuePath): string {
     const declared = this.userContent.reachesInside(path);
     if (declared !== undefined) {
-      this.markUserContent(declared, path);
+      this.markUserContent(declared, path, value);
       // Empty stays empty, as in `asUserContent`.
       return value === "" ? value : USER_CONTENT.text;
     }
     return scrubText(value, this.locate(path), this.context);
   }
 
-  private markUserContent(declared: string, path: ValuePath): void {
+  /**
+   * The declared path matched, so it isn't reported as unused. An empty
+   * string stays as it is (see `asUserContent`), so nothing was replaced and
+   * the report leaves it out.
+   */
+  private markUserContent(declared: string, path: ValuePath, value: JsonValue): void {
     this.context.matchedUserContent.add(declared);
-    this.context.report.add("user-content", this.locate(path));
+    if (value !== "") {
+      this.context.report.add("user-content", this.locate(path));
+    }
   }
 
   private locate(path: ValuePath): string {
