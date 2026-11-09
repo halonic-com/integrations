@@ -18,7 +18,8 @@ import { writtenEventFields } from "./written-event.ts";
 
 /**
  * The Calendar API's base URL. It has no host of its own, so it shares
- * www.googleapis.com with Drive.
+ * www.googleapis.com with Drive, Gmail and other Google APIs; the token's
+ * scopes keep it to Calendar.
  * https://developers.google.com/workspace/calendar/api/v3/reference
  */
 const calendarBaseUrl = "https://www.googleapis.com/calendar/v3/";
