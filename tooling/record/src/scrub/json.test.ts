@@ -109,7 +109,7 @@ describe("scrubJson", () => {
     expect(context.matchedUserContent).toEqual(new Set(declared));
   });
 
-  it("keeps an empty string empty, as it holds no content", () => {
+  it("keeps an empty string empty, as it holds no content, and leaves it out of the report", () => {
     const declared = ["response.body.snippet", "response.body.arguments.*"];
     const context = testContext();
     const paths = new FieldPaths(declared, "response");
@@ -118,6 +118,7 @@ describe("scrubJson", () => {
       arguments: "",
     });
     expect(context.matchedUserContent).toEqual(new Set(declared));
+    expect(rulesUsed(context)).toEqual([]);
   });
 
   it("replaces all of a value whose shape the declared path can't follow", () => {
