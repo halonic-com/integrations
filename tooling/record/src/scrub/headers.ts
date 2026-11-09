@@ -44,6 +44,7 @@ const UNSTABLE_HEADERS = new Set([
   "server-timing",
   "strict-transport-security",
   "traceparent",
+  "traceresponse",
   "tracestate",
   "transfer-encoding",
   "vary",
@@ -63,6 +64,20 @@ const UNSTABLE_PREFIXES = [
   "x-guploader-",
 ];
 
+/**
+ * Headers left out of a recording because they name the account behind the
+ * recording key: its organization, workspace or project. They don't look
+ * random enough for the text rules to catch every one (Anthropic's
+ * organization ID is a plain UUID, OpenAI's organization is a readable name),
+ * and no test needs them.
+ */
+const ACCOUNT_HEADERS = new Set([
+  "anthropic-organization-id",
+  "anthropic-workspace-id",
+  "openai-organization",
+  "openai-project",
+]);
+
 /** Headers whose whole value is one URL, absolute or relative. */
 const URL_HEADERS = new Set(["location", "content-location", "referer"]);
 
@@ -73,7 +88,7 @@ const LINK_TARGET = /<([^>]*)>/;
  * Scrubs every header and returns them as one object with lower-case names,
  * the way `fetch` reports them, so a header with odd casing (`X-Api-KEY`) is
  * still found. Repeated headers are joined with `, `, as `fetch` does.
- * - unstable headers are left out
+ * - unstable headers and account headers are left out
  * - key headers (the standard ones and the ones the integration declares)
  *   become `<scrubbed:secret>`, keeping the auth scheme
  * - headers named like a secret (`X-Access-Token`, `Private-Token`,
@@ -91,7 +106,7 @@ export function scrubHeaders(
   const result: RecordedHeaders = {};
   for (const [rawName, value] of headers) {
     const name = rawName.toLowerCase();
-    if (isUnstable(name) && !isKeyHeader(name, context)) {
+    if (isLeftOut(name) && !isKeyHeader(name, context)) {
       continue;
     }
     const scrubbed = scrubHeader(name, value, `${where}.${name}`, context);
@@ -118,6 +133,10 @@ export function isSecretHeader(name: string): boolean {
  */
 function isKeyHeader(name: string, context: ScrubContext): boolean {
   return SECRET_HEADERS.has(name) || context.policy.secretHeaders.includes(name);
+}
+
+function isLeftOut(name: string): boolean {
+  return isUnstable(name) || ACCOUNT_HEADERS.has(name);
 }
 
 function isUnstable(name: string): boolean {

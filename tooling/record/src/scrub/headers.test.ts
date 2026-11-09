@@ -113,6 +113,22 @@ describe("scrubHeaders", () => {
     expect(scrubbed).toEqual({ "content-type": "application/json" });
   });
 
+  it("leaves out headers that name the account behind the key", () => {
+    const scrubbed = scrubHeaders(
+      [
+        ["anthropic-organization-id", "00000000-0000-4000-8000-000000000001"],
+        ["Anthropic-Workspace-Id", "wrkspc_fake"],
+        ["openai-organization", "example-org"],
+        ["openai-project", "proj_fake"],
+        ["traceresponse", "00-fake-01"],
+        ["content-type", "application/json"],
+      ],
+      "headers",
+      testContext(),
+    );
+    expect(scrubbed).toEqual({ "content-type": "application/json" });
+  });
+
   it("leaves out content-encoding, because the file holds the decoded body", () => {
     const scrubbed = scrubHeaders(
       [
