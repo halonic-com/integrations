@@ -63,7 +63,7 @@ Every Google error becomes a `GoogleError` with one of the guide's codes
 | `403` with a rate-limit reason (`rateLimitExceeded`, `userRateLimitExceeded`) | `rate-limited`        |
 | `403` with a limit reason (`dailyLimitExceeded`, `quotaExceeded`)             | `quota-exceeded`      |
 | `403` for a switched-off API (`accessNotConfigured`, `SERVICE_DISABLED`)      | `api-disabled`        |
-| `404`                                                                         | `not-found`           |
+| `404`, `410`                                                                  | `not-found`           |
 | `408`, `429`                                                                  | `rate-limited`        |
 | `5xx` and any other status                                                    | `unavailable`         |
 | a body that isn't JSON or that the schema refuses                             | `unexpected-response` |

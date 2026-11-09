@@ -401,6 +401,7 @@ describe("StreamableHttpTransport", () => {
     it.each([
       [200, "resolves"],
       [404, "resolves"],
+      [410, "resolves"],
       [500, "rejects"],
     ] as const)("cancels the answer to DELETE (%i)", async (status, outcome) => {
       const { server, mcp } = await connect([
@@ -448,7 +449,7 @@ describe("StreamableHttpTransport", () => {
     await expect(mcp.callTool("echo", {})).rejects.toMatchObject({ code: "session-expired" });
   });
 
-  it.each([200, 404, 405])("ends the session with DELETE and accepts %i", async (status) => {
+  it.each([200, 404, 405, 410])("ends the session with DELETE and accepts %i", async (status) => {
     const { server, mcp } = await connect([
       {
         request: { method: "DELETE", headers: session },
