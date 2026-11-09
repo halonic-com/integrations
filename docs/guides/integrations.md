@@ -141,6 +141,8 @@ level (pnpm wouldn't see it).
 integrations/tools/google/gmail/
 ├─ integration.yaml       the permission sheet (section 3)
 ├─ package.json           name, "private": true, "halonic": { "layer", "owner" }
+├─ tsconfig.json          the library only, on the `integration` preset (no Node types)
+├─ tsconfig.test.json     tests and vitest.config.ts, on the `node` preset
 ├─ README.md              what it does, how to connect it, its limits
 ├─ src/index.ts           exports the Integration; the only public entry
 ├─ src/client.ts          talks to the service: URLs, auth, response checks
@@ -153,6 +155,16 @@ An integration outside a group also has `src/errors.ts` with its error
 type (section 7). A service in a group uses the group's error type
 instead. A model provider has `src/provider.ts` (and the mapping files it
 needs) instead of `src/tools/`.
+
+`tsconfig.json` extends `@halonicjs/tooling-config/tsconfig/integration.json`,
+includes `src` (and `recordings/scenarios.ts` if there is one) and excludes
+`src/**/*.test.ts` and `src/test`. It includes nothing else, never
+`vitest.config.ts`, and has no `compilerOptions`: those would override the
+preset and could bring Node types back.
+`tsconfig.test.json` extends `@halonicjs/tooling-config/tsconfig/node.json`
+and includes `src` and `vitest.config.ts`. The `typecheck` script runs both:
+`tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json`. That way a Node
+API in library code fails the typecheck. The `tsconfig` check enforces this.
 
 ## 3. The permission sheet comes first
 

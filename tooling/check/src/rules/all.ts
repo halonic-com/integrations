@@ -9,6 +9,7 @@ import { checkLayers } from "./layers.ts";
 import { checkLockfile } from "./lockfile.ts";
 import { checkNames } from "./names.ts";
 import { checkPackages } from "./packages.ts";
+import { checkTsconfig } from "./tsconfig.ts";
 
 /** Every rule `pnpm check` runs, by name. */
 export const rules: Readonly<Record<string, (context: CheckContext) => Report>> = {
@@ -21,4 +22,5 @@ export const rules: Readonly<Record<string, (context: CheckContext) => Report>> 
   lockfile: checkLockfile,
   "absolute-paths": checkAbsolutePaths,
   "google-sheet": checkGoogleSheet,
+  tsconfig: checkTsconfig,
 };

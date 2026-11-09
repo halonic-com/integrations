@@ -8,6 +8,7 @@ export interface PackageJson {
   readonly private?: boolean;
   readonly exports?: unknown;
   readonly bin?: unknown;
+  readonly scripts?: Readonly<Record<string, string>>;
   readonly dependencies?: Readonly<Record<string, string>>;
   readonly devDependencies?: Readonly<Record<string, string>>;
   readonly peerDependencies?: Readonly<Record<string, string>>;

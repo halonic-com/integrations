@@ -12,8 +12,25 @@ const realRoot = join(import.meta.dirname, "..", "..", "..", "..");
 export interface FixturePackage {
   readonly directory: string;
   readonly manifest?: Record<string, unknown>;
-  readonly files?: Readonly<Record<string, string>>;
+  /** Files to write; `null` leaves out a file an integration gets by default. */
+  readonly files?: Readonly<Record<string, string | null>>;
 }
+
+/** The typecheck script every integration needs, checking both of its configs. */
+export const integrationTypecheck = "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json";
+
+/** The two configs every integration needs, which tests then break on purpose. */
+export const integrationConfigs: Readonly<Record<string, string>> = {
+  "tsconfig.json": JSON.stringify({
+    extends: "@halonicjs/tooling-config/tsconfig/integration.json",
+    include: ["src"],
+    exclude: ["src/**/*.test.ts", "src/test"],
+  }),
+  "tsconfig.test.json": JSON.stringify({
+    extends: "@halonicjs/tooling-config/tsconfig/node.json",
+    include: ["src", "vitest.config.ts"],
+  }),
+};
 
 /** A valid package.json for a folder, which tests then break on purpose. */
 export function manifestFor(
@@ -26,6 +43,7 @@ export function manifestFor(
     private: true,
     type: "module",
     exports: { ".": "./src/index.ts" },
+    ...(layer === "integrations" ? { scripts: { typecheck: integrationTypecheck } } : {}),
     halonic: { layer, owner: "ravi" },
     ...extra,
   };
@@ -68,10 +86,15 @@ export function runChecks(
     );
     for (const pkg of packages) {
       write(`${pkg.directory}/package.json`, JSON.stringify(pkg.manifest ?? {}));
-      for (const [file, text] of Object.entries(
-        pkg.files ?? { "src/index.ts": "export const x = 1;\n" },
-      )) {
-        write(`${pkg.directory}/${file}`, text);
+      // Integrations get valid configs unless a test gives its own.
+      const configs = pkg.directory.startsWith("integrations/") ? integrationConfigs : {};
+      for (const [file, text] of Object.entries({
+        ...configs,
+        ...(pkg.files ?? { "src/index.ts": "export const x = 1;\n" }),
+      })) {
+        if (text !== null) {
+          write(`${pkg.directory}/${file}`, text);
+        }
       }
     }
     for (const [file, text] of Object.entries(options.extraFiles ?? {})) {
@@ -91,7 +114,7 @@ export function runChecks(
 export function integration(
   name: string,
   extra: Record<string, unknown> = {},
-  files?: Record<string, string>,
+  files?: Record<string, string | null>,
 ): FixturePackage {
   return {
     directory: `integrations/${name}`,
