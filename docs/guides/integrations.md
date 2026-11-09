@@ -276,8 +276,9 @@ Rules for each field:
 - **`googleApis`**: one `{ api, name }` per Google API the user switches on
   in the Google Cloud Console. `api` is the service name, such as
   `drive.googleapis.com`; `name` is the name on the Console's API library
-  page, such as `Google Drive API`. At least one entry is required whenever
-  `googleScopes` is set.
+  page, such as `Google Drive API`: up to 80 letters, digits, spaces and
+  `( ) & ' / . , -`, starting with a letter or digit, so no `:`. At least one
+  entry is required whenever `googleScopes` is set.
 - **`googleCheck`** (optional): one request the host sends after sign-in to
   see that the API is switched on, such as
   `{ method: GET, url: https://gmail.googleapis.com/gmail/v1/users/me/profile }`.
