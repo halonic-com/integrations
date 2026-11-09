@@ -617,7 +617,7 @@ result.
    | `400`, `422`            | `bad-arguments`       | that the service refused the request (rule 4)  |
    | `401`                   | `not-signed-in`       | to reconnect the account or check the key      |
    | `403`                   | `not-allowed`         | that the account may not do this               |
-   | `404`                   | `not-found`           | what wasn't found, by the id the caller passed |
+   | `404`, `410`            | `not-found`           | what wasn't found, by the id the caller passed |
    | `408`, `429`            | `rate-limited`        | to try again later                             |
    | `5xx`, and other limits | `unavailable`         | that the service is having trouble             |
    | a body Zod refuses      | `unexpected-response` | that the service answered in an unexpected way |

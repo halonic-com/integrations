@@ -37,6 +37,7 @@ describe("codeForStatus", () => {
     [401, "not-signed-in"],
     [403, "not-allowed"],
     [404, "not-found"],
+    [410, "not-found"],
     [408, "rate-limited"],
     [429, "rate-limited"],
     [500, "unavailable"],
@@ -73,6 +74,17 @@ describe("errorForResponse", () => {
     expect(error.code).toBe("not-found");
     expect(error.message).toBe(
       "Gmail found nothing at gmail.googleapis.com/gmail/v1/users/me/messages/msg-123 (status 404, notFound).",
+    );
+  });
+
+  it("says nothing was found for something already deleted, rather than to try again", () => {
+    const error = errorForResponse(410, googleBody(410, "deleted", "GONE"), {
+      service: "Google Calendar",
+      url: "https://www.googleapis.com/calendar/v3/calendars/primary/events/event-123",
+    });
+    expect(error.code).toBe("not-found");
+    expect(error.message).toBe(
+      "Google Calendar found nothing at www.googleapis.com/calendar/v3/calendars/primary/events/event-123 (status 410, deleted).",
     );
   });
 
