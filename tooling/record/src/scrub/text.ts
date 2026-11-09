@@ -114,6 +114,7 @@ function replaceEmails(text: string, where: string, context: ScrubContext): stri
 
 function replaceEmail(address: string, where: string, context: ScrubContext): string {
   if (isExampleEmail(address)) {
+    context.fakes.keepEmail(address);
     return address;
   }
   context.report.add("email", where);
@@ -122,7 +123,11 @@ function replaceEmail(address: string, where: string, context: ScrubContext): st
 
 function replacePhones(text: string, where: string, context: ScrubContext): string {
   return text.replace(PHONE, (number) => {
-    if (!hasPhoneLength(number) || isExamplePhone(number)) {
+    if (!hasPhoneLength(number)) {
+      return number;
+    }
+    if (isExamplePhone(number)) {
+      context.fakes.keepPhone(number);
       return number;
     }
     context.report.add("phone", where);
