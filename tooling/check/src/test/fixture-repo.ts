@@ -59,6 +59,10 @@ export function runChecks(
       readFileSync(join(realRoot, "tooling/check/dependencies.json"), "utf8"),
     );
     write(
+      "tooling/check/advisories-ignored.json",
+      readFileSync(join(realRoot, "tooling/check/advisories-ignored.json"), "utf8"),
+    );
+    write(
       "package.json",
       JSON.stringify(manifestFor("@halonicjs/root", "tooling", { exports: undefined })),
     );

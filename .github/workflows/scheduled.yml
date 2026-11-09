@@ -33,9 +33,9 @@ jobs:
       - name: Licences
         run: pnpm check:licences
       - name: Audit shipped dependencies (high and critical fail)
-        run: pnpm audit --prod --audit-level high
+        run: pnpm check:audit --prod --audit-level high
       - name: Audit dev tooling (report only)
-        run: pnpm audit || echo "::warning::Advisories in dev tooling; see the log above."
+        run: pnpm check:audit || echo "::warning::Advisories in dev tooling; see the log above."
 
   full-scan:
     # Weekly, and on demand: the whole tree and the whole history.
