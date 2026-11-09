@@ -33,6 +33,11 @@ export interface ScrubResult {
  * between calls. Stand-ins are stable within the call, so the same e-mail
  * address or ID gets the same stand-in in every exchange.
  *
+ * The recording is scrubbed twice. Example addresses and drama numbers are
+ * kept as they are, and one can look like a stand-in (`person2@example.com`)
+ * anywhere in the recording, even after a real address got that number. The
+ * first pass only finds them; the second skips their numbers.
+ *
  * Throws `RecordingRefused` when something can't be scrubbed safely, or a
  * declared user-content path can't be read; the caller must then save nothing.
  */
@@ -40,11 +45,21 @@ export function scrubExchanges(
   exchanges: readonly CapturedExchange[],
   options: ScrubOptions,
 ): ScrubResult {
+  const firstPass = new Fakes();
+  scrubWith(exchanges, options, firstPass);
+  return scrubWith(exchanges, options, new Fakes(firstPass.kept()));
+}
+
+function scrubWith(
+  exchanges: readonly CapturedExchange[],
+  options: ScrubOptions,
+  fakes: Fakes,
+): ScrubResult {
   const { policy } = options;
   const context: ScrubContext = {
     policy,
     knownSecrets: new KnownSecrets(options.knownSecrets ?? []),
-    fakes: new Fakes(),
+    fakes,
     report: new ReportBuilder(),
     matchedUserContent: new Set(),
   };

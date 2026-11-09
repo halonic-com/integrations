@@ -34,6 +34,12 @@ are stable within one recording, so a test can still see that the page token
 in one response is the one sent in the next request, and they need no
 escaping in a URL.
 
+Addresses on `example.com` and numbers in the drama range are kept as they
+are. One of them can look like a stand-in (`person2@example.com`), so the
+recorder scrubs a recording twice: the first pass finds the ones it keeps,
+and the second skips their numbers. A real address never gets the stand-in
+of an example address in the same file.
+
 ## What an integration declares
 
 The scrubber never guesses which fields hold the user's own content, so

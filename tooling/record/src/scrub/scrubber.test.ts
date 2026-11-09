@@ -174,6 +174,44 @@ describe("scrubExchanges", () => {
     ]);
   });
 
+  describe("never gives a real value the stand-in of an example value it keeps", () => {
+    /** One exchange whose response body is `text`, as plain JSON. */
+    function exchangeWith(text: string): CapturedExchange {
+      return {
+        request: { method: "GET", url: "https://mail.example.com/v1/me", headers: [] },
+        response: { status: 200, headers: JSON_HEADERS, body: JSON.stringify({ text }) },
+      };
+    }
+
+    function scrubbedTexts(texts: string[]): unknown[] {
+      const { exchanges } = scrubExchanges(texts.map(exchangeWith), { policy: mailPolicy });
+      return exchanges.map(({ response }) =>
+        response.body.kind === "json" ? response.body.value : undefined,
+      );
+    }
+
+    it("when the example address comes first", () => {
+      expect(scrubbedTexts(["person1@example.com", FAKE.email])).toEqual([
+        { text: "person1@example.com" },
+        { text: "person2@example.com" },
+      ]);
+    });
+
+    it("when the example address comes after the real one", () => {
+      expect(scrubbedTexts([FAKE.email, "Person1@example.com"])).toEqual([
+        { text: "person2@example.com" },
+        { text: "Person1@example.com" },
+      ]);
+    });
+
+    it("for a drama number after a real one", () => {
+      expect(scrubbedTexts([`call ${FAKE.phone}`, "call +44 7700 900001"])).toEqual([
+        { text: "call +447700900002" },
+        { text: "call +44 7700 900001" },
+      ]);
+    });
+  });
+
   it("doesn't change the captured exchanges", () => {
     const captured = mailExchanges();
     const copy = structuredClone(captured);
