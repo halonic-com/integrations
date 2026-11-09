@@ -28,11 +28,13 @@ limits:
 recording:
   userContent:
     - request.body.messages[*].content # what the user and the model wrote, and tool results
-    - request.body.messages[*].tool_calls[*].function.arguments # tool arguments sent back
     - request.body.tools[*].function.description # can describe the user's own setup
     - response.body.choices[*].message.content
     - response.body.choices[*].message.refusal
-    - response.body.choices[*].message.tool_calls[*].function.arguments
+    # Tool arguments, sent back and received: every value, nested ones too.
+    # The argument names stay; they are the tool's own, already in its schema.
+    - request.body.messages[*].tool_calls[*].function.arguments.*
+    - response.body.choices[*].message.tool_calls[*].function.arguments.*
     # The same content in a streamed answer: each chunk's data.
     - response.body[*].data.choices[*].delta.content
     - response.body[*].data.choices[*].delta.refusal
