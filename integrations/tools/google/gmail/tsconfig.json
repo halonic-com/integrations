@@ -2,6 +2,7 @@
   "extends": "../../../../tooling/config/tsconfig/integration.json",
   "include": [
     "src",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "recordings/scenarios.ts"
   ]
 }

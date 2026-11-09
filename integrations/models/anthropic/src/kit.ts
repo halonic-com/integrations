@@ -184,3 +184,17 @@ export interface Integration {
   readonly tools: readonly never[];
   connect(host: IntegrationHost): IntegrationConnection;
 }
+
+/**
+ * One scenario in `recordings/scenarios.ts`, which `pnpm record` runs
+ * against the real service. Not from the kit: it is copied from
+ * `tooling/record/src/scenario.ts`, so the scenario file imports nothing
+ * from tooling. It stays when the kit is swapped in.
+ */
+export interface Scenario {
+  /** Kebab-case. The recording is saved as `recordings/<name>.json`. */
+  readonly name: string;
+  /** Declared user-content paths this scenario doesn't touch. */
+  readonly unusedUserContent?: readonly string[];
+  run(connection: IntegrationConnection): Promise<void>;
+}

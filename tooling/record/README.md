@@ -1,6 +1,6 @@
 # tooling/record
 
-`pnpm record <integration>` records an integration's real HTTP traffic so
+`pnpm record <sheet id or path>` records an integration's real HTTP traffic so
 the conformance suite can replay it. Both repos are public, so nothing is
 saved until the scrubber has removed keys, tokens, e-mail addresses, phone
 numbers and the user's own content.
@@ -148,6 +148,86 @@ The error paths the recorder adds by itself never stop a recording this way.
 
 The error names the place (`exchanges[2].response.body`) and the reason,
 never a value.
+
+## Recording a scenario
+
+Write the scenarios in `integrations/<group>/<name>/recordings/scenarios.ts`.
+It exports the integration and a list of scenarios. Each scenario uses the
+connection the way a user would: it calls a tool, or `chat` on the model
+provider. The file is integration code, so it gets no Node APIs and no
+`fetch`, only the connection. It is never exported from the package, and
+the integration's `tsconfig.json` includes it so it is typechecked.
+
+It imports nothing from tooling either: `pnpm check` treats it as runtime
+code, and integrations ship without tooling packages. The `Scenario` type
+goes in the integration's own `src/kit.ts`, next to the kit types copied
+there, with the integration's own connection type. Copy it from
+`integrations/models/anthropic/src/kit.ts` when you write an integration's
+first scenarios. `pnpm record` checks the shape again when it loads the file.
+
+```ts
+// integrations/models/anthropic/src/kit.ts
+export interface Scenario {
+  readonly name: string;
+  readonly unusedUserContent?: readonly string[];
+  run(connection: IntegrationConnection): Promise<void>;
+}
+```
+
+```ts
+// integrations/models/anthropic/recordings/scenarios.ts, shortened
+import { anthropic } from "../src/index.ts";
+import type { Scenario } from "../src/kit.ts";
+
+export const integration = anthropic;
+export const scenarios: readonly Scenario[] = [
+  {
+    name: "answer-text", // saved as recordings/answer-text.json
+    unusedUserContent: ["request.body.tools[*].description" /* , ... */],
+    async run(connection) {
+      const provider = connection.createLlmProvider?.({
+        id: "claude",
+        type: "anthropic",
+        local: false,
+        options: {},
+      });
+      await provider?.chat({
+        model: "claude-haiku-4-5-20251001",
+        messages: [{ role: "user", content: "Say hello." }],
+      });
+    },
+  },
+];
+```
+
+Then name the integration by its sheet `id` or its path, and optionally the
+scenarios to record:
+
+```sh
+HALONIC_RECORD_SECRET_ANTHROPIC_KEY=... pnpm record model-anthropic answer-text
+pnpm record integrations/tools/mcp/http   # every scenario
+```
+
+- **Keys** come from `HALONIC_RECORD_SECRET_<SECRET>`, named after the
+  sheet's secret: `anthropic-key` becomes `HALONIC_RECORD_SECRET_ANTHROPIC_KEY`.
+  **Settings** such as an MCP server's `url` come from
+  `HALONIC_RECORD_SETTING_<SETTING>`, because a self-hosted server's address
+  can be personal. Neither is ever taken from the command line. If one is
+  missing, the command names the variable and stops before it sends anything.
+  An `optional: true` secret that isn't set is simply not sent.
+- **The host** is a stand-in for the kit's, in `src/host`, until
+  `@halonicjs/integration-kit` is published. It copies the kit's rules: keys
+  go only where the sheet's `as:` says (`bearer`, or `header` with `header:`
+  and `prefix:`), and only to the sheet's hosts. Any other `as:` stops the
+  command. A request to a host that isn't in the sheet fails the scenario,
+  even if the integration catches the error.
+- **Nothing is saved unless every scenario passes.** A scenario fails when it
+  throws, when the host refused a request, or when `prepareRecording` refuses
+  the result. Every printed line has each `HALONIC_RECORD_*` value removed,
+  so no message or stack trace shows a key or a server address. A URL
+  setting's bare host name is removed too, so with
+  `HALONIC_RECORD_SETTING_URL=http://localhost:8080/mcp` every `localhost`
+  in the output is hidden. That is on purpose.
 
 ## Capturing the traffic
 
