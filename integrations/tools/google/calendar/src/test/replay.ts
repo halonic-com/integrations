@@ -5,6 +5,7 @@ import type {
   HttpResponse,
 } from "@halonicjs/integration-tool-google-shared";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
+import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { calendar } from "../index.ts";
 import type { IntegrationConnection } from "../kit.ts";
 
@@ -32,19 +33,12 @@ function recordingWait(): { wait: GoogleHost["wait"]; waits: number[] } {
 }
 
 /**
- * The `recording.userContent` paths of integration.yaml. The replay scrubs
- * what is sent with them before it compares it with the recording, which
- * has an event's title as `<scrubbed:content>`. Read from the sheet, so the
- * tests can't drift from it. Without a YAML parser: the section is a plain
- * list of paths, with comments between them.
+ * The `recording` section of integration.yaml. The replay scrubs what is
+ * sent with it before it compares it with the recording, which has
+ * an event's title as `<scrubbed:content>`. Read from the sheet, so the tests
+ * can't drift from it.
  */
-function sheetUserContent(): string[] {
-  const sheet = readFileSync(new URL("../../integration.yaml", import.meta.url), "utf8");
-  const section = /\nrecording:\n {2}userContent:\n((?: {4}.*\n)*)/.exec(`${sheet}\n`)?.[1] ?? "";
-  const paths = [...section.matchAll(/^ {4}- (\S+)$/gm)].map((match) => match[1] ?? "");
-  if (paths.length === 0) throw new Error("integration.yaml has no recording.userContent paths.");
-  return paths;
-}
+const policy = readSheetPolicy(new URL("../../integration.yaml", import.meta.url));
 
 /** Reads `recordings/<scenario>.json`. */
 function loadRecording(scenario: string): unknown {
@@ -75,7 +69,7 @@ export function connectToRecording(scenario: string): {
   connection: IntegrationConnection;
   replay: Replay;
 } {
-  const recorded = replay(loadRecording(scenario), { policy: { userContent: sheetUserContent() } });
+  const recorded = replay(loadRecording(scenario), { policy });
   const { wait } = recordingWait();
   const connection = calendar.connect({ http: requireBearer(recorded), wait });
   return { connection, replay: recorded };

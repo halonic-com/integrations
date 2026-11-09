@@ -1,4 +1,5 @@
 import { fakeResponse, replay } from "@halonicjs/tooling-record/replay";
+import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerJson from "../recordings/answer-json.json" with { type: "json" };
 import answerText from "../recordings/answer-text.json" with { type: "json" };
@@ -21,19 +22,11 @@ import type {
 import { createGeminiProvider, generateContentUrl, streamGenerateContentUrl } from "./provider.ts";
 
 /**
- * The request paths of the `recording` section in integration.yaml. The
- * replay scrubs what is sent with them before it compares it with the
+ * The `recording` section of integration.yaml. The replay scrubs what is
+ * sent with it, the way the recorder did, before it compares it with the
  * recording.
  */
-const policy = {
-  userContent: [
-    "request.body.systemInstruction.parts[*].text",
-    "request.body.contents[*].parts[*].text",
-    "request.body.contents[*].parts[*].functionCall.args.*",
-    "request.body.contents[*].parts[*].functionResponse.response.*",
-    "request.body.tools[*].functionDeclarations[*].description",
-  ],
-};
+const policy = readSheetPolicy(new URL("../integration.yaml", import.meta.url));
 
 /** `secret` and `baseUrl` are set to show they are ignored: the sheet decides both. */
 const config: ProviderConfig = {

@@ -1,0 +1,8 @@
+{
+  "//": "Tests and the Vitest config may use Node types; the library itself may not (tsconfig.json).",
+  "extends": "../../../tooling/config/tsconfig/node.json",
+  "include": [
+    "src",
+    "vitest.config.ts"
+  ]
+}

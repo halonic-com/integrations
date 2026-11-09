@@ -265,6 +265,9 @@ importers:
       '@halonicjs/tooling-record':
         specifier: workspace:*
         version: link:../../../tooling/record
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -287,6 +290,9 @@ importers:
       '@halonicjs/tooling-record':
         specifier: workspace:*
         version: link:../../../tooling/record
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -309,6 +315,9 @@ importers:
       '@halonicjs/tooling-record':
         specifier: workspace:*
         version: link:../../../tooling/record
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

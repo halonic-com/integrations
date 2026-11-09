@@ -3,5 +3,8 @@
   "include": [
     "src",
     "recordings/scenarios.ts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
   ]
 }
