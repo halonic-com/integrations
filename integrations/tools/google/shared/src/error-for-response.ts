@@ -82,6 +82,8 @@ export function codeForStatus(status: number, reason?: string): GoogleErrorCode 
     case 403:
       return codeForForbidden(reason);
     case 404:
+    // Gone: Calendar answers this for an event that is already deleted.
+    case 410:
       return "not-found";
     case 408:
     case 429:
