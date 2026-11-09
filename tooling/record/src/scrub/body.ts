@@ -114,9 +114,17 @@ function scrubTextBody(
 }
 
 /**
+ * Whole event data that some services send to mark the end of a stream, such
+ * as OpenAI's `[DONE]`. It holds no content, and the client waits for it, so
+ * a declared path into the data must not turn it into a placeholder.
+ */
+const streamEndMarkers: ReadonlySet<JsonValue> = new Set(["[DONE]"]);
+
+/**
  * Each event's data is scrubbed like a JSON body that starts at
  * `[n].data`, so `response.body[*].data.delta.text` points at the streamed
- * text of every event. The event name goes through the text rules.
+ * text of every event. The event name goes through the text rules. A stream
+ * end marker is kept as it is.
  */
 function scrubEvents(
   events: readonly StreamEvent[],
@@ -125,7 +133,9 @@ function scrubEvents(
   context: ScrubContext,
 ): StreamEvent[] {
   return events.map((event, index) => {
-    const data: JsonValue = scrubJson(event.data, where, userContent, context, [index, "data"]);
+    const data: JsonValue = streamEndMarkers.has(event.data)
+      ? event.data
+      : scrubJson(event.data, where, userContent, context, [index, "data"]);
     return { event: scrubText(event.event, `${where}[${index}].event`, context), data };
   });
 }
