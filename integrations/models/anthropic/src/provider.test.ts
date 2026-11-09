@@ -7,14 +7,17 @@ import overloaded from "../recordings/overloaded.json" with { type: "json" };
 import streamOverloaded from "../recordings/stream-overloaded.json" with { type: "json" };
 import streamText from "../recordings/stream-text.json" with { type: "json" };
 import toolCall from "../recordings/tool-call.json" with { type: "json" };
+import toolLoopThinking from "../recordings/tool-loop-thinking.json" with { type: "json" };
 import { AnthropicError } from "./errors.ts";
 import { anthropic } from "./index.ts";
 import type {
+  ChatMessage,
   ChatRequest,
   ChatStreamEvent,
   IntegrationHttpClient,
   LlmProvider,
   ProviderConfig,
+  ToolDefinition,
 } from "./kit.ts";
 import { createAnthropicProvider } from "./provider.ts";
 
@@ -46,6 +49,12 @@ const question: ChatRequest = {
 const briefQuestion: ChatRequest = {
   ...question,
   messages: [{ role: "system", content: "Be brief." }, ...question.messages],
+};
+
+const weatherForecast: ToolDefinition = {
+  name: "weather_forecast",
+  description: "Forecast for a city.",
+  parameters: { type: "object", properties: { city: { type: "string" } }, required: ["city"] },
 };
 
 function provider(http: IntegrationHttpClient) {
@@ -88,20 +97,7 @@ describe("chat", () => {
 
   it("returns the tool calls the model asks for", async () => {
     const recording = replay(toolCall, { policy });
-    const response = await provider(recording.http).chat({
-      ...question,
-      tools: [
-        {
-          name: "weather_forecast",
-          description: "Forecast for a city.",
-          parameters: {
-            type: "object",
-            properties: { city: { type: "string" } },
-            required: ["city"],
-          },
-        },
-      ],
-    });
+    const response = await provider(recording.http).chat({ ...question, tools: [weatherForecast] });
     recording.assertAllUsed();
     expect(response.finishReason).toBe("tool_calls");
     expect(response.toolCalls).toEqual([
@@ -112,6 +108,47 @@ describe("chat", () => {
       },
     ]);
     expect(response.usage).toEqual({ inputTokens: 402, outputTokens: 57 });
+  });
+
+  /** HAL-316, recorded live on a model that thinks adaptively. */
+  it("sends a thinking turn back unchanged in a tool loop, and Anthropic accepts it", async () => {
+    const recording = replay(toolLoopThinking, { policy });
+    const llm = provider(recording.http);
+    const request = {
+      model: "claude-sonnet-5-5",
+      tools: [weatherForecast],
+      params: { maxTokens: 4096 },
+    };
+    const opening: ChatMessage[] = [
+      { role: "system", content: "Use the tools you are given." },
+      { role: "user", content: "Should I take an umbrella?" },
+    ];
+
+    const toolTurn = await llm.chat({ ...request, messages: opening });
+    const toolCall = toolTurn.toolCalls[0];
+    if (toolCall === undefined || toolTurn.replay === undefined) {
+      throw new Error("The recording has no tool call to answer.");
+    }
+    expect(toolTurn.replay.data).toContainEqual(expect.objectContaining({ type: "thinking" }));
+
+    const finalTurn = await llm.chat({
+      ...request,
+      messages: [
+        ...opening,
+        {
+          role: "assistant",
+          content: toolTurn.content,
+          toolCalls: toolTurn.toolCalls,
+          replay: toolTurn.replay,
+        },
+        { role: "tool", toolCallId: toolCall.id, name: toolCall.name, content: "Rain." },
+      ],
+    });
+    recording.assertAllUsed();
+
+    const followUp = JSON.parse(String(recording.sent[1]?.init.body));
+    expect(followUp.messages[1].content).toEqual(toolTurn.replay.data);
+    expect(finalTurn.finishReason).toBe("stop");
   });
 
   it("passes the signal on", async () => {
