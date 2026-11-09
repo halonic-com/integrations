@@ -4,7 +4,8 @@
   "type": "module",
   "description": "Our own repo checks: layers, dependencies, names, file size, lockfile, licences and the personal-terms guard.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./sheet-yaml": "./src/lib/sheet-yaml.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",

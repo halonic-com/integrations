@@ -451,6 +451,9 @@ importers:
 
   tooling/record:
     dependencies:
+      '@halonicjs/tooling-check':
+        specifier: workspace:*
+        version: link:../check
       zod:
         specifier: 'catalog:'
         version: 4.6.7
