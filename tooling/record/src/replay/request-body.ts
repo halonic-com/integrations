@@ -4,6 +4,7 @@ import type { HeaderEntry, RecordedBody, RecordedRequest } from "../scrub/exchan
 import { SECRET } from "../scrub/fakes.ts";
 import { FieldPaths } from "../scrub/field-paths.ts";
 import { sameText, shown, userContentHint } from "./compare-text.ts";
+import { firstDifference } from "./compare-value.ts";
 import { asReplayError } from "./replay-context.ts";
 
 /** Where a body difference is reported from, in the same terms as a `userContent` path. */
@@ -150,38 +151,11 @@ function lineDifference(recorded: string, sent: string): string | undefined {
   return undefined;
 }
 
-/** The first place, in path notation, where two JSON values differ. Field order doesn't matter. */
+/** Where two JSON values differ, as the end of a sentence; `undefined` when they match. */
 function valueDifference(recorded: unknown, sent: unknown, path: string): string | undefined {
-  if (Array.isArray(recorded) && Array.isArray(sent)) {
-    const count = Math.max(recorded.length, sent.length);
-    for (let index = 0; index < count; index++) {
-      const difference = valueDifference(recorded[index], sent[index], `${path}[${index}]`);
-      if (difference !== undefined) {
-        return difference;
-      }
-    }
+  const difference = firstDifference(recorded, sent, path);
+  if (difference === undefined) {
     return undefined;
   }
-  if (isFields(recorded) && isFields(sent)) {
-    const names = [...new Set([...Object.keys(recorded), ...Object.keys(sent)])].sort();
-    for (const name of names) {
-      const difference = valueDifference(recorded[name], sent[name], `${path}.${name}`);
-      if (difference !== undefined) {
-        return difference;
-      }
-    }
-    return undefined;
-  }
-  const same =
-    typeof recorded === "string" && typeof sent === "string"
-      ? sameText(recorded, sent)
-      : recorded === sent;
-  if (same) {
-    return undefined;
-  }
-  return ` at ${path}: the request sends ${shown(sent)}; the recording has ${shown(recorded)}.${userContentHint(recorded, sent)}`;
-}
-
-function isFields(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
+  return ` at ${difference.path}: the request sends ${shown(difference.other)}; the recording has ${shown(difference.recorded)}.${userContentHint(difference.recorded, difference.other)}`;
 }
