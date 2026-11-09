@@ -57,6 +57,10 @@ describe("calendar_update_event", () => {
     ["end", { eventId: "lunch01", start: "2026-11-12T13:00:00Z" }],
     ["start", { eventId: "lunch01", end: "2026-11-12T13:00:00Z" }],
     ["end", { eventId: "lunch01", start: "2026-11-12", end: "2026-11-12T13:00:00Z" }],
+    [
+      "end",
+      { eventId: "lunch01", start: "2026-11-12T13:00:00Z", end: "2026-11-12T13:30:00+01:00" },
+    ],
     ["eventId", { eventId: "a/b", title: "x" }],
   ])("refuses a bad %s before any request", async (field, args) => {
     const { connection, requests } = connectToFakeCalendar(200, "{}");

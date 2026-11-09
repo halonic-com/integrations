@@ -120,6 +120,7 @@ export class CalendarClient {
   /**
    * One request, never retried: a timeout doesn't prove the event wasn't
    * created, and a second try could create it twice.
+   * https://developers.google.com/workspace/calendar/api/v3/reference/events/insert
    */
   async createEvent(
     calendarId: string,

@@ -50,11 +50,22 @@ export function eventChanges(args: EventArguments): EventChanges {
 }
 
 /**
- * Checks that start and end come together and are of one kind: two dates
- * or two times. Google refuses an all-day start with a timed end, but its
- * answer can't say which argument was wrong; this check can, before any
- * request. Used in each tool's `superRefine`, so a problem is reported as
- * the argument's name.
+ * Whether `end` is too early for `start`. An all-day event's end is the day
+ * after its last day, so it must come after the start; a timed event may
+ * end when it starts. Dates compare as text; times compare as instants,
+ * since their offsets may differ.
+ */
+function endsTooEarly(start: string, end: string): boolean {
+  if (isDate(start)) return end <= start;
+  return Date.parse(end) < Date.parse(start);
+}
+
+/**
+ * Checks that start and end come together, are of one kind (two dates or
+ * two times) and in order. Google refuses either mistake, but its answer
+ * can't say which argument was wrong; this check can, before any request.
+ * Used in each tool's `superRefine`, so a problem is reported as the
+ * argument's name.
  */
 export function checkTimes(args: EventArguments, context: z.RefinementCtx): void {
   if (args.start !== undefined && args.end === undefined) {
@@ -70,6 +81,8 @@ export function checkTimes(args: EventArguments, context: z.RefinementCtx): void
         path: ["end"],
         message: "Start and end are both dates or both times.",
       });
+    } else if (endsTooEarly(args.start, args.end)) {
+      context.addIssue({ code: "custom", path: ["end"], message: "End comes after start." });
     }
   }
 }
