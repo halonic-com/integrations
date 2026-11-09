@@ -43,6 +43,9 @@ so both repos check the same things. What differs:
   the sheet fields the rule asks for, and only the YAML the sheets use, so
   the check needs no YAML library. It goes when `halonic validate` checks
   sheets.
+- `src/rules/integration-types.ts` is this repo's own too: it rejects
+  `/// <reference>` lines that load Node or DOM types into integration
+  library code, which the main repo's layers don't have.
 
 - `advisories-ignored.json`, `src/lib/advisories.ts`,
   `src/rules/advisories.ts`, `src/cli/audit.ts` and

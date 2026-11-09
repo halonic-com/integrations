@@ -77,4 +77,26 @@ describe("tooling/check: layers", () => {
     const messages = runChecks([integration("gmail"), sneaky]).map((p) => p.message);
     expect(messages.some((message) => message.includes("reaches outside"))).toBe(true);
   });
+
+  it("stops library code from importing test code, which may load Node's types", () => {
+    const probe = integration(
+      "mcp",
+      {},
+      {
+        "src/test/probe-fake.ts": '/// <reference types="node" />\nexport const probeFake = 1;\n',
+        "src/test/index.ts": 'export * from "./probe-fake.ts";\n',
+        "src/probe.ts":
+          'import { probeFake } from "./test/probe-fake.ts";\nexport const p = probeFake;\n',
+        "src/folder.ts": 'import "./test";\n',
+        "src/index.test.ts": 'import "./test/probe-fake.ts";\n',
+      },
+    );
+    const problems = runChecks([probe])
+      .filter((problem) => problem.rule === "layers")
+      .map((problem) => `${problem.file}:${problem.line}`);
+    expect(problems.sort()).toEqual([
+      "integrations/mcp/src/folder.ts:1",
+      "integrations/mcp/src/probe.ts:1",
+    ]);
+  });
 });
