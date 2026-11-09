@@ -1,4 +1,5 @@
 import { type Replay, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it, vi } from "vitest";
 import callCancelled from "../recordings/call-cancelled.json" with { type: "json" };
 import callTool from "../recordings/call-tool.json" with { type: "json" };
@@ -15,13 +16,11 @@ import { McpToolsError, mcpHttp } from "./index.ts";
  */
 
 /**
- * The request paths of the `recording` section in integration.yaml. The
- * replay scrubs what is sent with them before it compares it with the
+ * The `recording` section of integration.yaml. The replay scrubs what is
+ * sent with it, the way the recorder did, before it compares it with the
  * recording.
  */
-const policy = {
-  userContent: ["request.body.params.arguments"],
-};
+const policy = readSheetPolicy(new URL("../integration.yaml", import.meta.url));
 
 const url = "https://tools.example.com/mcp";
 

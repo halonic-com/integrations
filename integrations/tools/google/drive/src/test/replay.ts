@@ -4,16 +4,16 @@ import type {
   HttpResponse,
 } from "@halonicjs/integration-tool-google-shared";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
+import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { drive } from "../index.ts";
 import type { IntegrationConnection } from "../kit.ts";
 
 /**
- * The request paths of the `recording` section in integration.yaml. The
- * replay scrubs what is sent with them before it compares it with the
- * recording. Text bodies need no `allowContentTypes` here: the replay
- * allows the content type a recorded text body has.
+ * The `recording` section of integration.yaml. The replay scrubs what is
+ * sent with it, the way the recorder did, before it compares it with the
+ * recording.
  */
-const policy = { userContent: ["request.body.name"] };
+const policy = readSheetPolicy(new URL("../../integration.yaml", import.meta.url));
 
 /**
  * A `wait` that resolves at once and records each pause, so a test can see
