@@ -14,6 +14,11 @@ export {
   type RecordingInput,
 } from "./recording/prepare-recording.ts";
 export {
+  createRecordingTransport,
+  type HttpTransport,
+  type RecordingTransport,
+} from "./recording/recording-transport.ts";
+export {
   findLeaks,
   type Leak,
   type LeakKind,
