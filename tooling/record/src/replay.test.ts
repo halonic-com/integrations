@@ -152,7 +152,7 @@ describe("replay of a session", () => {
           body: {
             kind: "sse",
             value: [
-              { event: "message", data: { text: "<scrubbed:content>" } },
+              { event: "message", data: { text: "hello" } },
               { event: "ping", data: "two\nlines" },
             ],
           },
@@ -182,7 +182,7 @@ describe("replay of a session", () => {
     const chunk = await reader?.read();
     expect(chunk?.done).toBe(false);
     expect(new TextDecoder().decode(chunk?.value)).toBe(
-      'event: message\ndata: {"text":"<scrubbed:content>"}\n\nevent: ping\ndata: two\ndata: lines\n\n',
+      'event: message\ndata: {"text":"hello"}\n\nevent: ping\ndata: two\ndata: lines\n\n',
     );
     expect((await reader?.read())?.done).toBe(true);
     await expect(second.json()).rejects.toThrow(SyntaxError);

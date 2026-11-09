@@ -2,6 +2,7 @@ import { type RecordingFile, recordingFileSchema } from "./format.ts";
 import { replayContext } from "./replay/replay-context.ts";
 import { RequestBodies } from "./replay/request-body.ts";
 import { RequestUrls } from "./replay/request-url.ts";
+import { ResponseBodies } from "./replay/response-body.ts";
 import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
 
 /**
@@ -10,8 +11,9 @@ import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
  * unexpected call fails, and `assertAllUsed` fails on an unused exchange.
  * The key, the headers the integration sets and the request body must match
  * the recording too (see `checkMatches`). The URL and the body are scrubbed
- * with the integration's policy before they are compared. Tests can also
- * check what was sent through `sent`.
+ * with the integration's policy before they are compared, and each recorded
+ * response must already match the policy (see `ResponseBodies`). Tests can
+ * also check what was sent through `sent`.
  *
  * For integration tests only: import it from `@halonicjs/tooling-record/replay`
  * in a devDependency. Replace with `@halonicjs/testing-integration` once it
@@ -111,7 +113,7 @@ export interface ReplayOptions {
    * recorded URL and body are scrubbed, so the replay scrubs the sent ones
    * with the same rules before it compares them. Without the policy, a field
    * or query parameter the recorder replaced as the user's own content
-   * doesn't match.
+   * doesn't match, and a response with user content fails.
    */
   readonly policy?: ScrubPolicyInput;
 }
@@ -125,6 +127,7 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
     urls: new RequestUrls(context),
     bodies: new RequestBodies(context),
   };
+  const responses = new ResponseBodies(context.policy);
   const sent: SentRequest[] = [];
   const http: ReplayHttpClient = {
     async fetch(url, init = {}) {
@@ -134,6 +137,7 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
       checkMatches(exchange, url, init, unset, check);
+      responses.check(exchange.request, exchange.response.body);
       return toResponse(exchange.response);
     },
   };

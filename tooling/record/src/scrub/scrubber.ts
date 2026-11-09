@@ -1,6 +1,6 @@
 import { parseBody, scrubBody } from "./body.ts";
 import type { ScrubContext } from "./context.ts";
-import type { CapturedExchange, RecordedBody, RecordedExchange } from "./exchange.ts";
+import type { CapturedExchange, RecordedExchange } from "./exchange.ts";
 import { Fakes } from "./fakes.ts";
 import { FieldPaths } from "./field-paths.ts";
 import { scrubHeaders } from "./headers.ts";
@@ -8,7 +8,7 @@ import { KnownSecrets } from "./known-secrets.ts";
 import type { ScrubPolicy } from "./policy.ts";
 import { QueryPaths } from "./query-paths.ts";
 import { ReportBuilder, type ScrubReport } from "./report.ts";
-import { serviceErrorPaths } from "./service-errors.ts";
+import { responseUserContent } from "./service-errors.ts";
 import { StreamedJson } from "./streamed-json.ts";
 import { scrubUrl } from "./url.ts";
 
@@ -81,22 +81,6 @@ function scrubWith(
 interface RequestUserContent {
   readonly query: QueryPaths;
   readonly body: FieldPaths;
-}
-
-/**
- * The policy's response paths, then the error paths the recorder adds for
- * this service's error format. The policy's come first, so a path the sheet
- * declares itself is the one that matches and counts as used.
- */
-function responseUserContent(
-  policy: ScrubPolicy,
-  url: string,
-  responseBody: RecordedBody,
-): FieldPaths {
-  return new FieldPaths(
-    [...policy.userContent, ...serviceErrorPaths(url, responseBody)],
-    "response",
-  );
 }
 
 function scrubExchange(
