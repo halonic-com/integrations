@@ -202,15 +202,9 @@ importers:
 
   integrations/knowledge/mcp:
     dependencies:
-      '@halonicjs/integration-mcp':
+      '@halonicjs/integration-mcp-server':
         specifier: workspace:*
-        version: link:../../mcp
-      '@halonicjs/integration-shared':
-        specifier: workspace:*
-        version: link:../../shared
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
+        version: link:../../mcp-server
     devDependencies:
       '@halonicjs/tooling-config':
         specifier: workspace:*
@@ -240,6 +234,34 @@ importers:
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../tooling/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6))
+
+  integrations/mcp-server:
+    dependencies:
+      '@halonicjs/integration-mcp':
+        specifier: workspace:*
+        version: link:../mcp
+      '@halonicjs/integration-shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@halonicjs/tooling-config':
+        specifier: workspace:*
+        version: link:../../tooling/config
+      '@halonicjs/tooling-record':
+        specifier: workspace:*
+        version: link:../../tooling/record
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -436,15 +458,9 @@ importers:
 
   integrations/tools/mcp/http:
     dependencies:
-      '@halonicjs/integration-mcp':
+      '@halonicjs/integration-mcp-server':
         specifier: workspace:*
-        version: link:../../../mcp
-      '@halonicjs/integration-shared':
-        specifier: workspace:*
-        version: link:../../../shared
-      zod:
-        specifier: 'catalog:'
-        version: 4.6.7
+        version: link:../../../mcp-server
     devDependencies:
       '@halonicjs/tooling-config':
         specifier: workspace:*

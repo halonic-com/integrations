@@ -9,6 +9,9 @@ Zod into the cloud runtime.
 - **Layer:** integrations
 - **Owner:** tomas
 
+The code is in the [`mcp-server`](../../mcp-server/README.md) library;
+this package is its sheet, its name and its recordings.
+
 ## Connecting it
 
 The workspace gives the connection one setting, `url`: the server's MCP

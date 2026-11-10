@@ -21,8 +21,14 @@ const settingsSchema = z.object({
     .regex(/^https?:\/\/[^\s/?#]+[^\s]*$/i),
 });
 
-/** @throws {McpToolsError} `bad-config`, naming the fields to fix */
-export function readSettings(settings: Readonly<Record<string, unknown>>): ServerSettings {
+/**
+ * @param integration - the sheet's `id`, which the message names
+ * @throws {McpToolsError} `bad-config`, naming the fields to fix
+ */
+export function readSettings(
+  settings: Readonly<Record<string, unknown>>,
+  integration: string,
+): ServerSettings {
   const parsed = settingsSchema.safeParse(settings);
   if (!parsed.success) {
     const fields = [
@@ -30,7 +36,7 @@ export function readSettings(settings: Readonly<Record<string, unknown>>): Serve
     ];
     throw new McpToolsError(
       "bad-config",
-      `Check the tool-mcp-http settings: ${fields.join(", ")}.`,
+      `Check the ${integration} settings: ${fields.join(", ")}.`,
     );
   }
   return parsed.data;
