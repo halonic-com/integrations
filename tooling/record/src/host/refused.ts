@@ -10,6 +10,7 @@ export type RefusalCode =
   | "placement-not-in-sheet"
   | "secret-not-allowed-for-host"
   | "secret-over-plain-http"
+  | "setting-outside-class"
   | "secret-not-configured"
   | "too-many-redirects"
   | "not-supported";

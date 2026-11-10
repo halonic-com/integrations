@@ -2,14 +2,19 @@
 // `@halonicjs/integration-kit` is published and record through its
 // `createIntegrationHost`.
 //
-// Mirrors halonic-com/halonic at 25b35b5: `allowedUrl` and `hostIn` from
+// Mirrors halonic-com/halonic at dc8e2b1: `allowedUrl` and `hostIn` from
 // `packages/adapters/integration-kit/src/policy.ts`, `isLoopback` and
-// `isLocalAddress` from `.../local-address.ts`, and `integrationPolicy` from
-// `packages/core/format/src/kinds/integration/policy.ts`, which may read the
-// URL with `URL` here. Change the rules there first, then copy them.
+// `isLocalAddress` from `.../local-address.ts`, and `integrationPolicy` and
+// `addressClassOf` from `packages/core/format/src/kinds/integration/policy.ts`,
+// which may read the URL with `URL` here. Change the rules there first, then copy them.
 
 import type { RecordValues } from "../command/record-values.ts";
-import type { DeclaredPlacement, RecordingSheet, SheetHost } from "../command/sheet.ts";
+import type {
+  AddressClass,
+  DeclaredPlacement,
+  RecordingSheet,
+  SheetSecretHost,
+} from "../command/sheet.ts";
 import { HostRefused } from "./refused.ts";
 
 /** What one integration may do: the kit's `IntegrationPolicy`, without tokens. */
@@ -30,23 +35,25 @@ export interface DeclaredSecret {
 
 /**
  * Turns the sheet and the settings into the policy the host enforces. A
- * `{ fromSetting }` host becomes the host of the URL in that setting. Plain
- * `http` is allowed only to this machine or a private network, and a
- * required secret only to this machine.
+ * `{ fromSetting }` host becomes the host of the URL in that setting, which
+ * must be in the class the sheet declares for it. Plain `http` is allowed
+ * only to this machine or a private network, and a required secret only to
+ * this machine.
  *
- * @throws HostRefused when a setting isn't a URL the kit would accept. The message names the setting, never its value.
+ * @throws HostRefused when a setting isn't a URL the kit would accept, or is outside its class. The message names the setting, never its value.
  */
 export function resolvePolicy(sheet: RecordingSheet, values: RecordValues): IntegrationPolicy {
+  const classes = settingClasses(sheet);
   const hosts: string[] = [];
   const localHosts: string[] = [];
   for (const host of sheet.hosts) {
-    const found = resolveHost(sheet, host, values);
+    const found = resolveHost(sheet, host, classes, values);
     (found.plain ? localHosts : hosts).push(found.host);
   }
   const secrets: Record<string, DeclaredSecret> = {};
   for (const [name, secret] of Object.entries(sheet.secrets)) {
     const secretHosts = secret.hosts.map((host) => {
-      const found = resolveHost(sheet, host, values);
+      const found = resolveHost(sheet, host, classes, values);
       if (found.plain && !secret.optional && !isLoopback(found.hostname)) {
         throw new HostRefused(
           "secret-over-plain-http",
@@ -71,7 +78,23 @@ interface FoundHost {
   readonly plain: boolean;
 }
 
-function resolveHost(sheet: RecordingSheet, host: SheetHost, values: RecordValues): FoundHost {
+/** The class the sheet declares for each setting a `{ fromSetting }` host reads. */
+function settingClasses(sheet: RecordingSheet): ReadonlyMap<string, AddressClass> {
+  const classes = new Map<string, AddressClass>();
+  for (const host of sheet.hosts) {
+    if (typeof host !== "string" && !classes.has(host.fromSetting)) {
+      classes.set(host.fromSetting, host.class);
+    }
+  }
+  return classes;
+}
+
+function resolveHost(
+  sheet: RecordingSheet,
+  host: SheetSecretHost,
+  classes: ReadonlyMap<string, AddressClass>,
+  values: RecordValues,
+): FoundHost {
   if (typeof host === "string") {
     return { host, hostname: host, plain: false };
   }
@@ -95,7 +118,47 @@ function resolveHost(sheet: RecordingSheet, host: SheetHost, values: RecordValue
       `${sheet.id}: the setting "${setting}" may use plain http only to this machine or a private network address; use https`,
     );
   }
+  // The sheet reader refuses a secret's setting that `hosts` leaves out.
+  const declared = classes.get(setting);
+  if (declared === undefined || addressClassOf(url.hostname) !== declared) {
+    throw new HostRefused(
+      "setting-outside-class",
+      `${sheet.id}: the setting "${setting}" must hold ${classWords(declared)}`,
+    );
+  }
   return { host: url.host, hostname: url.hostname, plain };
+}
+
+/**
+ * The class a URL's host is in, read from the literal text: a name can
+ * resolve anywhere, so only `localhost` and IP addresses count as this
+ * computer or the home network, and an IP address never counts as public.
+ * Undefined for an address in no class, such as link-local `169.254.0.0/16`.
+ */
+function addressClassOf(hostname: string): AddressClass | undefined {
+  if (isLoopback(hostname)) {
+    return "loopback";
+  }
+  if (isLocalAddress(hostname)) {
+    return "private";
+  }
+  const host = hostname.toLowerCase();
+  const literal = host.startsWith("[") || ipv4(host) !== undefined;
+  return literal || host.endsWith(".localhost") ? undefined : "public";
+}
+
+/** What a class allows, for a message. */
+function classWords(declared: AddressClass | undefined): string {
+  switch (declared) {
+    case "loopback":
+      return "a URL on this machine (localhost, 127.0.0.0/8 or [::1])";
+    case "private":
+      return "a URL with a private network address (10/8, 172.16/12, 192.168/16 or fc00::/7)";
+    case "public":
+      return "an https URL with a public host name";
+    case undefined:
+      return "a URL for a host in the sheet's hosts";
+  }
 }
 
 function unique(items: readonly string[]): string[] {

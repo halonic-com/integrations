@@ -4,9 +4,10 @@ kit: 1 # the version of the Integration port it was built against
 provides: [connector]
 
 # The one MCP server the workspace chooses: the host of the `url` setting,
-# and nothing else.
+# and nothing else. It must be a public host name, over https.
 hosts:
   - fromSetting: url
+    class: public
 
 secrets:
   mcp-server-key:

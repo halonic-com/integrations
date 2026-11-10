@@ -20,11 +20,22 @@ secrets:
 const serverSheet = readRecordingSheet(`id: tool-example-server
 hosts:
   - fromSetting: url
+    class: public
 secrets:
   server-key:
     hosts: [{ fromSetting: url }]
     as: bearer
     optional: true
+`);
+
+const localServerSheet = readRecordingSheet(`id: tool-example-local-server
+hosts:
+  - fromSetting: url
+    class: loopback
+secrets:
+  server-key:
+    hosts: [{ fromSetting: url }]
+    as: bearer
 `);
 
 /** Answers with `answers` in turn, the last one over and over, and keeps what it was sent. */
@@ -156,16 +167,21 @@ describe("createRecordingHost", () => {
     });
   });
 
-  it("allows plain http only to a server on this machine or a private network", async () => {
+  it("allows plain http to a loopback server, with its key", async () => {
+    const service = fakeTransport(ok);
     const local = createRecordingHost(
-      serverSheet,
-      values({}, { url: "http://localhost:8080/mcp" }),
-      fakeTransport(ok).transport,
+      localServerSheet,
+      values({ "server-key": FAKE.plainKey }, { url: "http://localhost:8080/mcp" }),
+      service.transport,
     );
-    await expect(local.host.http.fetch("http://localhost:8080/mcp")).resolves.toBeInstanceOf(
-      Response,
-    );
+    await local.host.http.fetch("http://localhost:8080/mcp", {
+      auth: { secret: "server-key", as: "bearer" },
+    });
 
+    expect(service.sent[0]?.headers.get("authorization")).toBe(`Bearer ${FAKE.plainKey}`);
+  });
+
+  it("refuses plain http to a public host name", () => {
     expect(() =>
       createRecordingHost(
         serverSheet,
@@ -174,6 +190,24 @@ describe("createRecordingHost", () => {
       ),
     ).toThrow(HostRefused);
   });
+
+  it.each([
+    ["a public sheet", "this machine", "public", "http://localhost:8080/mcp"],
+    ["a public sheet", "a private address", "public", "https://192.168.1.20/mcp"],
+    ["a public sheet", "a link-local address", "public", "https://169.254.169.254/"],
+    ["a loopback sheet", "a public host", "loopback", "https://mcp.example.com/mcp"],
+    ["a loopback sheet", "a private address", "loopback", "http://10.0.0.5:8080/mcp"],
+  ])(
+    "refuses, for %s, a setting with %s, as the kit does",
+    (_sheet, _address, addressClass, url) => {
+      const sheet = addressClass === "public" ? serverSheet : localServerSheet;
+      const create = () =>
+        createRecordingHost(sheet, values({}, { url }), fakeTransport(ok).transport);
+
+      expect(create).toThrow(expect.objectContaining({ code: "setting-outside-class" }));
+      expect(create).not.toThrow(url);
+    },
+  );
 
   it("names the setting it can't read, never its value", () => {
     const create = () =>
