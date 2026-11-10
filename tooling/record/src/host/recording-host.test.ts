@@ -4,7 +4,6 @@ import { readRecordingSheet } from "../command/sheet.ts";
 import type { HttpTransport } from "../recording/recording-transport.ts";
 import { FAKE } from "../test/fakes.ts";
 import { createRecordingHost } from "./recording-host.ts";
-import { HostRefused } from "./refused.ts";
 
 const modelSheet = readRecordingSheet(`id: model-example
 hosts:
@@ -37,6 +36,20 @@ secrets:
     hosts: [{ fromSetting: url }]
     as: bearer
 `);
+
+/** A server on the home network, with a key it may or may not need. */
+function privateServerSheet(optional: boolean) {
+  return readRecordingSheet(`id: tool-example-private-server
+hosts:
+  - fromSetting: url
+    class: private
+secrets:
+  server-key:
+    hosts: [{ fromSetting: url }]
+    as: bearer
+    optional: ${String(optional)}
+`);
+}
 
 /** Answers with `answers` in turn, the last one over and over, and keeps what it was sent. */
 function fakeTransport(...answers: (() => Response)[]) {
@@ -181,15 +194,28 @@ describe("createRecordingHost", () => {
     expect(service.sent[0]?.headers.get("authorization")).toBe(`Bearer ${FAKE.plainKey}`);
   });
 
-  it("refuses plain http to a public host name", () => {
+  it("refuses plain http to a public host name, as the kit does", () => {
     expect(() =>
       createRecordingHost(
         serverSheet,
         values({}, { url: "http://mcp.example.com/mcp" }),
         fakeTransport(ok).transport,
       ),
-    ).toThrow(HostRefused);
+    ).toThrow(expect.objectContaining({ code: "plain-http-not-local" }));
   });
+
+  it.each([false, true])(
+    "refuses a secret over plain http to a private address, optional: %s, as the kit does",
+    (optional) => {
+      expect(() =>
+        createRecordingHost(
+          privateServerSheet(optional),
+          values({}, { url: "http://192.168.1.20:8080/mcp" }),
+          fakeTransport(ok).transport,
+        ),
+      ).toThrow(expect.objectContaining({ code: "secret-over-plain-http" }));
+    },
+  );
 
   it.each([
     ["a public sheet", "this machine", "public", "http://localhost:8080/mcp"],
