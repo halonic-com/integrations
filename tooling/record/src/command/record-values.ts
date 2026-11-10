@@ -1,4 +1,4 @@
-import type { RecordingSheet, SheetHost } from "./sheet.ts";
+import type { RecordingSheet } from "./sheet.ts";
 
 /**
  * The key and setting values for one recording, read from environment
@@ -84,12 +84,12 @@ export function knownValues(values: RecordValues): string[] {
   return [...values.secrets.values(), ...Object.values(values.settings)];
 }
 
-/** The settings the sheet's hosts read, each once, in the order the sheet names them. */
+/**
+ * The settings the sheet's hosts read, each once, in the order the sheet
+ * names them. A secret's `{ fromSetting }` host is always in `hosts` too:
+ * the sheet reader refuses one that isn't.
+ */
 function settingNames(sheet: RecordingSheet): string[] {
-  const hosts: SheetHost[] = [
-    ...sheet.hosts,
-    ...Object.values(sheet.secrets).flatMap((secret) => secret.hosts),
-  ];
-  const names = hosts.flatMap((host) => (typeof host === "string" ? [] : [host.fromSetting]));
+  const names = sheet.hosts.flatMap((host) => (typeof host === "string" ? [] : [host.fromSetting]));
   return [...new Set(names)];
 }

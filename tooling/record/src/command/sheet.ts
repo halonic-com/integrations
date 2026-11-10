@@ -22,12 +22,32 @@ export interface RecordingSheet {
   readonly policy: ScrubPolicy;
 }
 
-/** A host name, or the host of the URL a setting holds (`{ fromSetting: url }`). */
-export type SheetHost = string | { readonly fromSetting: string };
+/**
+ * Where the host of a `{ fromSetting }` URL may be: the kit's `AddressClass`.
+ * - `loopback`: only on this computer (`localhost`, `127.0.0.0/8`, `::1`);
+ * - `private`: only on the home network, as a private IP address;
+ * - `public`: any public host name, over `https`.
+ */
+export const ADDRESS_CLASSES = ["loopback", "private", "public"] as const;
+
+/** One of {@link ADDRESS_CLASSES}. */
+export type AddressClass = (typeof ADDRESS_CLASSES)[number];
+
+/**
+ * A host name, or the host of the URL a setting holds with the class it must
+ * be in (`{ fromSetting: url, class: public }`).
+ */
+export type SheetHost = string | { readonly fromSetting: string; readonly class: AddressClass };
+
+/**
+ * A host a secret may go to: a host name, or a `{ fromSetting }` host from
+ * `hosts`, named by its setting. The class stays with the one in `hosts`.
+ */
+export type SheetSecretHost = string | { readonly fromSetting: string };
 
 /** One secret in the sheet. */
 export interface SheetSecret {
-  readonly hosts: readonly SheetHost[];
+  readonly hosts: readonly SheetSecretHost[];
   /** Sent only when it is set; otherwise the request goes without it. */
   readonly optional: boolean;
   readonly placement: DeclaredPlacement;
@@ -46,11 +66,16 @@ export class SheetError extends Error {
   override readonly name = "SheetError";
 }
 
-const hostSchema = z.union([z.string(), z.strictObject({ fromSetting: z.string() })]);
+const hostSchema = z.union([
+  z.string(),
+  z.strictObject({ fromSetting: z.string(), class: z.enum(ADDRESS_CLASSES) }),
+]);
+
+const secretHostSchema = z.union([z.string(), z.strictObject({ fromSetting: z.string() })]);
 
 /** Scalars are text: the reader doesn't turn `true` into a boolean. */
 const secretSchema = z.object({
-  hosts: z.array(hostSchema).min(1),
+  hosts: z.array(secretHostSchema).min(1),
   as: z.string(),
   header: z.string().optional(),
   prefix: z.string().optional(),
@@ -71,7 +96,8 @@ const recordingSchema = z.strictObject({
  * Reads the sheet's `id`, `hosts`, `secrets` and `recording`. Other fields
  * aren't read, so a sheet may use more YAML in them than the reader covers.
  *
- * @throws SheetError when a field is missing, malformed or uses a placement this recorder doesn't know
+ * @throws SheetError when a field is missing, malformed or uses a placement this recorder doesn't know,
+ *   or a secret goes to a `{ fromSetting }` host that `hosts` doesn't list with its class
  */
 export function readRecordingSheet(text: string): RecordingSheet {
   const fields = readFields(text);
@@ -84,7 +110,17 @@ export function readRecordingSheet(text: string): RecordingSheet {
     fields.get("secrets") ?? undefined,
     "secrets",
   );
+  const settings = new Set(
+    hosts.flatMap((host) => (typeof host === "string" ? [] : [host.fromSetting])),
+  );
   for (const [name, secret] of Object.entries(rawSecrets ?? {})) {
+    for (const host of secret.hosts) {
+      if (typeof host !== "string" && !settings.has(host.fromSetting)) {
+        throw new SheetError(
+          `integration.yaml: the secret "${name}" goes to the setting "${host.fromSetting}", which "hosts" doesn't list`,
+        );
+      }
+    }
     secrets[name] = {
       hosts: secret.hosts,
       optional: secret.optional === "true",

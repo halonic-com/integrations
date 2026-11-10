@@ -28,6 +28,7 @@ recording:
 const serverSheet = `id: tool-example-server
 hosts:
   - fromSetting: url
+    class: public
 secrets:
   server-key:
     purpose: >-
@@ -65,7 +66,7 @@ describe("readRecordingSheet", () => {
   it("reads hosts from a setting and optional bearer secrets", () => {
     const sheet = readRecordingSheet(serverSheet);
 
-    expect(sheet.hosts).toEqual([{ fromSetting: "url" }]);
+    expect(sheet.hosts).toEqual([{ fromSetting: "url", class: "public" }]);
     expect(sheet.secrets["server-key"]).toEqual({
       hosts: [{ fromSetting: "url" }],
       optional: true,
@@ -78,6 +79,39 @@ describe("readRecordingSheet", () => {
       streamedJson: [],
       allowContentTypes: [],
     });
+  });
+
+  it.each(["loopback", "private", "public"])("reads the class %s", (addressClass) => {
+    const text = serverSheet.replace("class: public", `class: ${addressClass}`);
+    expect(readRecordingSheet(text).hosts).toEqual([{ fromSetting: "url", class: addressClass }]);
+  });
+
+  it("refuses a { fromSetting } host without a class, as the kit does", () => {
+    const text = serverSheet.replace("\n    class: public", "");
+    expect(() => readRecordingSheet(text)).toThrow('"hosts.0" is missing or not what');
+  });
+
+  it("refuses a class the kit doesn't know", () => {
+    const text = serverSheet.replace("class: public", "class: anywhere");
+    expect(() => readRecordingSheet(text)).toThrow('"hosts.0" is missing or not what');
+  });
+
+  it("refuses a class on a secret's host: it stays with the one in hosts", () => {
+    const text = serverSheet.replace(
+      "      - fromSetting: url\n    as:",
+      "      - fromSetting: url\n        class: public\n    as:",
+    );
+    expect(() => readRecordingSheet(text)).toThrow('"secrets.server-key.hosts.0" is missing');
+  });
+
+  it("refuses a secret that goes to a setting hosts doesn't list", () => {
+    const text = serverSheet.replace(
+      "      - fromSetting: url\n    as:",
+      "      - fromSetting: other\n    as:",
+    );
+    expect(() => readRecordingSheet(text)).toThrow(
+      'the secret "server-key" goes to the setting "other", which "hosts" doesn\'t list',
+    );
   });
 
   it("keeps a header prefix, with the space the quotes keep", () => {

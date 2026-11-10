@@ -14,6 +14,7 @@ secrets:
 const serverSheet = readRecordingSheet(`id: tool-example-server
 hosts:
   - fromSetting: url
+    class: public
 secrets:
   server-key:
     hosts: [{ fromSetting: url }]
