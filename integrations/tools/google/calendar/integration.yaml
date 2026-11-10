@@ -92,6 +92,7 @@ tools:
       location: Where it takes place.
       description: Notes for the event, as plain text.
     risk: send # everyone the calendar is shared with sees the new event
+    noun: { one: invite, many: invites }
     untrusted: false # returns the id, the values it was given and a link
   - name: calendar_update_event
     description: >-
@@ -109,6 +110,7 @@ tools:
       location: The new location; an empty text removes it.
       description: New notes as plain text; an empty text removes them.
     risk: send # guests and people the calendar is shared with see the change
+    noun: { one: event update, many: event updates }
     untrusted: true # returns the event's other fields, which someone else may have written
   - name: calendar_delete_event
     description: >-
@@ -119,6 +121,7 @@ tools:
       eventId: The event's id, from calendar_list_events.
       calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
     risk: send # an event the account organises disappears for its guests too
+    noun: { one: cancellation, many: cancellations }
     untrusted: false # returns only the id it was given
 
 needs: []
