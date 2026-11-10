@@ -68,7 +68,8 @@ the turn is rebuilt from `content` and `toolCalls`.
   Fable 5 and 5.1 and Sonnet 5 refuse any value, and Sonnet 5.5 refuses
   values other than the default. A workflow that sets them for one of these
   models gets `bad-arguments`. Haiku 4.5, Opus 4.6 and Sonnet 4.6 still
-  accept them.
+  accept them, but only without `reasoningEffort`: once thinking is on,
+  Anthropic refuses any `temperature` other than 1.
 - **Thinking:** without `reasoningEffort`, nothing about thinking is
   sent and each model keeps its default: current models (Opus 5 and later,
   Sonnet 5 and 5.5, Fable 5 and later) think adaptively, while Opus 4.6 to
@@ -88,11 +89,12 @@ the turn is rebuilt from `content` and `toolCalls`.
   `not-signed-in`, `not-allowed`, `not-found`, `rate-limited`,
   `unavailable`, `unexpected-response`). Anthropic's own error text is never
   passed on; at most its error type, such as `(overloaded_error)`.
-- **Recordings** in `recordings/` were written by hand, not recorded:
-  `pnpm record` and an Anthropic test account weren't available yet. They
-  follow Anthropic's documented response shapes in the recorder's format,
-  scrubbed as the recorder would scrub them. Replace them with real
-  recordings once both are available. A streamed tool call has no
+- **Recordings:** `tool-loop-thinking` and `effort-adaptive` were
+  recorded live with `pnpm record`. The others in `recordings/` were
+  written by hand, before `pnpm record` and an Anthropic test account were
+  available. They follow Anthropic's documented response shapes in the
+  recorder's format, scrubbed as the recorder would scrub them. Replace
+  them with real recordings over time. A streamed tool call has no
   recording yet: the recorder scrubs each `partial_json` piece on its own,
   so the pieces no longer join to JSON on replay. Its mapping is tested
   with hand-written events in `from-stream.test.ts` until the recorder
