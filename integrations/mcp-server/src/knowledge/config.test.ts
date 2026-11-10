@@ -3,13 +3,15 @@ import { readSettings, readSourceConfig } from "./config.ts";
 
 describe("readSettings", () => {
   it("reads the url", () => {
-    expect(readSettings({ url: "https://docs.example.com/mcp" })).toEqual({
+    expect(readSettings({ url: "https://docs.example.com/mcp" }, "knowledge-mcp")).toEqual({
       url: "https://docs.example.com/mcp",
     });
   });
 
   it("ignores the old sendKey setting: the kit decides by whether the key is set up", () => {
-    expect(readSettings({ url: "http://localhost:8080/mcp", sendKey: false })).toEqual({
+    expect(
+      readSettings({ url: "http://localhost:8080/mcp", sendKey: false }, "knowledge-mcp"),
+    ).toEqual({
       url: "http://localhost:8080/mcp",
     });
   });
@@ -17,7 +19,7 @@ describe("readSettings", () => {
   it.each([{}, { url: "docs.example.com" }, { url: "ftp://docs.example.com" }])(
     "refuses a missing or wrong url, naming it: %j",
     (settings) => {
-      expect(() => readSettings(settings)).toThrow(
+      expect(() => readSettings(settings, "knowledge-mcp")).toThrow(
         expect.objectContaining({
           code: "bad-config",
           message: "Check the knowledge-mcp settings: url.",

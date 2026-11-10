@@ -1,13 +1,11 @@
 import { McpClient, type McpHost, StreamableHttpTransport } from "@halonicjs/integration-mcp";
 import type { SecretPlacement } from "@halonicjs/integration-shared";
+import { clientInfoOf, type IntegrationEntry } from "../entry.ts";
 import { readSettings } from "./config.ts";
 import { KnowledgeMcpError } from "./errors.ts";
 
 /** The secret the sheet declares; the kit adds its value, which we never see. */
 const serverKey: SecretPlacement = { secret: "mcp-server-key", as: "bearer" };
-
-/** How we introduce ourselves to the server. */
-const clientInfo = { name: "halonic-knowledge-mcp", version: "0.1.0" };
 
 /**
  * The connection's one MCP server, shared by all its knowledge sources.
@@ -21,11 +19,15 @@ const clientInfo = { name: "halonic-knowledge-mcp", version: "0.1.0" };
 export function connectToServer(
   host: McpHost,
   settings: Readonly<Record<string, unknown>>,
+  entry: IntegrationEntry,
 ): McpClient {
   return new McpClient({
-    clientInfo,
+    clientInfo: clientInfoOf(entry),
     openTransport: () =>
-      new StreamableHttpTransport(host, { url: readSettings(settings).url, auth: serverKey }),
+      new StreamableHttpTransport(host, {
+        url: readSettings(settings, entry.name).url,
+        auth: serverKey,
+      }),
     checkAgreement: (agreement) => {
       if (!agreement.offersTools) {
         throw new KnowledgeMcpError("not-found", "The MCP server offers no tools to search with.");
