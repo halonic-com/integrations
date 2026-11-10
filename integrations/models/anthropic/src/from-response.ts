@@ -26,6 +26,17 @@ const otherBlockSchema = z.looseObject({
 /** Absent, or `null` on older models, when the prompt cache wasn't used. */
 const cacheTokensSchema = z.int().nonnegative().nullish();
 
+/**
+ * The cache writes split by how long the cache entry lives. Absent on older
+ * models and in older recordings.
+ */
+export const cacheCreationSchema = z
+  .object({
+    ephemeral_5m_input_tokens: cacheTokensSchema,
+    ephemeral_1h_input_tokens: cacheTokensSchema,
+  })
+  .nullish();
+
 /** Only the fields we read. Anthropic adds fields over time; they pass through unchecked. */
 export const anthropicResponseSchema = z.object({
   content: z.array(z.union([textBlockSchema, toolUseBlockSchema, otherBlockSchema])),
@@ -35,6 +46,7 @@ export const anthropicResponseSchema = z.object({
     output_tokens: z.int().nonnegative(),
     cache_creation_input_tokens: cacheTokensSchema,
     cache_read_input_tokens: cacheTokensSchema,
+    cache_creation: cacheCreationSchema,
   }),
 });
 export type AnthropicResponse = z.infer<typeof anthropicResponseSchema>;
@@ -72,20 +84,43 @@ export function fromAnthropicResponse(body: AnthropicResponse): ChatResponse {
 }
 
 /**
- * `input_tokens` leaves out the tokens read from or written to the prompt
- * cache, so they are added back: `inputTokens` counts every input token,
- * as OpenAI's `prompt_tokens` does. `Usage` has no field for the cache
- * split yet, so spend prices them all as plain input.
+ * `input_tokens` already leaves out the tokens read from or written to the
+ * prompt cache, which is what `inputTokens` means too. The cache tokens go
+ * in their own counts, because spend prices each at its own price
+ * (decision HAL-2688-01 and -02 in halonic-com/halonic). A count that is 0
+ * is left out.
  * https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
  */
 function toUsage(usage: AnthropicResponse["usage"]): Usage {
+  const writes = cacheWrites(usage);
   return {
-    inputTokens:
-      usage.input_tokens +
-      (usage.cache_creation_input_tokens ?? 0) +
-      (usage.cache_read_input_tokens ?? 0),
+    inputTokens: usage.input_tokens,
     outputTokens: usage.output_tokens,
+    ...countIfAny("cacheReadTokens", usage.cache_read_input_tokens ?? 0),
+    ...countIfAny("cacheWriteTokens", writes.short),
+    ...countIfAny("cacheWrite1hTokens", writes.oneHour),
   };
+}
+
+/**
+ * Splits the cache writes into 5-minute and 1-hour writes, which cost
+ * different prices. Without the `cache_creation` split, every write counts
+ * as a 5-minute write: that is the default lifetime, and the cheaper price
+ * when the model has a 1-hour price too.
+ */
+function cacheWrites(usage: AnthropicResponse["usage"]): { short: number; oneHour: number } {
+  const total = usage.cache_creation_input_tokens ?? 0;
+  if (usage.cache_creation === undefined || usage.cache_creation === null) {
+    return { short: total, oneHour: 0 };
+  }
+  return {
+    short: usage.cache_creation.ephemeral_5m_input_tokens ?? 0,
+    oneHour: usage.cache_creation.ephemeral_1h_input_tokens ?? 0,
+  };
+}
+
+function countIfAny<Field extends keyof Usage>(field: Field, count: number): Partial<Usage> {
+  return count > 0 ? { [field]: count } : {};
 }
 
 function toToolCall(block: z.infer<typeof toolUseBlockSchema>): ToolCall {

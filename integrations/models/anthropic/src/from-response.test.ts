@@ -44,18 +44,46 @@ describe("fromAnthropicResponse", () => {
     expect(response.toolCalls).toEqual([]);
   });
 
-  it("counts prompt cache reads and writes as input tokens", () => {
-    const body = anthropicResponseSchema.parse({
-      content: [],
-      stop_reason: "end_turn",
-      usage: {
-        input_tokens: 10,
-        output_tokens: 3,
-        cache_creation_input_tokens: 100,
-        cache_read_input_tokens: 1000,
-      },
+  function usageOf(usage: Record<string, unknown>) {
+    const body = anthropicResponseSchema.parse({ content: [], stop_reason: "end_turn", usage });
+    return fromAnthropicResponse(body).usage;
+  }
+
+  it("counts prompt cache reads and writes apart from the input tokens", () => {
+    const usage = usageOf({
+      input_tokens: 10,
+      output_tokens: 3,
+      cache_creation_input_tokens: 300,
+      cache_read_input_tokens: 1000,
+      cache_creation: { ephemeral_5m_input_tokens: 100, ephemeral_1h_input_tokens: 200 },
     });
-    expect(fromAnthropicResponse(body).usage).toEqual({ inputTokens: 1110, outputTokens: 3 });
+    expect(usage).toEqual({
+      inputTokens: 10,
+      outputTokens: 3,
+      cacheReadTokens: 1000,
+      cacheWriteTokens: 100,
+      cacheWrite1hTokens: 200,
+    });
+  });
+
+  it("counts every cache write as a 5-minute write without the cache_creation split", () => {
+    const usage = usageOf({
+      input_tokens: 10,
+      output_tokens: 3,
+      cache_creation_input_tokens: 300,
+    });
+    expect(usage).toEqual({ inputTokens: 10, outputTokens: 3, cacheWriteTokens: 300 });
+  });
+
+  it("leaves out cache counts that are 0 or null", () => {
+    const usage = usageOf({
+      input_tokens: 10,
+      output_tokens: 3,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: null,
+      cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 0 },
+    });
+    expect(usage).toEqual({ inputTokens: 10, outputTokens: 3 });
   });
 
   it.each([

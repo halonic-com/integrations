@@ -18,10 +18,26 @@ import type { ByteStream } from "@halonicjs/integration-shared";
  * DOM types, and the kit will bring its own.
  */
 
-/** Tokens one model call used. From `@halonicjs/events`. */
+/**
+ * Tokens one model call used. From `@halonicjs/events`, with the prompt
+ * cache counts added in halonic-com/halonic#789 and #859.
+ */
 export interface Usage {
+  /** Input tokens the cache didn't serve or store. */
   inputTokens: number;
   outputTokens: number;
+  /** Input tokens read from the provider's prompt cache. Absent when there were none. */
+  cacheReadTokens?: number;
+  /**
+   * Input tokens written to the provider's prompt cache for its short
+   * lifetime (Anthropic: 5 minutes). Absent when there were none.
+   */
+  cacheWriteTokens?: number;
+  /**
+   * Input tokens written to the provider's prompt cache for 1 hour, which
+   * costs more than a short write. Absent when there were none.
+   */
+  cacheWrite1hTokens?: number;
 }
 
 /** A tool call the model asked for. */

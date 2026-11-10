@@ -1,7 +1,11 @@
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { z } from "zod";
 import { errorForStreamEvent, unexpectedResponse } from "./errors.ts";
-import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
+import {
+  anthropicResponseSchema,
+  cacheCreationSchema,
+  fromAnthropicResponse,
+} from "./from-response.ts";
 import type { ChatStreamEvent } from "./kit.ts";
 
 /*
@@ -27,6 +31,7 @@ const usageSchema = z.object({
   output_tokens: z.int().nonnegative().optional(),
   cache_creation_input_tokens: z.int().nonnegative().nullish(),
   cache_read_input_tokens: z.int().nonnegative().nullish(),
+  cache_creation: cacheCreationSchema,
 });
 type StreamedUsage = z.infer<typeof usageSchema>;
 
