@@ -2,6 +2,7 @@ import { fakeResponse, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerText from "../recordings/answer-text.json" with { type: "json" };
+import effortAdaptive from "../recordings/effort-adaptive.json" with { type: "json" };
 import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import overloaded from "../recordings/overloaded.json" with { type: "json" };
 import streamOverloaded from "../recordings/stream-overloaded.json" with { type: "json" };
@@ -149,6 +150,36 @@ describe("chat", () => {
     const followUp = JSON.parse(String(recording.sent[1]?.init.body));
     expect(followUp.messages[1].content).toEqual(toolTurn.replay.data);
     expect(finalTurn.finishReason).toBe("stop");
+  });
+
+  /** HAL-2570, recorded live on Sonnet 4.6, which doesn't think unless asked. */
+  it("asks for effort and adaptive thinking, and Anthropic then refuses a temperature", async () => {
+    const recording = replay(effortAdaptive, { policy });
+    const llm = provider(recording.http);
+    const request: ChatRequest = {
+      model: "claude-sonnet-4-6",
+      messages: [
+        { role: "system", content: "Answer with the number only." },
+        { role: "user", content: "How many three-digit numbers add up to 12?" },
+      ],
+      params: { maxTokens: 4096, reasoningEffort: "high" },
+    };
+
+    const answer = await llm.chat(request);
+    expect(recording.sent[0]?.body).toMatchObject({
+      output_config: { effort: "high" },
+      thinking: { type: "adaptive" },
+    });
+    expect(answer.replay?.data).toContainEqual(expect.objectContaining({ type: "thinking" }));
+    expect(answer.finishReason).toBe("stop");
+
+    const refusal = await llm
+      .chat({ ...request, params: { ...request.params, temperature: 0.5 } })
+      .catch((caught) => caught);
+    recording.assertAllUsed();
+    expect(refusal).toBeInstanceOf(AnthropicError);
+    expect(refusal).toMatchObject({ code: "bad-arguments" });
+    expect(refusal.message).not.toContain("temperature");
   });
 
   it("passes the signal on", async () => {

@@ -1,6 +1,7 @@
-import { anthropic } from "../src/index.ts";
+import { AnthropicError, anthropic } from "../src/index.ts";
 import type {
   ChatMessage,
+  ChatRequest,
   IntegrationConnection,
   LlmProvider,
   ProviderConfig,
@@ -112,6 +113,58 @@ export const scenarios: readonly Scenario[] = [
       });
       if (finalTurn.finishReason !== "stop") {
         throw new Error(`The follow-up turn ended with "${finalTurn.finishReason}", not "stop".`);
+      }
+    },
+  },
+  {
+    /**
+     * HAL-2570: `reasoningEffort` on Sonnet 4.6, a model that doesn't think
+     * unless asked. The first call checks that Anthropic takes
+     * `output_config.effort` with adaptive thinking, and that the model
+     * thinks. The second adds `temperature`, which Anthropic's docs say a
+     * thinking request can't change, and has to be refused as
+     * `bad-arguments`, as the README says.
+     */
+    name: "effort-adaptive",
+    unusedUserContent: [
+      "request.body.messages[*].content[*].content",
+      "request.body.messages[*].content[*].input.*",
+      "request.body.messages[*].content[*].thinking",
+      "request.body.tools[*].description",
+      "response.body.content[*].input.*",
+      ...streamedContent,
+    ],
+    async run(connection) {
+      const provider = modelProvider(connection);
+      const request: ChatRequest = {
+        model: "claude-sonnet-4-6",
+        messages: [
+          { role: "system", content: "Answer with the number only." },
+          {
+            role: "user",
+            content:
+              "How many three-digit numbers have digits that add up to 12 " +
+              "and contain no digit twice?",
+          },
+        ],
+        params: { maxTokens: 4096, reasoningEffort: "high" },
+      };
+
+      const answer = await provider.chat(request);
+      if (!hasThinkingBlock(answer.replay?.data)) {
+        throw new Error("The model didn't think, so this recording wouldn't test effort.");
+      }
+
+      const withTemperature = { ...request, params: { ...request.params, temperature: 0.5 } };
+      const refusal = await provider.chat(withTemperature).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      if (refusal === undefined) {
+        throw new Error("Sonnet 4.6 took a temperature while thinking. Update the README.");
+      }
+      if (!(refusal instanceof AnthropicError && refusal.code === "bad-arguments")) {
+        throw refusal;
       }
     },
   },

@@ -1,0 +1,208 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_tokens": 4096,
+            "messages": [
+              {
+                "content": [
+                  {
+                    "text": "<scrubbed:content>",
+                    "type": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "model": "claude-sonnet-4-6",
+            "output_config": {
+              "effort": "high"
+            },
+            "system": "<scrubbed:content>",
+            "thinking": {
+              "type": "adaptive"
+            }
+          }
+        },
+        "headers": {
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "container": null,
+            "content": [
+              {
+                "signature": "scrubbed-secret-2",
+                "thinking": "<scrubbed:content>",
+                "type": "thinking"
+              },
+              {
+                "text": "<scrubbed:content>",
+                "type": "text"
+              }
+            ],
+            "diagnostics": null,
+            "id": "scrubbed-secret-1",
+            "model": "claude-sonnet-4-6",
+            "role": "assistant",
+            "stop_details": null,
+            "stop_reason": "end_turn",
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "cache_creation": {
+                "ephemeral_1h_input_tokens": 0,
+                "ephemeral_5m_input_tokens": 0
+              },
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 0,
+              "inference_geo": "global",
+              "input_tokens": 35,
+              "output_tokens": 1367,
+              "output_tokens_details": {
+                "thinking_tokens": 961
+              },
+              "service_tier": "standard",
+              "speed": "standard"
+            }
+          }
+        },
+        "headers": {
+          "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+          "content-type": "application/json",
+          "x-robots-tag": "none"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "max_tokens": 4096,
+            "messages": [
+              {
+                "content": [
+                  {
+                    "text": "<scrubbed:content>",
+                    "type": "text"
+                  }
+                ],
+                "role": "user"
+              }
+            ],
+            "model": "claude-sonnet-4-6",
+            "output_config": {
+              "effort": "high"
+            },
+            "system": "<scrubbed:content>",
+            "temperature": 0.5,
+            "thinking": {
+              "type": "adaptive"
+            }
+          }
+        },
+        "headers": {
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "x-api-key": "<scrubbed:secret>"
+        },
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "message": "`temperature` may only be set to 1 when thinking is enabled or in adaptive mode. Please consult our documentation at https://platform.claude.com/docs/en/build-with-claude/extended-thinking",
+              "type": "invalid_request_error"
+            },
+            "request_id": "scrubbed-secret-3",
+            "type": "error"
+          }
+        },
+        "headers": {
+          "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+          "content-type": "application/json",
+          "x-robots-tag": "none",
+          "x-should-retry": "false"
+        },
+        "status": 400
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "model-anthropic",
+  "scenario": "effort-adaptive",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.x-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.messages[0].content[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.body.system",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.content[0].thinking",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.content[0].signature",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.content[1].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.x-api-key",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.messages[0].content[0].text",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.body.system",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.request_id",
+      "rule": "random-token"
+    }
+  ]
+}
