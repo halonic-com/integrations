@@ -2,7 +2,7 @@
 // `@halonicjs/integration-kit` is published and record through its
 // `createIntegrationHost`.
 //
-// Mirrors halonic-com/halonic at dc8e2b1: `allowedUrl` and `hostIn` from
+// Mirrors halonic-com/halonic at dc8e2b1, with halonic#1099: `allowedUrl` and `hostIn` from
 // `packages/adapters/integration-kit/src/policy.ts`, `isLoopback` and
 // `isLocalAddress` from `.../local-address.ts`, and `integrationPolicy` and
 // `addressClassOf` from `packages/core/format/src/kinds/integration/policy.ts`,
@@ -37,8 +37,8 @@ export interface DeclaredSecret {
  * Turns the sheet and the settings into the policy the host enforces. A
  * `{ fromSetting }` host becomes the host of the URL in that setting, which
  * must be in the class the sheet declares for it. Plain `http` is allowed
- * only to this machine or a private network, and a required secret only to
- * this machine.
+ * only to this machine or a private network, and a secret only to this
+ * machine, even when it's optional.
  *
  * @throws HostRefused when a setting isn't a URL the kit would accept, or is outside its class. The message names the setting, never its value.
  */
@@ -54,7 +54,7 @@ export function resolvePolicy(sheet: RecordingSheet, values: RecordValues): Inte
   for (const [name, secret] of Object.entries(sheet.secrets)) {
     const secretHosts = secret.hosts.map((host) => {
       const found = resolveHost(sheet, host, classes, values);
-      if (found.plain && !secret.optional && !isLoopback(found.hostname)) {
+      if (found.plain && !isLoopback(found.hostname)) {
         throw new HostRefused(
           "secret-over-plain-http",
           `${sheet.id}: the secret "${name}" may go over plain http only to this machine`,
@@ -114,7 +114,7 @@ function resolveHost(
   const plain = url.protocol === "http:";
   if (plain && !isLocalAddress(url.hostname)) {
     throw new HostRefused(
-      "scheme-not-allowed",
+      "plain-http-not-local",
       `${sheet.id}: the setting "${setting}" may use plain http only to this machine or a private network address; use https`,
     );
   }

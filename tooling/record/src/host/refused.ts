@@ -1,10 +1,15 @@
 // Part of the stand-in host for `pnpm record`; see `policy.ts`. Mirrors
 // `IntegrationRefusedError` in halonic `packages/adapters/integration-kit/src/refused.ts`.
 
-/** The codes of the kit's refusals that the stand-in host can give. */
+/**
+ * The codes of the kit's refusals that the stand-in host can give, plus the
+ * codes halonic `integrationPolicy` gives for a setting it can't use
+ * (`plain-http-not-local`, `setting-outside-class`).
+ */
 export type RefusalCode =
   | "bad-url"
   | "scheme-not-allowed"
+  | "plain-http-not-local"
   | "host-not-allowed"
   | "secret-not-declared"
   | "placement-not-in-sheet"
