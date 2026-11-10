@@ -122,6 +122,7 @@ tools:
       to: Recipient addresses, such as "someone@example.com".
       body: Plain-text body.
     risk: send
+    noun: { one: email, many: emails }
     untrusted: false # returns only ids
 
 needs: []

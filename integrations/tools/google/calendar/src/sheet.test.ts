@@ -38,11 +38,17 @@ describe("integration.yaml", () => {
   });
 
   it.each(calendar.tools.map((tool, index) => [tool.name, tool, index] as const))(
-    "has %s's risk, untrusted and every description word for word",
+    "has %s's risk, untrusted, noun and every description word for word",
     (_name, tool, index) => {
       const block = toolBlocks[index] ?? "";
       expect(block).toMatch(new RegExp(`\\n {4}risk: ${tool.risk}\\b`));
       expect(block).toMatch(new RegExp(`\\n {4}untrusted: ${tool.untrusted}\\b`));
+      // A send tool says what it sends, so a run can say "Sent 1 email" (HAL-2836).
+      if (tool.risk === "send") {
+        expect(block).toMatch(
+          /\n {4}noun: \{ one: [a-z]+(?: [a-z]+)*, many: [a-z]+(?: [a-z]+)* \}\n/,
+        );
+      }
       const text = squeeze(block);
       expect(text).toContain(tool.description);
       const properties = (tool.parameters["properties"] ?? {}) as Record<

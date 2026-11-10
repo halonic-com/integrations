@@ -100,6 +100,7 @@ tools:
       folderId: Folder to create it in; people who can see that folder can see the file.
       convertTo: Turn the content into a Google Doc or Sheet.
     risk: send # folderId may be a folder other people can see
+    noun: { one: file, many: files }
     untrusted: false # returns the id, the name it was given, the type and a link
   - name: drive_update_file
     description: >-
@@ -111,6 +112,7 @@ tools:
       content: The new text, replacing all of the old.
       mimeType: Type of the content you pass (default text/plain).
     risk: send # the file may be shared with other people
+    noun: { one: file update, many: file updates }
     untrusted: true # returns the existing file's name, which someone else may have chosen
   - name: drive_create_folder
     description: >-
@@ -120,6 +122,7 @@ tools:
       name: The new folder's name.
       parentId: Folder to create it in; people who can see that folder can see the new one.
     risk: send # parentId may be a folder other people can see
+    noun: { one: folder, many: folders }
     untrusted: false # returns the id, the name it was given and a link
   - name: drive_move_file
     description: >-
@@ -131,6 +134,7 @@ tools:
       toFolderId: The folder to move it into.
       newName: A new name for the file.
     risk: send # moving into a shared folder changes who can see the file
+    noun: { one: file, many: files }
     untrusted: true # returns the existing file's name, which someone else may have chosen
 
 needs: []

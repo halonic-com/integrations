@@ -228,6 +228,7 @@ tools:
       to: Recipient addresses, such as "someone@example.com".
       body: Plain-text body.
     risk: send
+    noun: { one: email, many: emails } # a run says "Sent 1 email"
     untrusted: false # returns only ids
 
 # Capabilities beyond HTTP, such as starting a program. Most need none.
@@ -305,7 +306,10 @@ Rules for each field:
   code's text, word for word: they are what the user approves, and they
   are what the model reads. `risk` and `untrusted` match the code, and
   every tool states `untrusted` as `true` or `false`; leaving it out is not
-  allowed.
+  allowed. Every `send` tool also has a `noun`, what one call sends in the
+  singular and the plural (`{ one: email, many: emails }`), so a run can
+  say "Sent 1 email". Lower-case words only, never a value from the call;
+  it lives only in the sheet, not in the code.
 - **`needs`**: empty unless a reviewer agreed. Starting a local program
   (`process`) goes through the trust step and is never allowed in the
   cloud.

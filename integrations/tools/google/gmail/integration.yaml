@@ -159,12 +159,14 @@ tools:
       quoteOriginal: Include the quoted original when replying (default false).
       signature: Append the account's Gmail signature (default true).
     risk: send
+    noun: { one: email, many: emails }
     untrusted: false # returns only ids
   - name: gmail_send_draft
     description: Sends an existing draft by draftId. Sending cannot be undone.
     arguments:
       draftId: The draft's id, from gmail_create_draft.
     risk: send
+    noun: { one: email, many: emails }
     untrusted: false # returns only ids
 
 needs: []
