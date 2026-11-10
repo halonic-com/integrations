@@ -1,0 +1,199 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "halonic-tool-mcp-http-local",
+                "version": "0.1.0"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "http://localhost:8080/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "result": {
+              "capabilities": {
+                "tools": {
+                  "listChanged": true
+                }
+              },
+              "protocolVersion": "2025-11-25",
+              "serverInfo": {
+                "name": "example-notes",
+                "version": "2.1.0"
+              }
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized"
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+          "mcp-protocol-version": "2025-11-25",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "method": "POST",
+        "url": "http://localhost:8080/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {},
+        "status": 202
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {}
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+          "mcp-protocol-version": "2025-11-25",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "method": "POST",
+        "url": "http://localhost:8080/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "result": {
+              "tools": [
+                {
+                  "annotations": {
+                    "readOnlyHint": true
+                  },
+                  "description": "Finds notes whose title or text contains the query. Returns id and title.",
+                  "inputSchema": {
+                    "properties": {
+                      "query": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "search_notes",
+                  "title": "Search notes"
+                },
+                {
+                  "description": "Adds a note with a title and a text. Returns the new note's id.",
+                  "inputSchema": {
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "text"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "add_note"
+                }
+              ]
+            }
+          }
+        },
+        "headers": {
+          "content-type": "application/json"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-mcp-http-local",
+  "scenario": "list-tools",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}

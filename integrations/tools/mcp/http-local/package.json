@@ -1,0 +1,28 @@
+{
+  "name": "@halonicjs/integration-tool-mcp-http-local",
+  "private": true,
+  "type": "module",
+  "description": "MCP server on this computer: tools from an MCP server running on this computer, over streamable HTTP and our own MCP client.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/integration-mcp-server": "workspace:*"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@halonicjs/tooling-record": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "ravi"
+  }
+}

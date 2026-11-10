@@ -1,0 +1,48 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "id": 1,
+            "jsonrpc": "2.0",
+            "method": "initialize",
+            "params": {
+              "capabilities": {},
+              "clientInfo": {
+                "name": "halonic-tool-mcp-http-local",
+                "version": "0.1.0"
+              },
+              "protocolVersion": "2025-11-25"
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "content-type": "application/json"
+        },
+        "method": "POST",
+        "url": "http://localhost:8080/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": "unauthorized"
+          }
+        },
+        "headers": {
+          "content-type": "application/json",
+          "www-authenticate": "Bearer realm=\"example-notes\""
+        },
+        "status": 401
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-mcp-http-local",
+  "scenario": "missing-key",
+  "scrubReport": []
+}
