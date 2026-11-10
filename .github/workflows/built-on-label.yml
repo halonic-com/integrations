@@ -1,0 +1,36 @@
+# Fails a pull request that has no `built-on:*` label (`built-on:paperclip`
+# or `built-on:halonic`), so we can see which tool built each change. It
+# re-runs when a label is added or removed. It only reads the labels in the
+# event, so it needs no token and checks out nothing.
+
+name: Built-on label
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions: {}
+
+concurrency:
+  group: built-on-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  built-on-label:
+    name: built-on-label
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require a built-on label
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          case ",$LABELS," in
+            *,built-on:paperclip,*|*,built-on:halonic,*)
+              echo "Found a built-on label."
+              ;;
+            *)
+              echo "::error::Add the label built-on:paperclip or built-on:halonic to this pull request."
+              exit 1
+              ;;
+          esac
