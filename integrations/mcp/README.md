@@ -52,7 +52,7 @@ refuse a server, such as one that offers no tools.
 
 ```ts
 const client = new McpClient({
-  clientInfo: { name: "halonic-tool-mcp-http", version: "0.1.0" },
+  clientInfo: { name: "halonic-tool-mcp-http-online", version: "0.1.0" },
   openTransport: () => new StreamableHttpTransport(host, { url, auth }),
 });
 const tools = await client.listTools(signal);

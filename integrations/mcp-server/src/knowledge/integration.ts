@@ -12,7 +12,10 @@ import { connectToServer } from "./server.ts";
  * computer and one online.
  *
  * @example
- * export const knowledgeMcp = mcpKnowledgeIntegration({ name: "knowledge-mcp", version: "0.1.0" });
+ * export const knowledgeMcpOnline = mcpKnowledgeIntegration({
+ *   name: "knowledge-mcp-online",
+ *   version: "0.1.0",
+ * });
  */
 export function mcpKnowledgeIntegration(entry: IntegrationEntry): Integration {
   return {

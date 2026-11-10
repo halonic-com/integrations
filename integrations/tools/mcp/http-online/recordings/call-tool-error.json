@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-knowledge-mcp",
+                "name": "halonic-tool-mcp-http-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -20,10 +20,11 @@
         },
         "headers": {
           "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
@@ -34,13 +35,13 @@
             "result": {
               "capabilities": {
                 "tools": {
-                  "listChanged": false
+                  "listChanged": true
                 }
               },
               "protocolVersion": "2025-11-25",
               "serverInfo": {
-                "name": "example-docs",
-                "version": "1.4.0"
+                "name": "example-notes",
+                "version": "2.1.0"
               }
             }
           }
@@ -64,12 +65,13 @@
         },
         "headers": {
           "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json",
           "mcp-protocol-version": "2025-11-25",
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
@@ -92,18 +94,19 @@
               "arguments": {
                 "field-1": "<scrubbed:content>"
               },
-              "name": "read_doc"
+              "name": "add_note"
             }
           }
         },
         "headers": {
           "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json",
           "mcp-protocol-version": "2025-11-25",
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
@@ -117,7 +120,8 @@
                   "text": "<scrubbed:content>",
                   "type": "text"
                 }
-              ]
+              ],
+              "isError": true
             }
           }
         },
@@ -130,9 +134,14 @@
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "knowledge-mcp",
-  "scenario": "get-without-key",
+  "integration": "tool-mcp-http-online",
+  "scenario": "call-tool-error",
   "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
     {
       "count": 1,
       "path": "exchanges[0].response.headers.mcp-session-id",
@@ -145,7 +154,17 @@
     },
     {
       "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
       "path": "exchanges[2].request.headers.mcp-session-id",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.authorization",
       "rule": "secret-header"
     },
     {

@@ -1,6 +1,10 @@
-# knowledge-mcp
+# knowledge-mcp-online: MCP server online
 
-A knowledge source on any MCP server. Agents search it and read its
+A knowledge source on an MCP server on the internet. In the knowledge
+picker it is **MCP server online**: "A server on the internet, reached over
+https." A server on this computer is
+[knowledge-mcp-local](../mcp-local/README.md), the same code with a
+`loopback` sheet. Agents search it and read its
 documents; the source maps `search` and `get` onto two of the server's
 tools. It talks to the server through our own MCP client in
 [`../../mcp`](../../mcp/README.md), so it carries nothing but our code and
@@ -17,7 +21,9 @@ this package is its sheet, its name and its recordings.
 The workspace gives the connection one setting, `url`: the server's MCP
 endpoint, such as `https://docs.example.com/mcp`.
 
-The sheet allows the host of `url` and nothing else, and the key
+The `url` must be `https` with a public host name: the kit refuses one on
+this computer, on a private network or given as an IP address
+(`setting-outside-class`). The sheet allows the host of `url` and nothing else, and the key
 (`mcp-server-key`) goes only to that host, as `Authorization: Bearer`.
 The integration names the key and never sees it. The key is optional in
 the sheet: for a server that needs none, leave it unset, and the kit sends

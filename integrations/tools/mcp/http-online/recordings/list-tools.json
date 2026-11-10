@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-knowledge-mcp",
+                "name": "halonic-tool-mcp-http-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -24,7 +24,7 @@
           "content-type": "application/json"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
@@ -35,13 +35,13 @@
             "result": {
               "capabilities": {
                 "tools": {
-                  "listChanged": false
+                  "listChanged": true
                 }
               },
               "protocolVersion": "2025-11-25",
               "serverInfo": {
-                "name": "example-docs",
-                "version": "1.4.0"
+                "name": "example-notes",
+                "version": "2.1.0"
               }
             }
           }
@@ -71,7 +71,7 @@
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
@@ -89,14 +89,8 @@
           "value": {
             "id": 2,
             "jsonrpc": "2.0",
-            "method": "tools/call",
-            "params": {
-              "arguments": {
-                "field-1": "<scrubbed:content>",
-                "field-2": 0
-              },
-              "name": "search_docs"
-            }
+            "method": "tools/list",
+            "params": {}
           }
         },
         "headers": {
@@ -107,63 +101,69 @@
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://docs.example.com/mcp"
+        "url": "https://tools.example.com/mcp"
       },
       "response": {
         "body": {
-          "kind": "sse",
-          "value": [
-            {
-              "data": {
-                "id": 2,
-                "jsonrpc": "2.0",
-                "result": {
-                  "content": [
-                    {
-                      "text": "<scrubbed:content>",
-                      "type": "text"
-                    }
-                  ]
+          "kind": "json",
+          "value": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "result": {
+              "tools": [
+                {
+                  "annotations": {
+                    "readOnlyHint": true
+                  },
+                  "description": "Finds notes whose title or text contains the query. Returns id and title.",
+                  "inputSchema": {
+                    "properties": {
+                      "query": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "search_notes",
+                  "title": "Search notes"
+                },
+                {
+                  "description": "Adds a note with a title and a text. Returns the new note's id.",
+                  "inputSchema": {
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "text"
+                    ],
+                    "type": "object"
+                  },
+                  "name": "add_note"
                 }
-              },
-              "event": "message"
+              ]
             }
-          ]
+          }
         },
         "headers": {
-          "content-type": "text/event-stream"
+          "content-type": "application/json"
         },
-        "status": 200
-      },
-      "transport": "http"
-    },
-    {
-      "request": {
-        "body": {
-          "kind": "empty"
-        },
-        "headers": {
-          "accept": "application/json, text/event-stream",
-          "authorization": "Bearer <scrubbed:secret>",
-          "mcp-protocol-version": "2025-11-25",
-          "mcp-session-id": "scrubbed-secret-1"
-        },
-        "method": "DELETE",
-        "url": "https://docs.example.com/mcp"
-      },
-      "response": {
-        "body": {
-          "kind": "empty"
-        },
-        "headers": {},
         "status": 200
       },
       "transport": "http"
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "knowledge-mcp",
-  "scenario": "search-text",
+  "integration": "tool-mcp-http-online",
+  "scenario": "list-tools",
   "scrubReport": [
     {
       "count": 1,
@@ -193,26 +193,6 @@
     {
       "count": 1,
       "path": "exchanges[2].request.headers.authorization",
-      "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[2].request.body.params.arguments",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[2].response.body[0].data.result.content[0].text",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[3].request.headers.mcp-session-id",
-      "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[3].request.headers.authorization",
       "rule": "secret-header"
     }
   ]

@@ -1,8 +1,11 @@
 import { mcpToolsIntegration, type ToolsIntegration } from "@halonicjs/integration-mcp-server";
 
-/** Tools from any MCP server the workspace chooses. The code is in `mcp-server`. */
-export const mcpHttp: ToolsIntegration = mcpToolsIntegration({
-  name: "tool-mcp-http",
+/**
+ * "MCP server online": tools from an MCP server on the internet, over
+ * https. The code is in `mcp-server`; the sheet keeps it on public hosts.
+ */
+export const mcpHttpOnline: ToolsIntegration = mcpToolsIntegration({
+  name: "tool-mcp-http-online",
   version: "0.1.0",
 });
 

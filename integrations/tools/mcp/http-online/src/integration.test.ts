@@ -7,7 +7,7 @@ import callToolError from "../recordings/call-tool-error.json" with { type: "jso
 import listTools from "../recordings/list-tools.json" with { type: "json" };
 import missingKey from "../recordings/missing-key.json" with { type: "json" };
 import toolsChanged from "../recordings/tools-changed.json" with { type: "json" };
-import { McpToolsError, mcpHttp } from "./index.ts";
+import { McpToolsError, mcpHttpOnline } from "./index.ts";
 
 /**
  * The recordings are invented traffic with a small made-up notes server,
@@ -33,7 +33,7 @@ async function noWait(): Promise<void> {
 }
 
 function connect(http: ReplayHttpClient, settings: Record<string, unknown> = { url }) {
-  return mcpHttp.connect({ http, wait: noWait, settings });
+  return mcpHttpOnline.connect({ http, wait: noWait, settings });
 }
 
 /** What the integration sent in request `index`, as JSON. */
@@ -41,11 +41,11 @@ function sentBody(recording: Replay, index: number): unknown {
   return recording.sent[index]?.body;
 }
 
-describe("tool-mcp-http on recordings", () => {
+describe("tool-mcp-http-online on recordings", () => {
   it("declares no tools and sends nothing until a tool is listed or called", () => {
     const recording = replay(listTools, { policy });
     connect(recording.http);
-    expect(mcpHttp.tools).toEqual([]);
+    expect(mcpHttpOnline.tools).toEqual([]);
     expect(recording.sent).toHaveLength(0);
   });
 
@@ -171,7 +171,7 @@ describe("tool-mcp-http on recordings", () => {
     ).rejects.toMatchObject({
       name: "McpToolsError",
       code: "bad-config",
-      message: "Check the tool-mcp-http settings: url.",
+      message: "Check the tool-mcp-http-online settings: url.",
     });
     expect(recording.sent).toHaveLength(0);
   });

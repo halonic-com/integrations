@@ -1,8 +1,8 @@
 {
-  "name": "@halonicjs/integration-knowledge-mcp",
+  "name": "@halonicjs/integration-knowledge-mcp-online",
   "private": true,
   "type": "module",
-  "description": "Knowledge source on an MCP server: agents search and read its documents through two of its tools.",
+  "description": "MCP server online: a knowledge source on an MCP server on the internet, searched and read through two of its tools.",
   "exports": {
     ".": "./src/index.ts"
   },

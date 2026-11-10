@@ -12,7 +12,7 @@ This repository is being set up. More soon.
 | Folder                                    | What                                              |
 | ----------------------------------------- | ------------------------------------------------- |
 | `integrations/models/<provider>`          | model providers, such as Anthropic and OpenAI     |
-| `integrations/knowledge/<source>`         | knowledge sources, such as `knowledge/mcp`        |
+| `integrations/knowledge/<source>`         | knowledge sources, such as `knowledge/mcp-online` |
 | `integrations/tools/<provider>/<service>` | services with tools, such as `tools/google/gmail` |
 | `integrations/<name>`                     | integrations in no group, such as our MCP client  |
 | `tooling/<name>`                          | the repo's own tools, such as `pnpm record`       |

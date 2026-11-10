@@ -1,4 +1,4 @@
-id: knowledge-mcp
+id: knowledge-mcp-online
 version: 0.1.0
 kit: 1 # the version of the Integration port it was built against
 provides: [knowledge]

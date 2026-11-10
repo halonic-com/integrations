@@ -10,7 +10,10 @@ import { mcpClientFor } from "./server.ts";
  * business: the same code serves a server on this computer and one online.
  *
  * @example
- * export const mcpHttp = mcpToolsIntegration({ name: "tool-mcp-http", version: "0.1.0" });
+ * export const mcpHttpOnline = mcpToolsIntegration({
+ *   name: "tool-mcp-http-online",
+ *   version: "0.1.0",
+ * });
  */
 export function mcpToolsIntegration(entry: IntegrationEntry): Integration {
   return {

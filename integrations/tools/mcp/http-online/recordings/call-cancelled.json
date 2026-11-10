@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-tool-mcp-http",
+                "name": "halonic-tool-mcp-http-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -92,10 +92,9 @@
             "method": "tools/call",
             "params": {
               "arguments": {
-                "field-1": "<scrubbed:content>",
-                "field-2": "<scrubbed:content>"
+                "field-1": "<scrubbed:content>"
               },
-              "name": "add_note"
+              "name": "search_notes"
             }
           }
         },
@@ -119,27 +118,7 @@
                 "method": "notifications/progress",
                 "params": {
                   "progress": 1,
-                  "progressToken": 2,
-                  "total": 2
-                }
-              },
-              "event": "message"
-            },
-            {
-              "data": {
-                "id": 2,
-                "jsonrpc": "2.0",
-                "result": {
-                  "content": [
-                    {
-                      "text": "<scrubbed:content>",
-                      "type": "text"
-                    }
-                  ],
-                  "structuredContent": {
-                    "field-1": "<scrubbed:content>",
-                    "field-2": "<scrubbed:content>"
-                  }
+                  "progressToken": 2
                 }
               },
               "event": "message"
@@ -152,11 +131,43 @@
         "status": 200
       },
       "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "jsonrpc": "2.0",
+            "method": "notifications/cancelled",
+            "params": {
+              "reason": "The caller cancelled the request.",
+              "requestId": 2
+            }
+          }
+        },
+        "headers": {
+          "accept": "application/json, text/event-stream",
+          "authorization": "Bearer <scrubbed:secret>",
+          "content-type": "application/json",
+          "mcp-protocol-version": "2025-11-25",
+          "mcp-session-id": "scrubbed-secret-1"
+        },
+        "method": "POST",
+        "url": "https://tools.example.com/mcp"
+      },
+      "response": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {},
+        "status": 202
+      },
+      "transport": "http"
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "tool-mcp-http",
-  "scenario": "call-tool",
+  "integration": "tool-mcp-http-online",
+  "scenario": "call-cancelled",
   "scrubReport": [
     {
       "count": 1,
@@ -195,13 +206,13 @@
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body[1].data.result.content[0].text",
-      "rule": "user-content"
+      "path": "exchanges[3].request.headers.mcp-session-id",
+      "rule": "secret-header"
     },
     {
       "count": 1,
-      "path": "exchanges[2].response.body[1].data.result.structuredContent",
-      "rule": "user-content"
+      "path": "exchanges[3].request.headers.authorization",
+      "rule": "secret-header"
     }
   ]
 }

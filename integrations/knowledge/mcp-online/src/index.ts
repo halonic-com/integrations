@@ -3,9 +3,13 @@ import {
   mcpKnowledgeIntegration,
 } from "@halonicjs/integration-mcp-server";
 
-/** A knowledge source on any MCP server. The code is in `mcp-server`. */
-export const knowledgeMcp: KnowledgeIntegration = mcpKnowledgeIntegration({
-  name: "knowledge-mcp",
+/**
+ * "MCP server online": a knowledge source on an MCP server on the
+ * internet, over https. The code is in `mcp-server`; the sheet keeps it on
+ * public hosts.
+ */
+export const knowledgeMcpOnline: KnowledgeIntegration = mcpKnowledgeIntegration({
+  name: "knowledge-mcp-online",
   version: "0.1.0",
 });
 
