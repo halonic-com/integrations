@@ -6,7 +6,11 @@ import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import searchText from "../recordings/search-text.json" with { type: "json" };
 import searchToolError from "../recordings/search-tool-error.json" with { type: "json" };
 import { KnowledgeMcpError, knowledgeMcp } from "./index.ts";
-import { noWait } from "./test/no-wait.ts";
+
+/** No recording here has an answer stream that breaks off, so a call here is a bug. */
+async function noWait(): Promise<void> {
+  throw new Error("No answer stream breaks off here, so nothing should wait.");
+}
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is

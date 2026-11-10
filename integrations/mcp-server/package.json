@@ -1,0 +1,30 @@
+{
+  "name": "@halonicjs/integration-mcp-server",
+  "private": true,
+  "type": "module",
+  "description": "The library for the MCP server the workspace chooses, as tools or as a knowledge source, on this computer or online. Not an integration itself.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/integration-mcp": "workspace:*",
+    "@halonicjs/integration-shared": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@halonicjs/tooling-record": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "ravi"
+  }
+}

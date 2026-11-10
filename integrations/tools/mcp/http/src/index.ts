@@ -1,18 +1,15 @@
-import { McpToolsConnection } from "./connection.ts";
-import type { Integration } from "./kit.ts";
-import { mcpClientFor } from "./server.ts";
+import { mcpToolsIntegration, type ToolsIntegration } from "@halonicjs/integration-mcp-server";
 
-/**
- * Tools from any MCP server the workspace chooses. It declares none: the
- * server decides them, so the connection lists them with `listTools`.
- */
-export const mcpHttp: Integration = {
+/** Tools from any MCP server the workspace chooses. The code is in `mcp-server`. */
+export const mcpHttp: ToolsIntegration = mcpToolsIntegration({
   name: "tool-mcp-http",
   version: "0.1.0",
-  tools: [],
-  // No request here: the server is only called when a tool is listed or called.
-  connect: (host) => new McpToolsConnection(mcpClientFor(host)),
-};
+});
 
-export { McpToolsError, type McpToolsErrorCode } from "./errors.ts";
-export type { Integration, IntegrationHost, IntegrationTool } from "./kit.ts";
+export {
+  type IntegrationHost,
+  type IntegrationTool,
+  McpToolsError,
+  type McpToolsErrorCode,
+  type ToolsIntegration as Integration,
+} from "@halonicjs/integration-mcp-server";

@@ -51,11 +51,17 @@ const sourceConfigSchema = z.object({
   refArg: argumentName.default("ref"),
 });
 
-/** @throws {KnowledgeMcpError} `bad-config`, naming the fields to fix */
-export function readSettings(settings: Readonly<Record<string, unknown>>): ServerSettings {
+/**
+ * @param integration - the sheet's `id`, which the message names
+ * @throws {KnowledgeMcpError} `bad-config`, naming the fields to fix
+ */
+export function readSettings(
+  settings: Readonly<Record<string, unknown>>,
+  integration: string,
+): ServerSettings {
   const parsed = settingsSchema.safeParse(settings);
   if (!parsed.success) {
-    throw badConfig("the knowledge-mcp settings", parsed.error);
+    throw badConfig(`the ${integration} settings`, parsed.error);
   }
   return parsed.data;
 }

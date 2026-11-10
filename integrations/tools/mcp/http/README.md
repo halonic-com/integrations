@@ -8,6 +8,9 @@ code and Zod into the cloud runtime.
 - **Layer:** integrations
 - **Owner:** ravi
 
+The code is in the [`mcp-server`](../../../mcp-server/README.md) library;
+this package is its sheet, its name and its recordings.
+
 It replaces the old Studio's `packages/mcp/connector` for servers over
 HTTP. A server that runs as a local program (stdio) is a matter for the
 host, and comes with connector pinning in phase 3.
