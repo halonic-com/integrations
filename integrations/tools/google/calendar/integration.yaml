@@ -110,7 +110,7 @@ tools:
       location: The new location; an empty text removes it.
       description: New notes as plain text; an empty text removes them.
     risk: send # guests and people the calendar is shared with see the change
-    noun: { one: event update, many: event updates }
+    noun: { one: updated invite, many: updated invites }
     untrusted: true # returns the event's other fields, which someone else may have written
   - name: calendar_delete_event
     description: >-
