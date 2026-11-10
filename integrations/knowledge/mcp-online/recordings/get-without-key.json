@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-knowledge-mcp",
+                "name": "halonic-knowledge-mcp-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -20,7 +20,6 @@
         },
         "headers": {
           "accept": "application/json, text/event-stream",
-          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json"
         },
         "method": "POST",
@@ -65,7 +64,6 @@
         },
         "headers": {
           "accept": "application/json, text/event-stream",
-          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json",
           "mcp-protocol-version": "2025-11-25",
           "mcp-session-id": "scrubbed-secret-1"
@@ -92,16 +90,14 @@
             "method": "tools/call",
             "params": {
               "arguments": {
-                "field-1": "<scrubbed:content>",
-                "field-2": 0
+                "field-1": "<scrubbed:content>"
               },
-              "name": "search_docs"
+              "name": "read_doc"
             }
           }
         },
         "headers": {
           "accept": "application/json, text/event-stream",
-          "authorization": "Bearer <scrubbed:secret>",
           "content-type": "application/json",
           "mcp-protocol-version": "2025-11-25",
           "mcp-session-id": "scrubbed-secret-1"
@@ -121,8 +117,7 @@
                   "text": "<scrubbed:content>",
                   "type": "text"
                 }
-              ],
-              "isError": true
+              ]
             }
           }
         },
@@ -135,14 +130,9 @@
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "knowledge-mcp",
-  "scenario": "search-tool-error",
+  "integration": "knowledge-mcp-online",
+  "scenario": "get-without-key",
   "scrubReport": [
-    {
-      "count": 1,
-      "path": "exchanges[0].request.headers.authorization",
-      "rule": "secret-header"
-    },
     {
       "count": 1,
       "path": "exchanges[0].response.headers.mcp-session-id",
@@ -155,17 +145,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[1].request.headers.authorization",
-      "rule": "secret-header"
-    },
-    {
-      "count": 1,
       "path": "exchanges[2].request.headers.mcp-session-id",
-      "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[2].request.headers.authorization",
       "rule": "secret-header"
     },
     {

@@ -1,6 +1,10 @@
-# tool-mcp-http
+# tool-mcp-http-online: MCP server online
 
-Tools from any MCP server the workspace chooses, offered to agents. It
+Tools from an MCP server on the internet, offered to agents. In the
+integration picker it is **MCP server online**: "A server on the internet,
+reached over https." A server on this computer is
+[tool-mcp-http-local](../http-local/README.md), the same code with a
+`loopback` sheet. It
 talks to the server over streamable HTTP through our own MCP client in
 [`../../../mcp`](../../../mcp/README.md), so it carries nothing but our
 code and Zod into the cloud runtime.
@@ -18,16 +22,21 @@ host, and comes with connector pinning in phase 3.
 ## Where it sits and what it's called
 
 The guide puts a service with tools in `tools/<provider>/<service>/`. MCP
-is no provider, but it is the closest fit: `tools/mcp/http/`, so
-`tool-mcp-http`. A local-program variant would be `tools/mcp/stdio/`, with
-its own sheet, because it needs `process` instead of a host.
+is no provider, but it is the closest fit: `tools/mcp/http-online/`, so
+`tool-mcp-http-online`. The sheet's `{ fromSetting: url }` host declares
+one class, so a server online (`public`) and one on this computer
+(`loopback`) are an entry each, `http-online` and `http-local`. A
+local-program variant would be `tools/mcp/stdio/`, with its own sheet,
+because it needs `process` instead of a host.
 
 ## Connecting it
 
 The workspace gives the connection one setting, `url`: the server's MCP
 endpoint, such as `https://tools.example.com/mcp`.
 
-The sheet allows the host of `url` and nothing else, and the key
+The `url` must be `https` with a public host name: the kit refuses one on
+this computer, on a private network or given as an IP address
+(`setting-outside-class`). The sheet allows the host of `url` and nothing else, and the key
 (`mcp-server-key`) goes only to that host, as `Authorization: Bearer`.
 The integration names the key and never sees it. The key is optional in
 the sheet: for a server that needs none, leave it unset, and the kit sends

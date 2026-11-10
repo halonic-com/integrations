@@ -7,7 +7,7 @@ running on this computer, for example http://localhost:8080."
 - **Layer:** integrations
 - **Owner:** ravi
 
-It is the same code as [tool-mcp-http](../http/README.md), the server
+It is the same code as [tool-mcp-http-online](../http-online/README.md), the server
 online, from the [`mcp-server`](../../../mcp-server/README.md) library.
 Only the sheet differs: its `{ fromSetting: url }` host is
 `class: loopback`, so the trust check can say "only on this computer"

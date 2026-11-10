@@ -43,7 +43,7 @@ published permanently.
 | Folder                                    | What                                                 |
 | ----------------------------------------- | ---------------------------------------------------- |
 | `integrations/models/<provider>`          | one model provider                                   |
-| `integrations/knowledge/<source>`         | one knowledge source, such as `knowledge/mcp`        |
+| `integrations/knowledge/<source>`         | one knowledge source, such as `knowledge/mcp-online` |
 | `integrations/tools/<provider>/<service>` | one service with tools, such as `tools/google/gmail` |
 | `integrations/<name>`                     | an integration in no group, such as `mcp`            |
 | `tooling/<name>`                          | the repo's own tools: `check`, `config`, `record`    |

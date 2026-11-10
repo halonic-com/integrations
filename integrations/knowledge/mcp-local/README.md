@@ -8,7 +8,7 @@ http://localhost:8080."
 - **Layer:** integrations
 - **Owner:** tomas
 
-It is the same code as [knowledge-mcp](../mcp/README.md), the server
+It is the same code as [knowledge-mcp-online](../mcp-online/README.md), the server
 online, from the [`mcp-server`](../../mcp-server/README.md) library. Only
 the sheet differs: its `{ fromSetting: url }` host is `class: loopback`,
 so the trust check can say "only on this computer" before the setting is

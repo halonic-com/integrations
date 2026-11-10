@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-tool-mcp-http",
+                "name": "halonic-tool-mcp-http-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -42,7 +42,7 @@
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "tool-mcp-http",
+  "integration": "tool-mcp-http-online",
   "scenario": "missing-key",
   "scrubReport": []
 }

@@ -4,7 +4,7 @@
  * entries, which differ only in their sheet and this.
  */
 export interface IntegrationEntry {
-  /** The sheet's `id`, such as `tool-mcp-http`. */
+  /** The sheet's `id`, such as `tool-mcp-http-online`. */
   readonly name: string;
   /** The sheet's `version`. */
   readonly version: string;

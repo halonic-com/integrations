@@ -5,7 +5,7 @@ import getWithoutKey from "../recordings/get-without-key.json" with { type: "jso
 import keyRefused from "../recordings/key-refused.json" with { type: "json" };
 import searchText from "../recordings/search-text.json" with { type: "json" };
 import searchToolError from "../recordings/search-tool-error.json" with { type: "json" };
-import { KnowledgeMcpError, knowledgeMcp } from "./index.ts";
+import { KnowledgeMcpError, knowledgeMcpOnline } from "./index.ts";
 
 /** No recording here has an answer stream that breaks off, so a call here is a bug. */
 async function noWait(): Promise<void> {
@@ -37,17 +37,17 @@ const searchOnly = {
 };
 
 function connect(recording: Replay, settings: Record<string, unknown> = { url }) {
-  return knowledgeMcp.connect({ http: recording.http, wait: noWait, settings });
+  return knowledgeMcpOnline.connect({ http: recording.http, wait: noWait, settings });
 }
 
 function provider(recording: Replay, settings?: Record<string, unknown>) {
   const connection = connect(recording, settings);
   const source = connection.createKnowledgeProvider?.(searchOnly);
-  if (source === undefined) throw new Error("knowledge-mcp builds knowledge providers");
+  if (source === undefined) throw new Error("knowledge-mcp-online builds knowledge providers");
   return { connection, source };
 }
 
-describe("knowledge-mcp on recordings", () => {
+describe("knowledge-mcp-online on recordings", () => {
   it("sends nothing until a source searches", () => {
     const recording = replay(searchText, { policy });
     provider(recording);
@@ -127,10 +127,10 @@ describe("knowledge-mcp on recordings", () => {
   });
 });
 
-describe("knowledge-mcp without a request", () => {
+describe("knowledge-mcp-online without a request", () => {
   const noCalls = replay({
     format: "halonic.recording/1",
-    integration: "knowledge-mcp",
+    integration: "knowledge-mcp-online",
     scenario: "no-calls",
     exchanges: [],
     scrubReport: [],

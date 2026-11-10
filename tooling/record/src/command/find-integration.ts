@@ -6,7 +6,7 @@ import { readSheetFields } from "@halonicjs/tooling-check/sheet-yaml";
  * The folder of the integration the user named: by its sheet `id`, such as
  * `model-anthropic`, or by its path from the repo root, such as
  * `integrations/models/anthropic`. A bare folder name isn't enough, because
- * integrations are grouped (`tools/mcp/http`, `knowledge/mcp`).
+ * integrations are grouped (`tools/mcp/http-online`, `knowledge/mcp-online`).
  *
  * @returns the absolute folder, or undefined when nothing matches
  */

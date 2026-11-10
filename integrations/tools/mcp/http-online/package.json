@@ -1,8 +1,8 @@
 {
-  "name": "@halonicjs/integration-tool-mcp-http",
+  "name": "@halonicjs/integration-tool-mcp-http-online",
   "private": true,
   "type": "module",
-  "description": "Tools from any MCP server the workspace chooses, over streamable HTTP and our own MCP client.",
+  "description": "MCP server online: tools from an MCP server on the internet, over streamable HTTP and our own MCP client.",
   "exports": {
     ".": "./src/index.ts"
   },

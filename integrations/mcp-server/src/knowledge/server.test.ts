@@ -9,7 +9,7 @@ import { noWait } from "./test/no-wait.ts";
  * The content is invented.
  */
 const url = "https://docs.example.com/mcp";
-const entry = { name: "knowledge-mcp", version: "0.1.0" };
+const entry = { name: "knowledge-mcp-online", version: "0.1.0" };
 const withKey = { authorization: "Bearer <scrubbed:secret>" };
 const firstSession = "scrubbed-secret-1";
 const secondSession = "scrubbed-secret-2";
@@ -27,7 +27,7 @@ const initialize = {
   params: {
     protocolVersion: "2025-11-25",
     capabilities: {},
-    clientInfo: { name: "halonic-knowledge-mcp", version: "0.1.0" },
+    clientInfo: { name: "halonic-knowledge-mcp-online", version: "0.1.0" },
   },
 };
 const initialized = { jsonrpc: "2.0", method: "notifications/initialized" };
@@ -106,7 +106,7 @@ function toolAnswer(id: number, args: object, text: string, sessionId = firstSes
 function recording(exchanges: unknown[]) {
   return replay({
     format: "halonic.recording/1",
-    integration: "knowledge-mcp",
+    integration: "knowledge-mcp-online",
     scenario: "in-test",
     exchanges,
     scrubReport: [],

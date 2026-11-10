@@ -17,10 +17,10 @@ computer (`loopback`) and one online (`public`) need a sheet each. The
 code is the same for both, so it lives here once, and each entry package
 is this code with its own sheet, name, README and recordings.
 
-| Part               | Folder       | Builds                                                                            |
-| ------------------ | ------------ | --------------------------------------------------------------------------------- |
-| The server's tools | `tools/`     | `mcpToolsIntegration(entry)`: see [tool-mcp-http](../tools/mcp/http/README.md)    |
-| A knowledge source | `knowledge/` | `mcpKnowledgeIntegration(entry)`: see [knowledge-mcp](../knowledge/mcp/README.md) |
+| Part               | Folder       | Builds                                                                                          |
+| ------------------ | ------------ | ----------------------------------------------------------------------------------------------- |
+| The server's tools | `tools/`     | `mcpToolsIntegration(entry)`: see [tool-mcp-http-online](../tools/mcp/http-online/README.md)    |
+| A knowledge source | `knowledge/` | `mcpKnowledgeIntegration(entry)`: see [knowledge-mcp-online](../knowledge/mcp-online/README.md) |
 
 `entry` is the sheet's `id` and `version`. The connection introduces itself
 to the server as `halonic-<id>`, and a wrong setting's message names the id.
@@ -28,7 +28,10 @@ to the server as `halonic-<id>`, and a wrong setting's message names the id.
 ```ts
 import { mcpToolsIntegration } from "@halonicjs/integration-mcp-server";
 
-export const mcpHttp = mcpToolsIntegration({ name: "tool-mcp-http", version: "0.1.0" });
+export const mcpHttpOnline = mcpToolsIntegration({
+  name: "tool-mcp-http-online",
+  version: "0.1.0",
+});
 ```
 
 The behaviour, the limits and the errors are described in the entry

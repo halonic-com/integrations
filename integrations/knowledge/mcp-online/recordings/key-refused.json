@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-knowledge-mcp",
+                "name": "halonic-knowledge-mcp-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -42,7 +42,7 @@
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "knowledge-mcp",
+  "integration": "knowledge-mcp-online",
   "scenario": "key-refused",
   "scrubReport": [
     {

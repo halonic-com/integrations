@@ -11,7 +11,7 @@
             "params": {
               "capabilities": {},
               "clientInfo": {
-                "name": "halonic-tool-mcp-http",
+                "name": "halonic-knowledge-mcp-online",
                 "version": "0.1.0"
               },
               "protocolVersion": "2025-11-25"
@@ -24,7 +24,7 @@
           "content-type": "application/json"
         },
         "method": "POST",
-        "url": "https://tools.example.com/mcp"
+        "url": "https://docs.example.com/mcp"
       },
       "response": {
         "body": {
@@ -35,13 +35,13 @@
             "result": {
               "capabilities": {
                 "tools": {
-                  "listChanged": true
+                  "listChanged": false
                 }
               },
               "protocolVersion": "2025-11-25",
               "serverInfo": {
-                "name": "example-notes",
-                "version": "2.1.0"
+                "name": "example-docs",
+                "version": "1.4.0"
               }
             }
           }
@@ -71,7 +71,7 @@
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://tools.example.com/mcp"
+        "url": "https://docs.example.com/mcp"
       },
       "response": {
         "body": {
@@ -92,9 +92,10 @@
             "method": "tools/call",
             "params": {
               "arguments": {
-                "field-1": "<scrubbed:content>"
+                "field-1": "<scrubbed:content>",
+                "field-2": 0
               },
-              "name": "search_notes"
+              "name": "search_docs"
             }
           }
         },
@@ -106,68 +107,36 @@
           "mcp-session-id": "scrubbed-secret-1"
         },
         "method": "POST",
-        "url": "https://tools.example.com/mcp"
+        "url": "https://docs.example.com/mcp"
       },
       "response": {
-        "body": {
-          "kind": "sse",
-          "value": [
-            {
-              "data": {
-                "jsonrpc": "2.0",
-                "method": "notifications/progress",
-                "params": {
-                  "progress": 1,
-                  "progressToken": 2
-                }
-              },
-              "event": "message"
-            }
-          ]
-        },
-        "headers": {
-          "content-type": "text/event-stream"
-        },
-        "status": 200
-      },
-      "transport": "http"
-    },
-    {
-      "request": {
         "body": {
           "kind": "json",
           "value": {
+            "id": 2,
             "jsonrpc": "2.0",
-            "method": "notifications/cancelled",
-            "params": {
-              "reason": "The caller cancelled the request.",
-              "requestId": 2
+            "result": {
+              "content": [
+                {
+                  "text": "<scrubbed:content>",
+                  "type": "text"
+                }
+              ],
+              "isError": true
             }
           }
         },
         "headers": {
-          "accept": "application/json, text/event-stream",
-          "authorization": "Bearer <scrubbed:secret>",
-          "content-type": "application/json",
-          "mcp-protocol-version": "2025-11-25",
-          "mcp-session-id": "scrubbed-secret-1"
+          "content-type": "application/json"
         },
-        "method": "POST",
-        "url": "https://tools.example.com/mcp"
-      },
-      "response": {
-        "body": {
-          "kind": "empty"
-        },
-        "headers": {},
-        "status": 202
+        "status": 200
       },
       "transport": "http"
     }
   ],
   "format": "halonic.recording/1",
-  "integration": "tool-mcp-http",
-  "scenario": "call-cancelled",
+  "integration": "knowledge-mcp-online",
+  "scenario": "search-tool-error",
   "scrubReport": [
     {
       "count": 1,
@@ -206,13 +175,8 @@
     },
     {
       "count": 1,
-      "path": "exchanges[3].request.headers.mcp-session-id",
-      "rule": "secret-header"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[3].request.headers.authorization",
-      "rule": "secret-header"
+      "path": "exchanges[2].response.body.result.content[0].text",
+      "rule": "user-content"
     }
   ]
 }

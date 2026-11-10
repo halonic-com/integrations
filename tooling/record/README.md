@@ -212,7 +212,7 @@ scenarios to record:
 
 ```sh
 HALONIC_RECORD_SECRET_ANTHROPIC_KEY=... pnpm record model-anthropic answer-text
-pnpm record integrations/tools/mcp/http   # every scenario
+pnpm record integrations/tools/mcp/http-online   # every scenario
 ```
 
 - **Keys** come from `HALONIC_RECORD_SECRET_<SECRET>`, named after the
