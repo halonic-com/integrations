@@ -31,8 +31,8 @@ again.
 
 The answer maps back to `ChatResponse`: text blocks joined, `tool_use`
 blocks as `toolCalls`, the whole ordered content as `replay`, `usage` with
-every input token (prompt cache reads and writes included) and every
-output token, and the stop reason as
+the input tokens, the prompt cache reads, the 5-minute and 1-hour cache
+writes each in their own count, and every output token, and the stop reason as
 `finishReason` (`end_turn` and `stop_sequence` → `stop`, `tool_use` →
 `tool_calls`, `max_tokens` → `length`, anything else → `other`).
 
@@ -83,8 +83,10 @@ the turn is rebuilt from `content` and `toolCalls`.
   effort and Opus 4.5 refuses adaptive thinking, so with `reasoningEffort`
   they fail with `bad-arguments`. Keep `reasoningEffort` the same for a
   whole conversation: changing it starts a new prompt cache.
-- **Spend:** `Usage` has no field for the prompt cache, so cache reads and
-  writes count as plain input tokens.
+- **Spend:** prompt cache reads and writes are counted apart from
+  `inputTokens`, so spend can price them at their own prices. Without
+  Anthropic's `cache_creation` split, every cache write counts as a
+  5-minute write.
 - **Errors** are `AnthropicError` with a short code (`bad-arguments`,
   `not-signed-in`, `not-allowed`, `not-found`, `rate-limited`,
   `unavailable`, `unexpected-response`). Anthropic's own error text is never

@@ -85,7 +85,7 @@ describe("fromAnthropicStream", () => {
           content: "Hello there.",
           toolCalls: [],
           replay: { type: "anthropic", data: [{ type: "text", text: "Hello there." }] },
-          usage: { inputTokens: 30, outputTokens: 12 },
+          usage: { inputTokens: 25, outputTokens: 12, cacheReadTokens: 5 },
           finishReason: "stop",
         },
       },
@@ -182,7 +182,40 @@ describe("fromAnthropicStream", () => {
       event("message_stop", {}),
     ]);
     expect(read.at(-1)).toMatchObject({
-      response: { usage: { inputTokens: 45, outputTokens: 7 }, finishReason: "length" },
+      response: {
+        usage: { inputTokens: 40, outputTokens: 7, cacheReadTokens: 5 },
+        finishReason: "length",
+      },
+    });
+  });
+
+  it("reads the 5-minute and 1-hour cache writes from message_start", async () => {
+    const read = await readAll([
+      event("message_start", {
+        message: {
+          content: [],
+          stop_reason: null,
+          usage: {
+            input_tokens: 25,
+            output_tokens: 1,
+            cache_creation_input_tokens: 300,
+            cache_creation: { ephemeral_5m_input_tokens: 100, ephemeral_1h_input_tokens: 200 },
+          },
+        },
+      }),
+      blockStart(0, { type: "text", text: "" }),
+      blockStop(0),
+      ...messageEnd("end_turn", 4),
+    ]);
+    expect(read.at(-1)).toMatchObject({
+      response: {
+        usage: {
+          inputTokens: 25,
+          outputTokens: 4,
+          cacheWriteTokens: 100,
+          cacheWrite1hTokens: 200,
+        },
+      },
     });
   });
 
