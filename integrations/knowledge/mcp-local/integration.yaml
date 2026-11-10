@@ -1,0 +1,37 @@
+id: knowledge-mcp-local
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [knowledge]
+
+# The one MCP server the workspace chooses: the host of the `url` setting,
+# and nothing else. It must be on this computer: localhost, 127.0.0.0/8 or
+# [::1], over http or https.
+hosts:
+  - fromSetting: url
+    class: loopback
+
+secrets:
+  mcp-server-key:
+    purpose: >-
+      The key for the MCP server you choose, if it needs one. Sent only to
+      that server, never anywhere else.
+    hosts:
+      - fromSetting: url
+    as: bearer
+    # Many servers need no key: without one set up, the kit sends none.
+    optional: true
+
+tokens: []
+tools: [] # a knowledge source only: agents search it, they don't call tools
+needs: []
+
+# Fields that hold the user's own content, for the recorder. The search
+# query and the ref go out as tool arguments; the documents come back as
+# the tool's text, in a JSON answer or in the events of an event stream.
+recording:
+  userContent:
+    - request.body.params.arguments
+    - response.body.result.content[*].text
+    - response.body.result.structuredContent
+    - response.body[*].data.result.content[*].text
+    - response.body[*].data.result.structuredContent
