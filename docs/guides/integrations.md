@@ -79,10 +79,13 @@ integrations/
 │  │  ├─ gmail/           tool-google-gmail
 │  │  └─ drive/           tool-google-drive
 │  └─ mcp/
-│     └─ http/            tool-mcp-http: any MCP server's tools
+│     ├─ http-local/      tool-mcp-http-local: tools of an MCP server on this computer
+│     └─ http-online/     tool-mcp-http-online: tools of an MCP server online
 ├─ knowledge/             knowledge sources
-│  └─ mcp/                knowledge-mcp
+│  ├─ mcp-local/          knowledge-mcp-local: an MCP server on this computer
+│  └─ mcp-online/         knowledge-mcp-online: an MCP server online
 ├─ mcp/                   mcp: our own MCP client
+├─ mcp-server/            a library, not an integration: the code of the four MCP-server entries
 └─ shared/                a library, not an integration: code different providers share
 ```
 
@@ -101,6 +104,12 @@ integrations/
 - **Code shared by different providers**, such as reading a streamed
   answer for the model providers and the MCP client, lives in the
   `integrations/shared/` library until the kit offers it.
+- **One code, several sheets:** a host the user chooses declares one
+  class (section 3), so a service people run both on their own computer
+  and online is an entry for each class, each with its own sheet, README
+  and recordings. The code lives once, in a library: `mcp-server/` holds
+  the code of the `-local` and `-online` MCP entries, and each entry
+  package is one call to it with its sheet's `id` and `version`.
 - An integration that belongs to no group sits directly in
   `integrations/<name>/`. Its name may not start with `model-`, `tool-` or
   `knowledge-`: those names belong to the groups.
@@ -249,14 +258,29 @@ Rules for each field:
   API. Never list a host that anyone can write to without an account, such
   as a paste site, a webhook catcher, a request bin or general file
   storage. A host the user chooses, such as a self-hosted server, is
-  `{ fromSetting: <setting> }`. Plain `http` is only allowed to a host the
-  user chose on this machine or a private network, and a **secret** goes
-  over plain `http` only to this machine: the kit refuses anything else as
-  `secret-over-plain-http`.
+  `{ fromSetting: <setting>, class: <class> }`, and the class says where
+  the URL in that setting may point, so the user sees it before the
+  setting is filled in:
+  - `loopback`: only on this computer (`localhost`, `127.0.0.0/8` or
+    `[::1]`);
+  - `private`: only on the home network, as a private IP address
+    (`10/8`, `172.16/12`, `192.168/16` or `fc00::/7`), never a name;
+  - `public`: a public host name, over `https`, never an IP address.
+
+  The kit refuses a setting outside its class as `setting-outside-class`,
+  and every class refuses an address in none, such as link-local
+  `169.254/16`. Pick one class per host: where users need two, make two
+  entries (section 2), as `tool-mcp-http-local` (`loopback`) and
+  `tool-mcp-http-online` (`public`) do. Plain `http` is only allowed to a
+  `loopback` or `private` host, and a **secret** goes over plain `http`
+  only to a `loopback` one: the kit refuses anything else as
+  `plain-http-not-local` or `secret-over-plain-http`.
 - **`secrets`**: one entry per key, token or password the service needs,
   with a `purpose` the user can understand, the narrowest `hosts` list that
   works, and where the kit puts it (`as`, plus `header` or `field`; see
-  section 4). A secret may only go to hosts that are also in `hosts`. A
+  section 4). A secret may only go to hosts that are also in `hosts`; for
+  a host the user chooses, write just `{ fromSetting: <setting> }`: the
+  class stays with the one in `hosts`. A
   secret that belongs to Halonic's own sign-in, such as `google-account`,
   goes only to that provider's hosts; never add another host to it. Add
   `optional: true` only when the service works without the secret, such
@@ -783,8 +807,9 @@ read earlier can steer it. What protects the user is the kit, the isolated
 worker it runs in, and the permission sheet the user reads and approves.
 That is why the sheet must say everything (section 3).
 
-1. Reach the network any way other than `host.http`, or call a host its
-   sheet doesn't list. _(kit)_
+1. Reach the network any way other than `host.http`, call a host its
+   sheet doesn't list, or a host the user chose outside its declared
+   class. _(kit)_
 2. Read, hold, log or return a key, token or password value, or ask the
    user to paste one into a setting, a tool argument or a file. _(kit,
    person)_

@@ -609,8 +609,30 @@ recording:
 ```
 
 A workspace that sends its model calls through its own gateway would need
-`{ fromSetting: baseUrl }` in `hosts`. Leave it out until someone needs it:
-every host in the sheet is one more place a key may go.
+`{ fromSetting: baseUrl, class: public }` in `hosts`. Leave it out until
+someone needs it: every host in the sheet is one more place a key may go.
+A gateway on the user's own computer would be a second entry with
+`class: loopback`, as the MCP server entries are:
+
+```yaml
+# integrations/tools/mcp/http-local/integration.yaml: "MCP server on this computer"
+hosts:
+  - fromSetting: url
+    class: loopback # localhost, 127.0.0.0/8 or [::1]; plain http allowed
+
+secrets:
+  mcp-server-key:
+    purpose: >-
+      The key for the MCP server you choose, if it needs one. Sent only to
+      that server, never anywhere else.
+    hosts:
+      - fromSetting: url # the class stays with the one in hosts
+    as: bearer
+    optional: true
+```
+
+`tool-mcp-http-online`, "MCP server online", has the same sheet with
+`class: public`, and the same code, from the `mcp-server` library.
 
 ### The provider
 
