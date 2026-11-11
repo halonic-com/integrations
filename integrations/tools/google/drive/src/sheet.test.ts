@@ -43,10 +43,11 @@ describe("integration.yaml", () => {
       const block = toolBlocks[index] ?? "";
       expect(block).toMatch(new RegExp(`\\n {4}risk: ${tool.risk}\\b`));
       expect(block).toMatch(new RegExp(`\\n {4}untrusted: ${tool.untrusted}\\b`));
-      // A send tool says what it sends, so a run can say "Sent 1 email" (HAL-2836).
+      // A send tool says what it sends and what it does to it, so a run can
+      // say "Saved 1 Drive file" rather than "Sent" (HAL-2836, HAL-2868).
       if (tool.risk === "send") {
         expect(block).toMatch(
-          /\n {4}noun: \{ one: [a-z]+(?: [a-z]+)*, many: [a-z]+(?: [a-z]+)* \}\n/,
+          /\n {4}noun: \{ one: Drive [a-z]+, many: Drive [a-z]+ \}\n {4}verb: (?:saved|created|updated|moved)\n/,
         );
       }
       const text = squeeze(block);
