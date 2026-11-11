@@ -332,8 +332,11 @@ Rules for each field:
   every tool states `untrusted` as `true` or `false`; leaving it out is not
   allowed. Every `send` tool also has a `noun`, what one call sends in the
   singular and the plural (`{ one: email, many: emails }`), so a run can
-  say "Sent 1 email". Lower-case words only, never a value from the call;
-  it lives only in the sheet, not in the code.
+  say "Sent 1 email". Lower-case words, never a value from the call; only
+  the first letter may be a capital, for a product name such as
+  `Drive file`. When "Sent" would overstate what a call does, add a `verb`
+  next to the noun: `saved`, `created`, `updated` or `moved`, so a run says
+  "Saved 1 Drive file". Both live only in the sheet, not in the code.
 - **`needs`**: empty unless a reviewer agreed. Starting a local program
   (`process`) goes through the trust step and is never allowed in the
   cloud.
