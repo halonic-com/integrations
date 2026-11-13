@@ -324,6 +324,42 @@ Rules for each field:
   in the `google-account` secret's hosts, because the request carries that
   token. The url has no port, user name or `#fragment`. Pick a cheap request
   that every account can make and that returns no mail or file content.
+- **`signIns`**: for a service that offers OAuth where no API key fits
+  (needs `kit: 2`). Halonic runs the sign-in; the integration never holds a
+  token. One entry per sign-in, named in lower case with `-`:
+  - `purpose` says in one sentence what the user gives access to.
+  - `flow: oauth-code`, with the service's own `authorizeUrl` and `tokenUrl`
+    (and `revokeUrl` when it has one, and `issuer` when it publishes one).
+    Each is `https` with an exact host, or `{ fromSetting, path }` for a
+    host the user chooses, whose setting is a `public` host in `hosts`. Write
+    only the service's own extra query parameters on the `authorizeUrl`
+    (`audience`, `access_type`); never `client_id`, `redirect_uri`, `state`,
+    `scope`, `code_challenge`, `response_type`, `request` or `request_uri`:
+    Halonic sets those, and the sheet check refuses them. Put no query on
+    the `tokenUrl`, `revokeUrl` or `issuer`.
+  - `clientId` is the app's public ID. If every user registers their own
+    app, make it a setting: `clientId: { fromSetting: client-id }`. Never
+    invent an ID, and never guess one for a service.
+  - `clientSecret` names a `secrets` entry that has **only a `purpose`**: no
+    `hosts`, no `as`. The user enters the value in Settings. **Never write
+    the value, ask for it in the chat, or put it in a file, a setting, a
+    test or a recording.** Leave `clientSecret` out for a public client that
+    relies on PKCE alone. `clientAuth` is `post` unless the service wants
+    HTTP Basic.
+  - `scopes` lists each scope with a `reason` for the user, the fewest that
+    make every tool work. Say in a comment why a broad scope is needed
+    when a narrower one exists.
+  - `access` says which hosts the access token may go to (each also in
+    `hosts`, and only the service's API, never its sign-in host) and how it
+    is put in: `as: bearer`, or `as: header` with `header` and `prefix`.
+    Never `form`.
+  - Halonic's trust check shows the user the sign-in host, the token host and
+    the access hosts together, and warns when the authorize and token hosts
+    differ. So use the service's real endpoints, and say in the `purpose`
+    when two hosts belong to one service.
+    A local integration or a plugin backend can't declare `signIns` until
+    Studio shows the sign-in's hosts; until then use an API key if the
+    service has one, or say that the service needs sign-in support.
 - **`tokens`**: only for values the integration itself writes and reads
   back later. Keys the user enters are `secrets`, not `tokens`.
 - **`tools`**: the same tools, in the same order, as the code declares. The
@@ -393,6 +429,25 @@ Rules for each field:
    a secret the sheet doesn't declare (`secret-not-declared`), one sent to
    a host the sheet doesn't allow it for, and one the workspace hasn't set
    up yet (`secret-not-configured`), unless the sheet marks it `optional`.
+   A sign-in's access token is placed the same way, by the sign-in's name,
+   and the code never reads it:
+
+   ```ts
+   const response = await host.http.fetch(url.href, {
+     auth: { signIn: "example-account", as: "bearer" },
+     signal,
+   });
+   ```
+
+   Write exactly what the sheet's `access` says: for `as: header`, the same
+   `header` and `prefix`. The kit refuses any other placement
+   (`placement-not-in-sheet`), a host outside the sign-in's `access.hosts`
+   (`token-not-allowed-for-host`), and the client secret itself
+   (`secret-sign-in-only`). When the user has to sign in again, the request
+   fails with `sign-in-needed`: let that error reach the caller as it is
+   (section 7, rule 7), and never try to sign in, refresh or ask for a token
+   yourself. A 401 comes back unchanged and the kit doesn't resend it:
+   retry only a request that is safe to repeat (rule 10).
 3. **Keep all calls in one place.** `src/client.ts` holds the base URL, the
    `auth` placement, the request helpers and the response checks. Tools and
    providers call the client and never build requests themselves.
@@ -695,7 +750,8 @@ result.
    - `IntegrationRefusedError`, with codes such as `host-not-allowed`,
      `secret-not-declared` and `secret-not-configured`. The last one is what
      the user sees when no key is set up or the account isn't connected, so
-     it must reach them as it is.
+     it must reach them as it is. So must `sign-in-needed`, which tells the
+     user to sign in again.
    - `IntegrationTimeoutError`. Its `name` is `"TimeoutError"`, so check
      for it with `instanceof IntegrationTimeoutError`, not by name.
 
@@ -857,6 +913,12 @@ That is why the sheet must say everything (section 3).
 16. Rename a shipped tool, or change what its arguments mean. _(person)_
 17. Change the checks, the recorder's rules or another integration in
     the same change. Each of those is its own pull request. _(person)_
+18. Write, ask for or log a sign-in's client secret, or try to read, store
+    or return an access or refresh token, or place one anywhere the sheet's
+    `access` doesn't say. _(kit; check for `tokens`; person)_
+19. Declare a sign-in whose hosts don't belong to the named service, or
+    list the sign-in host among the `access` hosts. _(person; the trust
+    check shows them to the user)_
 
 ## 11. Shipping
 
