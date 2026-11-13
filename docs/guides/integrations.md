@@ -228,6 +228,7 @@ tools:
       query: Gmail search query, such as "from:billing is:unread newer_than:7d".
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
+    noun: { one: email, many: emails } # a run says "Read 3 emails"
     untrusted: true # results hold mail written by other people
   - name: gmail_send
     description: >-
@@ -332,11 +333,14 @@ Rules for each field:
   every tool states `untrusted` as `true` or `false`; leaving it out is not
   allowed. Every `send` tool also has a `noun`, what one call sends in the
   singular and the plural (`{ one: email, many: emails }`), so a run can
-  say "Sent 1 email". Lower-case words, never a value from the call; only
+  say "Sent 1 email". A `read` or `write` tool may have one too, so a run
+  can say what it read ("Read 3 emails"); without one, the receipt stays
+  general. Lower-case words, never a value from the call; only
   the first letter may be a capital, and only for a product name such as
   `Drive file`, never for an ordinary word such as `Email`. When "Sent" would overstate what a call does, add a `verb`
-  next to the noun: `saved`, `created`, `updated` or `moved`, so a run says
-  "Saved 1 Drive file". Both live only in the sheet, not in the code.
+  next to the noun: `saved`, `created`, `updated`, `moved` or `drafted`, so a run says
+  "Saved 1 Drive file". `drafted` is only for a `write` tool, such as one
+  that creates a draft. A verb needs a noun. Both live only in the sheet, not in the code.
 - **`needs`**: empty unless a reviewer agreed. Starting a local program
   (`process`) goes through the trust step and is never allowed in the
   cloud.
