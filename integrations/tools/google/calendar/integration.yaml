@@ -52,6 +52,7 @@ tools:
       maxResults: Calendars to return (default 50).
       pageToken: nextPageToken from the previous call, for more calendars.
     risk: read
+    noun: { one: calendar, many: calendars }
     untrusted: true # calendars shared with the account are named by other people
   - name: calendar_list_events
     description: >-
@@ -67,6 +68,7 @@ tools:
       maxResults: Events to return (default 25).
       pageToken: nextPageToken from the previous call, for more events.
     risk: read
+    noun: { one: event, many: events }
     untrusted: true # invitations and shared calendars hold text other people wrote
   - name: calendar_get_event
     description: >-
@@ -78,6 +80,7 @@ tools:
       eventId: The event's id, from calendar_list_events.
       calendarId: 'Calendar id from calendar_list_calendars, or "primary" (default) for the main calendar.'
     risk: read
+    noun: { one: event, many: events }
     untrusted: true # invitations hold text other people wrote
   - name: calendar_create_event
     description: >-

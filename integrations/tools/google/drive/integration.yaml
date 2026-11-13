@@ -49,6 +49,7 @@ tools:
       maxItems: Items to return at most (default 300).
       foldersOnly: Only list folders (for filing decisions).
     risk: read
+    noun: { one: Drive file, many: Drive files }
     untrusted: true # file names in shared folders are chosen by other people
   - name: drive_search
     description: >-
@@ -65,6 +66,7 @@ tools:
       pageSize: Files to return (default 25).
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
+    noun: { one: Drive file, many: Drive files }
     untrusted: true # names and owners of shared files come from other people
   - name: drive_get_file
     description: >-
@@ -73,6 +75,7 @@ tools:
     arguments:
       fileId: The file's id, from drive_search or drive_tree.
     risk: read
+    noun: { one: Drive file, many: Drive files }
     untrusted: true # a shared file's name comes from someone else
   - name: drive_read_file
     description: >-
@@ -86,6 +89,7 @@ tools:
       maxChars: Characters to return (default 20000).
       offset: Where to start; use nextOffset from the previous read.
     risk: read
+    noun: { one: Drive file, many: Drive files }
     untrusted: true # shared files are written by other people
   - name: drive_create_file
     description: >-
