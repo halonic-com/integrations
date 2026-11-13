@@ -50,6 +50,7 @@ tools:
       includeInline: Also list small inline images such as signature logos.
       pageToken: nextPageToken from the previous call, for more results.
     risk: read
+    noun: { one: email, many: emails }
     untrusted: true # senders, subjects and bodies are written by other people
   - name: gmail_search
     description: >-
@@ -62,6 +63,7 @@ tools:
       maxResults: Messages to return (default 15).
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
+    noun: { one: email, many: emails }
     untrusted: true # senders, subjects and snippets are written by other people
   - name: gmail_read_message
     description: >-
@@ -74,6 +76,7 @@ tools:
       bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
       includeInline: Also list small inline images such as signature logos.
     risk: read
+    noun: { one: email, many: emails }
     untrusted: true # the message is written by someone else
   - name: gmail_read_thread
     description: >-
@@ -89,10 +92,12 @@ tools:
       maxMessages: Messages to return (default 25).
       messageOffset: Where to start in the thread; use nextMessageOffset from the previous read.
     risk: read
+    noun: { one: email, many: emails }
     untrusted: true # the messages are written by other people
   - name: gmail_list_labels
     description: Lists label ids and names, for gmail_modify_labels and search.
     risk: read
+    noun: { one: label, many: labels }
     untrusted: true # label names aren't values the integration controls
   - name: gmail_get_draft
     description: >-
@@ -104,6 +109,7 @@ tools:
       maxBodyChars: Body characters to return (default 20000).
       bodyOffset: Where to start in the body; use nextBodyOffset from the previous read.
     risk: read
+    noun: { one: draft, many: drafts }
     untrusted: true # a reply draft quotes mail written by someone else
   - name: gmail_modify_labels
     description: >-
@@ -138,6 +144,8 @@ tools:
       quoteOriginal: Include the quoted original when replying (default true).
       signature: Append the account's Gmail signature (default true).
     risk: write
+    noun: { one: email, many: emails }
+    verb: drafted
     untrusted: false # returns only ids
   - name: gmail_send
     description: >-
