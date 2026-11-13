@@ -113,6 +113,7 @@ tools:
       query: Gmail search query, such as "from:billing is:unread newer_than:7d".
       pageToken: nextPageToken from the previous search, for more results.
     risk: read
+    noun: { one: email, many: emails }
     untrusted: true # senders, subjects and snippets are written by other people
   - name: gmail_send
     description: >-
