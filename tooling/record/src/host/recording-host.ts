@@ -1,6 +1,8 @@
-// The stand-in host for `pnpm record`, until `@halonicjs/integration-kit` is
-// published. Delete this folder then, and record through the kit's
-// `createIntegrationHost` with the recording transport underneath.
+// The stand-in host for `pnpm record`. The published
+// `@halonicjs/adapters/integration-kit` has only what an integration
+// imports, not the kit's `createIntegrationHost`. Once the main repo
+// publishes that, delete this folder and record through it with the
+// recording transport underneath.
 //
 // Mirrors `createLimitedHttpClient` in halonic
 // `packages/adapters/integration-kit/src/limited-http.ts` at 25b35b5: the same
@@ -28,7 +30,7 @@ export interface IntegrationRequestInit extends RequestInit {
   readonly auth?: SecretPlacement | readonly SecretPlacement[];
 }
 
-/** What the integration's `connect` gets. The integrations' own `kit.ts` copies name parts of it. */
+/** What the integration's `connect` gets: the parts of the kit's `IntegrationHost` the recorder builds. */
 export interface IntegrationHost {
   readonly http: { fetch(url: string, init?: IntegrationRequestInit): Promise<Response> };
   readonly settings: Readonly<Record<string, unknown>>;

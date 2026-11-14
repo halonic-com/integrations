@@ -6,19 +6,18 @@ word for word. Worked examples for Gmail, Drive and a model provider are in
 [integration-examples.md](integration-examples.md).
 
 Integrations are built to the integration interface in the main repo: the
-`Integration` port and the kit, `@halonicjs/integration-kit`. Integration
-code imports everything from the kit, including the port types
+`Integration` port and the kit, `@halonicjs/adapters/integration-kit`.
+Integration code imports everything from the kit, including the port types
 (`Integration`, `IntegrationHost`, `ChatRequest`, ...), and never from
-`@halonicjs/ports`, which isn't published. Where that interface is still
+`@halonicjs/ports`, which isn't published. The kit is pinned to one exact
+version in `pnpm-workspace.yaml`'s catalog; a package lists it as
+`"@halonicjs/adapters": "catalog:"`. Where that interface is still
 being settled, this guide says so in a **Not settled yet** note, and it
 changes when the interface does. The rules themselves stay.
 
 **Must** and **never** in this guide are hard rules. Section 10 lists them
 and says, for each one, what enforces it: the kit, `pnpm check`, the
 conformance suite or a person.
-
-> **Not settled yet:** the kit doesn't re-export the port types yet. The
-> imports in this guide show where they will come from.
 
 ## Contents
 
@@ -516,7 +515,7 @@ Each tool lives in its own file in `src/tools/`, with three parts: its
 declaration, its argument schema and its `run` function.
 
 ```ts
-import { type ToolImplementation } from "@halonicjs/integration-kit";
+import { type ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 
 const searchArguments = z.strictObject({
@@ -847,11 +846,13 @@ format and the full list of scrub rules.
 > **Not settled yet:**
 >
 > - The conformance suite is published from the main repo as
->   `@halonicjs/testing-integration`. It is on `main` there, but not yet
->   published as a package this repo can install. Until it is, test the
->   mapping functions and the error paths with your own tests, and replay
->   your recordings with `@halonicjs/tooling-record/replay`, as the
->   integrations here do. `pnpm record` is available.
+>   `@halonicjs/testing/integration`, and the integrations here move onto
+>   it one at a time. Until yours runs it, test the mapping functions and
+>   the error paths with your own tests, and replay your recordings with
+>   `@halonicjs/tooling-record/replay`, as the integrations here do. That
+>   replay is the kit's `IntegrationHttpClient`, so it goes into the
+>   integration as it is, and `testHost` builds a whole host around it.
+>   `pnpm record` is available.
 > - Today one missed `userContent` path publishes that field. The recorder
 >   is to turn this around: scrub every string by default and keep only
 >   the fields marked safe, and reach URL paths and response headers.

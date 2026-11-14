@@ -1,6 +1,6 @@
 // Part of the stand-in host for `pnpm record`. Delete the `host` folder once
-// `@halonicjs/integration-kit` is published and record through its
-// `createIntegrationHost`.
+// the main repo publishes the kit's `createIntegrationHost`, and record
+// through it (see recording-host.ts).
 //
 // Mirrors halonic-com/halonic at dc8e2b1, with halonic#1099: `allowedUrl` and `hostIn` from
 // `packages/adapters/integration-kit/src/policy.ts`, `isLoopback` and
