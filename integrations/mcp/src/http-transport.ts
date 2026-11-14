@@ -1,12 +1,7 @@
-import {
-  type ByteStream,
-  EventStream,
-  EventStreamError,
-  type HttpResponse,
-  type SecretPlacement,
-} from "@halonicjs/integration-shared";
+import { maxIntegrationWaitMs, type SecretPlacement } from "@halonicjs/adapters/integration-kit";
+import { EventStream, EventStreamError } from "@halonicjs/integration-shared";
 import { McpError, unexpectedResponse } from "./errors.ts";
-import { type McpHost, maxIntegrationWaitMs } from "./host.ts";
+import type { McpHost } from "./host.ts";
 import { errorForStatus } from "./http-status.ts";
 import type { JsonRpcRequest, OutgoingMessage } from "./json-rpc.ts";
 import type { McpTransport } from "./transport.ts";
@@ -140,7 +135,11 @@ export class StreamableHttpTransport implements McpTransport {
    * Yields the messages of an answer stream until the answer to `id`,
    * resuming the stream when it ends or drops too early.
    */
-  async *#readAnswerStream(firstBody: ByteStream, id: number, signal: AbortSignal | undefined) {
+  async *#readAnswerStream(
+    firstBody: ReadableStream<Uint8Array>,
+    id: number,
+    signal: AbortSignal | undefined,
+  ) {
     let body = firstBody;
     // The id of the last complete event over all streams of this request.
     let lastEventId = "";
@@ -187,7 +186,10 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   /** Asks the server to send the rest of the stream, after the event with this id. */
-  async #resume(lastEventId: string, signal: AbortSignal | undefined): Promise<ByteStream> {
+  async #resume(
+    lastEventId: string,
+    signal: AbortSignal | undefined,
+  ): Promise<ReadableStream<Uint8Array>> {
     const response = await this.#fetch("GET", { "last-event-id": lastEventId }, undefined, signal);
     await this.#throwUnlessOk(response);
     if (mediaType(response) !== "text/event-stream" || response.body === null) {
@@ -203,7 +205,7 @@ export class StreamableHttpTransport implements McpTransport {
     extraHeaders: Record<string, string>,
     body: string | undefined,
     signal: AbortSignal | undefined,
-  ): Promise<HttpResponse> {
+  ): Promise<Response> {
     const headers: Record<string, string> = {
       accept: "application/json, text/event-stream",
       ...extraHeaders,
@@ -221,7 +223,7 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   /** Throws our error for a refused request; the server's text is never read. */
-  async #throwUnlessOk(response: HttpResponse): Promise<void> {
+  async #throwUnlessOk(response: Response): Promise<void> {
     if (!response.ok) {
       await discardBody(response);
       throw errorForStatus(response.status, this.#sessionId !== undefined);
@@ -229,7 +231,7 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   /** The server may hand out a session id in its answer to `initialize`. */
-  #rememberSession(response: HttpResponse, message: OutgoingMessage): void {
+  #rememberSession(response: Response, message: OutgoingMessage): void {
     if (!isRequest(message) || message.method !== "initialize") return;
     const sessionId = response.headers.get("mcp-session-id");
     if (sessionId === null) return;
@@ -254,15 +256,12 @@ function isRequest(message: OutgoingMessage): message is JsonRpcRequest {
  * reuse its connection instead of leaving it open until the server gives up.
  * A failure to cancel changes nothing for the caller, so it is ignored.
  */
-async function discardBody(response: HttpResponse): Promise<void> {
-  await response.body
-    ?.getReader()
-    .cancel()
-    .catch(() => undefined);
+async function discardBody(response: Response): Promise<void> {
+  await response.body?.cancel().catch(() => undefined);
 }
 
 /** The content type without parameters such as `charset`. */
-function mediaType(response: HttpResponse): string {
+function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }
 

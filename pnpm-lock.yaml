@@ -252,6 +252,9 @@ importers:
 
   integrations/mcp:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-shared':
         specifier: workspace:*
         version: link:../shared

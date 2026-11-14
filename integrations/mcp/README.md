@@ -57,5 +57,3 @@ const client = new McpClient({
 });
 const tools = await client.listTools(signal);
 ```
-
-The conformance suite follows when the kit is published (HAL-135).

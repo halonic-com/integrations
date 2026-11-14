@@ -184,7 +184,7 @@ describe("EventStream", () => {
     });
   });
 
-  it("reads the body of a real Response, which must fit ByteStream", async () => {
+  it("reads the body of a real Response", async () => {
     const body = new Response("id: 1\ndata: real\n\n").body;
     if (body === null) throw new Error("The response has no body.");
     expect(await readAll(new EventStream(body))).toEqual([message("real", "1")]);

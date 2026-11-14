@@ -1,4 +1,7 @@
-import type { HttpClient, HttpRequestInit, HttpResponse } from "@halonicjs/integration-shared";
+import type {
+  IntegrationHttpClient,
+  IntegrationRequestInit,
+} from "@halonicjs/adapters/integration-kit";
 
 /**
  * A fake MCP server for tests. Its exchanges have the shape of a
@@ -46,8 +49,8 @@ export interface FakeEvent {
 
 export const endpoint = "https://mcp.example.com/mcp";
 
-export class FakeServer implements HttpClient {
-  readonly calls: { url: string; init: HttpRequestInit | undefined }[] = [];
+export class FakeServer implements IntegrationHttpClient {
+  readonly calls: { url: string; init: IntegrationRequestInit | undefined }[] = [];
   readonly #exchanges: FakeExchange[];
   /** The answers whose body was neither read to the end nor cancelled. */
   readonly #openBodies = new Set<FakeExchange["response"]>();
@@ -56,7 +59,7 @@ export class FakeServer implements HttpClient {
     this.#exchanges = [...exchanges];
   }
 
-  async fetch(url: string, init?: HttpRequestInit): Promise<HttpResponse> {
+  async fetch(url: string, init?: IntegrationRequestInit): Promise<Response> {
     this.calls.push({ url, init });
     const exchange = this.#exchanges.shift();
     if (exchange === undefined) throw new Error(`Unexpected call: ${init?.method} ${url}`);
@@ -80,15 +83,16 @@ export class FakeServer implements HttpClient {
 function checkRequest(
   expected: FakeExchange["request"],
   url: string,
-  init: HttpRequestInit | undefined,
+  init: IntegrationRequestInit | undefined,
 ): void {
+  const sentHeaders = new Headers(init?.headers);
   const actual = {
     url,
     method: init?.method,
     headers: Object.fromEntries(
-      Object.keys(expected.headers ?? {}).map((name) => [name, init?.headers?.[name]]),
+      Object.keys(expected.headers ?? {}).map((name) => [name, sentHeaders.get(name) ?? undefined]),
     ),
-    body: init?.body === undefined ? undefined : JSON.parse(init.body),
+    body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
   };
   const wanted = {
     url: endpoint,
@@ -104,42 +108,30 @@ function checkRequest(
 }
 
 /** `onClosed` runs once the body is read to the end, drops or is cancelled. */
-function toResponse(response: FakeExchange["response"], onClosed: () => void): HttpResponse {
-  const headers = new Map(
-    Object.entries(response.headers ?? {}).map(([name, value]) => [name.toLowerCase(), value]),
-  );
-  const text = bodyText(response.body);
-  const encoded = new TextEncoder().encode(text);
+function toResponse(response: FakeExchange["response"], onClosed: () => void): Response {
+  const encoded = new TextEncoder().encode(bodyText(response.body));
   const drop =
     response.body.kind === "sse" &&
     (response.body.drop === true || response.body.cutEvent !== undefined);
   let sent = false;
-  return {
-    ok: response.status >= 200 && response.status < 300,
-    status: response.status,
-    headers: { get: (name) => headers.get(name.toLowerCase()) ?? null },
-    text: async () => {
-      onClosed();
-      return text;
+  // The high water mark is 0, so `pull` runs only when the client reads.
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        if (!sent) {
+          sent = true;
+          controller.enqueue(encoded);
+          return;
+        }
+        onClosed();
+        if (drop) controller.error(new Error("connection reset"));
+        else controller.close();
+      },
+      cancel: onClosed,
     },
-    body: {
-      getReader: () => ({
-        async read() {
-          if (!sent) {
-            sent = true;
-            return { done: false, value: encoded };
-          }
-          onClosed();
-          if (drop) throw new Error("connection reset");
-          return { done: true };
-        },
-        cancel: async () => {
-          onClosed();
-        },
-        releaseLock: () => undefined,
-      }),
-    },
-  };
+    { highWaterMark: 0 },
+  );
+  return new Response(body, { status: response.status, headers: response.headers ?? {} });
 }
 
 function bodyText(body: FakeBody): string {

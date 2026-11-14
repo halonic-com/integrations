@@ -1,17 +1,15 @@
-import type { ByteStream } from "../http-client.ts";
-
-/** A body that arrives in the given pieces, then ends or fails. */
-export interface FakeByteStream extends ByteStream {
+/** A real `ReadableStream` that also says what its reader did. */
+export interface FakeByteStream extends ReadableStream<Uint8Array> {
   /** True once the reader cancelled the stream. */
   readonly cancelled: boolean;
-  /** True once the reader released the stream after its end. */
+  /** True once the reader has read from the stream and let go of it again. */
   readonly released: boolean;
 }
 
 /**
  * Builds a response body from pieces. Text pieces are UTF-8 encoded.
  *
- * @param failure thrown by the read after the last piece, like a dropped connection
+ * @param failure fails the stream after the last piece, like a dropped connection
  */
 export function fakeByteStream(
   pieces: readonly (string | Uint8Array)[],
@@ -19,33 +17,29 @@ export function fakeByteStream(
 ): FakeByteStream {
   const encoder = new TextEncoder();
   const queue = pieces.map((piece) => (typeof piece === "string" ? encoder.encode(piece) : piece));
-  const state = { cancelled: false, released: false };
-  return {
-    get cancelled() {
-      return state.cancelled;
+  const state = { cancelled: false, started: false };
+  const stream = new ReadableStream<Uint8Array>(
+    {
+      // Called only when the reader asks for a piece, because the high water mark is 0.
+      pull(controller) {
+        state.started = true;
+        const piece = queue.shift();
+        if (piece !== undefined) {
+          controller.enqueue(piece);
+        } else if (failure !== undefined) {
+          controller.error(failure);
+        } else {
+          controller.close();
+        }
+      },
+      cancel() {
+        state.cancelled = true;
+      },
     },
-    get released() {
-      return state.released;
-    },
-    getReader() {
-      return {
-        async read() {
-          const value = queue.shift();
-          if (value !== undefined) {
-            return { done: false, value };
-          }
-          if (failure !== undefined) {
-            throw failure;
-          }
-          return { done: true };
-        },
-        async cancel() {
-          state.cancelled = true;
-        },
-        releaseLock() {
-          state.released = true;
-        },
-      };
-    },
-  };
+    { highWaterMark: 0 },
+  );
+  return Object.defineProperties(stream, {
+    cancelled: { get: () => state.cancelled },
+    released: { get: () => state.started && !stream.locked },
+  }) as FakeByteStream;
 }

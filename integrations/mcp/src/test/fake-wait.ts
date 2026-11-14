@@ -1,4 +1,5 @@
-import { type McpHost, maxIntegrationWaitMs } from "../host.ts";
+import { maxIntegrationWaitMs } from "@halonicjs/adapters/integration-kit";
+import type { McpHost } from "../host.ts";
 
 /**
  * A `wait` for tests, and the pauses it was asked for.
