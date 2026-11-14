@@ -112,6 +112,9 @@ This adds a line with your real name and email address:
 Signed-off-by: Your Name <you@example.com>
 ```
 
+- Halonic's own commits are made through the shared `halonic-dev` account,
+  which the company's signed contributor statement covers. They carry no
+  personal sign-off line.
 - Only a person can sign off. An AI tool can't certify anything, so never let
   one add the line for you.
 - Forgot it? `git commit --amend -s` fixes the last commit;

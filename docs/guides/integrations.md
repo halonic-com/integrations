@@ -847,10 +847,11 @@ format and the full list of scrub rules.
 > **Not settled yet:**
 >
 > - The conformance suite is published from the main repo as
->   `@halonicjs/testing-integration`. Until it is on `main`, test the mapping
->   functions and the error paths with your own tests, and replay your
->   recordings with `@halonicjs/tooling-record/replay`, as the integrations
->   here do. `pnpm record` is available.
+>   `@halonicjs/testing-integration`. It is on `main` there, but not yet
+>   published as a package this repo can install. Until it is, test the
+>   mapping functions and the error paths with your own tests, and replay
+>   your recordings with `@halonicjs/tooling-record/replay`, as the
+>   integrations here do. `pnpm record` is available.
 > - Today one missed `userContent` path publishes that field. The recorder
 >   is to turn this around: scrub every string by default and keep only
 >   the fields marked safe, and reach URL paths and response headers.
