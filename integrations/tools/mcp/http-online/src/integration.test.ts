@@ -1,5 +1,4 @@
-import type { IntegrationHost } from "@halonicjs/integration-mcp-server";
-import { type Replay, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { type Replay, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it, vi } from "vitest";
 import callCancelled from "../recordings/call-cancelled.json" with { type: "json" };
@@ -23,28 +22,6 @@ import { McpToolsError, mcpHttpOnline } from "./index.ts";
  */
 const policy = readSheetPolicy(new URL("../integration.yaml", import.meta.url));
 
-/** This integration keeps no tokens, so a test host refuses every token call. */
-const noTokens: IntegrationHost["tokens"] = {
-  get: () => Promise.reject(new Error("No tokens here.")),
-  set: () => Promise.reject(new Error("No tokens here.")),
-  remove: () => Promise.reject(new Error("No tokens here.")),
-};
-
-/**
- * A whole kit host around a replay. The replay answers with only the parts
- * of a `Response` the MCP client reads, and the client sends only string
- * bodies and plain header objects, so it stands in for the kit's client:
- * the one cast below.
- */
-function hostFor(http: ReplayHttpClient, settings: Record<string, unknown>): IntegrationHost {
-  return {
-    http: http as unknown as IntegrationHost["http"],
-    wait: noWait,
-    tokens: noTokens,
-    settings,
-  };
-}
-
 const url = "https://tools.example.com/mcp";
 
 /**
@@ -55,8 +32,8 @@ async function noWait(): Promise<void> {
   throw new Error("No answer stream breaks off here, so nothing should wait.");
 }
 
-function connect(http: ReplayHttpClient, settings: Record<string, unknown> = { url }) {
-  return mcpHttpOnline.connect(hostFor(http, settings));
+function connect(http: Replay["http"], settings: Record<string, unknown> = { url }) {
+  return mcpHttpOnline.connect(testHost(http, { settings, wait: noWait }));
 }
 
 /** What the integration sent in request `index`, as JSON. */
@@ -164,10 +141,10 @@ describe("tool-mcp-http-online on recordings", () => {
     // The kit aborts the request once the caller's signal fires: here, as
     // soon as the server has the tool call. The progress notice it started
     // to send is never read.
-    const http: ReplayHttpClient = {
+    const http: Replay["http"] = {
       async fetch(fetchUrl, init) {
         const response = await recording.http.fetch(fetchUrl, init);
-        if (init?.body?.includes('"tools/call"') === true) {
+        if (typeof init?.body === "string" && init.body.includes('"tools/call"')) {
           controller.abort();
           throw abort;
         }

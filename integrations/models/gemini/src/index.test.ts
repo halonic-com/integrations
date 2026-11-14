@@ -1,9 +1,9 @@
+import { testHost } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import { GeminiError, gemini } from "./index.ts";
-import { hostFor } from "./test/host.ts";
 
 /** A host whose network fails the test: connecting must send no request. */
-const host = hostFor({
+const host = testHost({
   fetch: async () => {
     throw new Error("connect sent a request");
   },

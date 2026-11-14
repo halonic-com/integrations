@@ -1,10 +1,11 @@
 import type {
   ChatRequest,
   ChatStreamEvent,
+  IntegrationHttpClient,
   LlmProvider,
   ProviderConfig,
 } from "@halonicjs/adapters/integration-kit";
-import { fakeResponse, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { fakeResponse, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerJson from "../recordings/answer-json.json" with { type: "json" };
@@ -17,7 +18,6 @@ import toolCall from "../recordings/tool-call.json" with { type: "json" };
 import { OpenAiError } from "./errors.ts";
 import { openai } from "./index.ts";
 import { createOpenAiProvider } from "./provider.ts";
-import { hostFor, kitHttp } from "./test/host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -48,8 +48,8 @@ const briefQuestion: ChatRequest = {
   messages: [{ role: "system", content: "Be brief." }, ...question.messages],
 };
 
-function provider(http: ReplayHttpClient) {
-  return createOpenAiProvider(kitHttp(http), config);
+function provider(http: IntegrationHttpClient) {
+  return createOpenAiProvider(http, config);
 }
 
 async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
@@ -151,9 +151,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a successful answer that isn't JSON, without quoting it", async () => {
-    const http = fakeResponse(200, async () => {
-      throw new SyntaxError("Unexpected token 'h', \"hello\" is not valid JSON");
-    });
+    const http = fakeResponse(200, "hello");
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -163,7 +161,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a body the schema refuses, without quoting it", async () => {
-    const http = fakeResponse(200, async () => ({ choices: "my private text" }));
+    const http = fakeResponse(200, JSON.stringify({ choices: "my private text" }));
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -173,7 +171,7 @@ describe("chat errors", () => {
 
   it("lets the kit's own errors through unchanged", async () => {
     const refused = new Error("secret-not-configured");
-    const http: ReplayHttpClient = {
+    const http: IntegrationHttpClient = {
       fetch: async () => {
         throw refused;
       },
@@ -241,15 +239,18 @@ describe("stream", () => {
   });
 
   it("reports a refused key before any event, like chat", async () => {
-    const http = fakeResponse(401, async () => ({
-      error: { type: "invalid_request_error", code: "invalid_api_key", message: "Incorrect key" },
-    }));
+    const http = fakeResponse(
+      401,
+      JSON.stringify({
+        error: { type: "invalid_request_error", code: "invalid_api_key", message: "Incorrect key" },
+      }),
+    );
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "not-signed-in", name: "OpenAiError" });
   });
 
   it("refuses a successful answer that isn't an event stream", async () => {
-    const http = fakeResponse(200, async () => ({ choices: [] }));
+    const http = fakeResponse(200, JSON.stringify({ choices: [] }));
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "unexpected-response" });
   });
@@ -257,7 +258,7 @@ describe("stream", () => {
 
 describe("the integration", () => {
   it("reports only the capabilities the mapping handles", () => {
-    const connection = openai.connect(hostFor(replay(answerText).http));
+    const connection = openai.connect(testHost(replay(answerText).http));
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "gpt",
       type: "openai",
@@ -266,7 +267,7 @@ describe("the integration", () => {
   });
 
   it("has no tools", async () => {
-    const connection = openai.connect(hostFor(replay(answerText).http));
+    const connection = openai.connect(testHost(replay(answerText).http));
     expect(openai.tools).toEqual([]);
     await expect(connection.callTool("anything", {})).rejects.toMatchObject({ code: "not-found" });
   });

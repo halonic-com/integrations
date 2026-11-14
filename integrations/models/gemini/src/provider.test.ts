@@ -3,10 +3,11 @@ import type {
   ChatRequest,
   ChatResponse,
   ChatStreamEvent,
+  IntegrationHttpClient,
   LlmProvider,
   ProviderConfig,
 } from "@halonicjs/adapters/integration-kit";
-import { fakeResponse, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { fakeResponse, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerJson from "../recordings/answer-json.json" with { type: "json" };
@@ -19,7 +20,6 @@ import toolCall from "../recordings/tool-call.json" with { type: "json" };
 import { GeminiError } from "./errors.ts";
 import { gemini } from "./index.ts";
 import { createGeminiProvider, generateContentUrl, streamGenerateContentUrl } from "./provider.ts";
-import { hostFor, kitHttp } from "./test/host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -60,8 +60,8 @@ const weatherTool = {
   },
 };
 
-function provider(http: ReplayHttpClient) {
-  return createGeminiProvider(kitHttp(http), config);
+function provider(http: IntegrationHttpClient) {
+  return createGeminiProvider(http, config);
 }
 
 async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
@@ -217,9 +217,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a successful answer that isn't JSON, without quoting it", async () => {
-    const http = fakeResponse(200, async () => {
-      throw new SyntaxError("Unexpected token 'h', \"hello\" is not valid JSON");
-    });
+    const http = fakeResponse(200, "hello");
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -229,7 +227,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a body the schema refuses, without quoting it", async () => {
-    const http = fakeResponse(200, async () => ({ candidates: "my private text" }));
+    const http = fakeResponse(200, JSON.stringify({ candidates: "my private text" }));
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -239,7 +237,7 @@ describe("chat errors", () => {
 
   it("lets the kit's own errors through unchanged", async () => {
     const refused = new Error("secret-not-configured");
-    const http: ReplayHttpClient = {
+    const http: IntegrationHttpClient = {
       fetch: async () => {
         throw refused;
       },
@@ -307,20 +305,23 @@ describe("stream", () => {
   });
 
   it("reports a refused key before any event, like chat", async () => {
-    const http = fakeResponse(400, async () => ({
-      error: {
-        code: 400,
-        message: "API key not valid. Please pass a valid API key.",
-        status: "INVALID_ARGUMENT",
-        details: [{ reason: "API_KEY_INVALID" }],
-      },
-    }));
+    const http = fakeResponse(
+      400,
+      JSON.stringify({
+        error: {
+          code: 400,
+          message: "API key not valid. Please pass a valid API key.",
+          status: "INVALID_ARGUMENT",
+          details: [{ reason: "API_KEY_INVALID" }],
+        },
+      }),
+    );
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "not-signed-in", name: "GeminiError" });
   });
 
   it("refuses a successful answer that isn't an event stream", async () => {
-    const http = fakeResponse(200, async () => ({ candidates: [] }));
+    const http = fakeResponse(200, JSON.stringify({ candidates: [] }));
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "unexpected-response" });
   });
@@ -336,12 +337,12 @@ describe("streamGenerateContentUrl", () => {
 
 describe("the integration", () => {
   it("offers stream along with chat", () => {
-    const connection = gemini.connect(hostFor(replay(answerText).http));
+    const connection = gemini.connect(testHost(replay(answerText).http));
     expect(connection.createLlmProvider?.(config).stream).toBeTypeOf("function");
   });
 
   it("reports only the capabilities the mapping handles", () => {
-    const connection = gemini.connect(hostFor(replay(answerText).http));
+    const connection = gemini.connect(testHost(replay(answerText).http));
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "gemini",
       type: "gemini",
