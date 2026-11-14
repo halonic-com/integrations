@@ -1,6 +1,6 @@
+import type { KnowledgeHit } from "@halonicjs/adapters/integration-kit";
 import type { McpToolResult } from "@halonicjs/integration-mcp";
 import { cutText } from "@halonicjs/integration-shared";
-import type { KnowledgeHit } from "./kit.ts";
 import { maxRefChars, maxSnippetChars, maxTextAnswerChars, maxTitleChars } from "./limits.ts";
 import { asJsonObject, type JsonObject, parseJson, stringField, textsOf } from "./structured.ts";
 

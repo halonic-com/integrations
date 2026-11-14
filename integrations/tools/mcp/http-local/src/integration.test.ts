@@ -1,3 +1,4 @@
+import type { IntegrationHost } from "@halonicjs/integration-mcp-server";
 import { type Replay, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it, vi } from "vitest";
@@ -22,6 +23,28 @@ import { McpToolsError, mcpHttpLocal } from "./index.ts";
  */
 const policy = readSheetPolicy(new URL("../integration.yaml", import.meta.url));
 
+/** This integration keeps no tokens, so a test host refuses every token call. */
+const noTokens: IntegrationHost["tokens"] = {
+  get: () => Promise.reject(new Error("No tokens here.")),
+  set: () => Promise.reject(new Error("No tokens here.")),
+  remove: () => Promise.reject(new Error("No tokens here.")),
+};
+
+/**
+ * A whole kit host around a replay. The replay answers with only the parts
+ * of a `Response` the MCP client reads, and the client sends only string
+ * bodies and plain header objects, so it stands in for the kit's client:
+ * the one cast below.
+ */
+function hostFor(http: ReplayHttpClient, settings: Record<string, unknown>): IntegrationHost {
+  return {
+    http: http as unknown as IntegrationHost["http"],
+    wait: noWait,
+    tokens: noTokens,
+    settings,
+  };
+}
+
 const url = "http://localhost:8080/mcp";
 
 /**
@@ -33,7 +56,7 @@ async function noWait(): Promise<void> {
 }
 
 function connect(http: ReplayHttpClient, settings: Record<string, unknown> = { url }) {
-  return mcpHttpLocal.connect({ http, wait: noWait, settings });
+  return mcpHttpLocal.connect(hostFor(http, settings));
 }
 
 /** What the integration sent in request `index`, as JSON. */

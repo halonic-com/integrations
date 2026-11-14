@@ -1,4 +1,3 @@
-import type { AbortSignalLike } from "@halonicjs/integration-shared";
 import { McpError } from "./errors.ts";
 import type { McpTool, McpToolResult } from "./protocol.ts";
 import { type ClientInfo, McpSession, type ServerAgreement } from "./session.ts";
@@ -47,7 +46,7 @@ export class McpClient {
    * Lists the server's tools now. At most `maxToolPages` requests, plus
    * the two of the handshake when no session is open.
    */
-  listTools(signal?: AbortSignalLike): Promise<McpTool[]> {
+  listTools(signal?: AbortSignal): Promise<McpTool[]> {
     return this.#inSession((session) => session.listTools(signal));
   }
 
@@ -58,7 +57,7 @@ export class McpClient {
   callTool(
     name: string,
     args: Record<string, unknown>,
-    signal?: AbortSignalLike,
+    signal?: AbortSignal,
   ): Promise<McpToolResult> {
     return this.#inSession((session) => session.callTool(name, args, signal));
   }

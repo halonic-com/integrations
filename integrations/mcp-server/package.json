@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@halonicjs/adapters": "catalog:",
     "@halonicjs/integration-mcp": "workspace:*",
     "@halonicjs/integration-shared": "workspace:*",
     "zod": "catalog:"

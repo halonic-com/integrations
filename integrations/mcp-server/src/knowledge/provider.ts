@@ -1,16 +1,21 @@
-import type { McpClient, McpToolResult } from "@halonicjs/integration-mcp";
-import { readSourceConfig, type SourceConfig } from "./config.ts";
-import { toDocument } from "./document.ts";
-import { KnowledgeMcpError, withKnowledgeErrors } from "./errors.ts";
-import { toHits } from "./hits.ts";
 import type {
   KnowledgeCapabilities,
   KnowledgeDoc,
   KnowledgeHit,
   KnowledgeProvider,
-  KnowledgeSource,
-} from "./kit.ts";
+} from "@halonicjs/adapters/integration-kit";
+import type { McpClient, McpToolResult } from "@halonicjs/integration-mcp";
+import { readSourceConfig, type SourceConfig } from "./config.ts";
+import { toDocument } from "./document.ts";
+import { KnowledgeMcpError, withKnowledgeErrors } from "./errors.ts";
+import { toHits } from "./hits.ts";
 import { hitLimit, maxQueryChars, maxRefChars } from "./limits.ts";
+
+/** A knowledge source as the workspace configures it: what `createKnowledgeProvider` is given. */
+export interface KnowledgeSource {
+  id: string;
+  config: Record<string, unknown>;
+}
 
 /**
  * One knowledge source on the connection's MCP server: `search` calls the

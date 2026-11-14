@@ -1,6 +1,6 @@
+import type { IntegrationTool } from "@halonicjs/adapters/integration-kit";
 import type { McpTool } from "@halonicjs/integration-mcp";
 import { describe, expect, it } from "vitest";
-import type { IntegrationTool } from "./kit.ts";
 import {
   maxDescriptionChars,
   maxParametersChars,

@@ -271,6 +271,9 @@ importers:
 
   integrations/mcp-server:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-mcp':
         specifier: workspace:*
         version: link:../mcp

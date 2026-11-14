@@ -229,7 +229,9 @@ describe("StreamableHttpTransport", () => {
 
     it("never resumes a call the caller aborted", async () => {
       const { server, mcp } = await connect([cutCall([{ id: "e1" }], true)]);
-      await expect(mcp.callTool("echo", {}, { aborted: true })).rejects.toThrow("connection reset");
+      await expect(mcp.callTool("echo", {}, AbortSignal.abort())).rejects.toThrow(
+        "connection reset",
+      );
       server.assertAllUsed();
     });
 

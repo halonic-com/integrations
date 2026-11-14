@@ -1,4 +1,3 @@
-import type { AbortSignalLike } from "@halonicjs/integration-shared";
 import type { OutgoingMessage } from "./json-rpc.ts";
 
 /**
@@ -13,11 +12,11 @@ export interface McpTransport {
    *
    * @throws {McpError} when the server can't be reached or refuses the message
    */
-  send(message: OutgoingMessage, signal?: AbortSignalLike): AsyncIterable<unknown>;
+  send(message: OutgoingMessage, signal?: AbortSignal): AsyncIterable<unknown>;
 
   /** Called once the version is agreed; HTTP sends it with every later request. */
   useProtocolVersion(version: string): void;
 
   /** Ends the session on the server, if it keeps one. */
-  close(signal?: AbortSignalLike): Promise<void>;
+  close(signal?: AbortSignal): Promise<void>;
 }

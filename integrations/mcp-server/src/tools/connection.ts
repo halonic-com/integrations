@@ -1,6 +1,6 @@
+import type { IntegrationConnection, IntegrationTool } from "@halonicjs/adapters/integration-kit";
 import { type McpClient, toolNamePattern } from "@halonicjs/integration-mcp";
 import { McpToolsError, withMcpToolsErrors } from "./errors.ts";
-import type { AbortSignal, IntegrationConnection, IntegrationTool } from "./kit.ts";
 import { toResultText } from "./result.ts";
 import { toIntegrationTools } from "./tools.ts";
 

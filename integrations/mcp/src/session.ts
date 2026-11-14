@@ -1,4 +1,3 @@
-import type { AbortSignalLike } from "@halonicjs/integration-shared";
 import type { z } from "zod";
 import { McpError, unexpectedResponse } from "./errors.ts";
 import {
@@ -68,7 +67,7 @@ export class McpSession {
    *
    * @throws {McpError} `unsupported-version` when the server speaks none of ours
    */
-  async initialize(signal?: AbortSignalLike): Promise<ServerAgreement> {
+  async initialize(signal?: AbortSignal): Promise<ServerAgreement> {
     const result = await this.#request(
       "initialize",
       {
@@ -105,7 +104,7 @@ export class McpSession {
    * Lists the server's tools, following pages: at most {@link maxToolPages}
    * requests and {@link maxTools} tools.
    */
-  async listTools(signal?: AbortSignalLike): Promise<McpTool[]> {
+  async listTools(signal?: AbortSignal): Promise<McpTool[]> {
     if (!this.#initialized().offersTools) {
       return [];
     }
@@ -139,7 +138,7 @@ export class McpSession {
   async callTool(
     name: string,
     args: Record<string, unknown>,
-    signal?: AbortSignalLike,
+    signal?: AbortSignal,
   ): Promise<McpToolResult> {
     this.#initialized();
     const result = await this.#request(
@@ -152,7 +151,7 @@ export class McpSession {
   }
 
   /** Ends the session on the server. */
-  async close(signal?: AbortSignalLike): Promise<void> {
+  async close(signal?: AbortSignal): Promise<void> {
     await this.#transport.close(signal);
   }
 
@@ -171,7 +170,7 @@ export class McpSession {
     method: string,
     params: Record<string, unknown>,
     schema: Schema,
-    signal: AbortSignalLike | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<z.infer<Schema>> {
     const id = this.#nextId;
     this.#nextId += 1;
@@ -224,7 +223,7 @@ export class McpSession {
     message: IncomingMessage,
     id: number,
     method: string,
-    signal: AbortSignalLike | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<Record<string, unknown> | undefined> {
     switch (message.kind) {
       case "result":
@@ -250,7 +249,7 @@ export class McpSession {
   async #answerServerRequest(
     id: RequestId,
     method: string,
-    signal: AbortSignalLike | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<void> {
     const answer =
       method === "ping"
