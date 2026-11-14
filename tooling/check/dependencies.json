@@ -11,9 +11,10 @@
     "@halonicjs/adapters": {
       "category": "main-repo",
       "allowedIn": [
-        "@halonicjs/integration-*"
+        "@halonicjs/integration-*",
+        "@halonicjs/tooling-record"
       ],
-      "reason": "The integration kit from halonic-com/halonic (@halonicjs/adapters/integration-kit): the port types, runTool and the errors the host raises. Our own code, with no dependencies; it replaces the kit copies in each integration. Pinned exactly in the catalog (fromMainRepo in policy.json)."
+      "reason": "The integration kit from halonic-com/halonic (@halonicjs/adapters/integration-kit): the port types, runTool and the errors the host raises. Our own code, with no dependencies; it replaces the kit copies in each integration. tooling-record uses its types only, so its replay is the kit's client in tests (approved by Liam as dev tooling). Pinned exactly in the catalog (fromMainRepo in policy.json)."
     },
     "@halonicjs/testing": {
       "category": "dev-tooling",

@@ -372,17 +372,24 @@ recording.assertAllUsed();
   user content doesn't match. Pass the request paths of the `recording` section in
   `integration.yaml`.
 - Check what the integration sent, unscrubbed, through `sent`: a JSON body
-  parsed, any other body as text. A recording can't show user content, such
-  as an instruction the integration adds to the messages.
-- The response has `status`, `headers`, `text()`, `json()` and `body` as a
-  byte stream, with an event stream in its wire format.
-- `fakeResponse` answers every call with one status and body, for error
-  paths a recording can't show.
+  parsed, any other body as text, and the headers as a plain object with
+  lowercase names. A recording can't show user content, such as an
+  instruction the integration adds to the messages.
+- `replay(…).http` is the kit's `IntegrationHttpClient` and answers with a
+  Web `Response`, an event stream in its wire format. Pass it to the
+  integration as it is; no cast is needed.
+- `testHost(http, { settings, wait })` builds a whole kit host around it,
+  with no tokens. `fakeResponse(status, body)` answers every call with one
+  status and body text, for error paths a recording can't show.
 
 It is for integration tests only. Add `@halonicjs/tooling-record` to
 `devDependencies`, never to `dependencies`, and import it only from test
-files: integrations ship without it. It will be replaced by
-`@halonicjs/testing-integration` once that is published.
+files: integrations ship without it.
+
+It stays next to `replayTransport` from `@halonicjs/testing/integration`.
+That one sits below the kit and matches only `<scrubbed:…>` placeholders,
+while this one also checks numbered stand-ins, the integration's scrub
+policy and unset secrets.
 
 ## Still read every recording
 

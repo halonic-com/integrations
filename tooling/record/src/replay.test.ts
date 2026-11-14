@@ -185,7 +185,8 @@ describe("replay of a session", () => {
       'event: message\ndata: {"text":"hello"}\n\nevent: ping\ndata: two\ndata: lines\n\n',
     );
     expect((await reader?.read())?.done).toBe(true);
-    await expect(second.json()).rejects.toThrow(SyntaxError);
+    // A real `Response`: once the stream was read, the body can't be read again.
+    await expect(second.json()).rejects.toThrow(TypeError);
 
     const third = await recorded.http.fetch(sessionUrl, { method: "DELETE", headers: session });
     expect(third.body).toBeNull();

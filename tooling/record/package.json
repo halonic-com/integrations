@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@halonicjs/adapters": "catalog:",
     "@halonicjs/tooling-check": "workspace:*",
     "zod": "catalog:"
   },

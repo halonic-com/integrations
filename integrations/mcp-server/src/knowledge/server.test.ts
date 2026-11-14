@@ -1,4 +1,4 @@
-import { type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import { connectToServer } from "./server.ts";
 import { noWait } from "./test/no-wait.ts";
@@ -117,10 +117,10 @@ function recording(exchanges: unknown[]) {
  * Passes `http`'s calls through, but holds the answers to the calls numbered
  * in `held` (counting from 1) until the test releases them.
  */
-function holdAnswers(http: ReplayHttpClient, held: readonly number[]) {
+function holdAnswers(http: Replay["http"], held: readonly number[]) {
   const gates = new Map(held.map((call) => [call, { arrived: signal(), released: signal() }]));
   let calls = 0;
-  const holding: ReplayHttpClient = {
+  const holding: Replay["http"] = {
     async fetch(fetchUrl, init) {
       calls += 1;
       const gate = gates.get(calls);

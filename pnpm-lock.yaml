@@ -578,6 +578,9 @@ importers:
 
   tooling/record:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/tooling-check':
         specifier: workspace:*
         version: link:../check

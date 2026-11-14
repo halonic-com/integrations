@@ -1,9 +1,16 @@
+import type {
+  IntegrationHttpClient,
+  IntegrationRequestInit,
+  SecretPlacement,
+} from "@halonicjs/adapters/integration-kit";
 import { type RecordingFile, recordingFileSchema } from "./format.ts";
 import { replayContext } from "./replay/replay-context.ts";
 import { RequestBodies } from "./replay/request-body.ts";
 import { RequestUrls } from "./replay/request-url.ts";
 import { ResponseBodies } from "./replay/response-body.ts";
 import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
+
+export { fakeResponse, type TestHostOptions, testHost } from "./replay/test-host.ts";
 
 /**
  * Replays a recording file as `host.http`, the way the conformance suite
@@ -16,69 +23,27 @@ import { definePolicy, type ScrubPolicyInput } from "./scrub/policy.ts";
  * also check what was sent through `sent`.
  *
  * For integration tests only: import it from `@halonicjs/tooling-record/replay`
- * in a devDependency. Replace with `@halonicjs/testing-integration` once it
- * is published.
+ * in a devDependency.
+ *
+ * Why not `replayTransport` from `@halonicjs/testing/integration`: that one
+ * stands below the kit and matches only `<scrubbed:…>` placeholders. This
+ * repo's recordings also have numbered stand-ins for tokens a service
+ * issued, user content scrubbed by the integration's policy, and optional
+ * secrets left out, and this replay checks all three.
  */
-
-/*
- * The HTTP shapes below are the parts of the kit's `host.http` a replay
- * needs. Tooling can't import an integration, so they are written out here;
- * they match the local kit types the integrations use today, so a `Replay`'s
- * `http` can be passed where an integration expects its `IntegrationHttpClient`
- * or `HttpClient`.
- */
-
-/** Where the kit puts the integration's key. */
-export type KeyPlacement =
-  | { secret: string; as: "bearer" }
-  | { secret: string; as: "header"; header: string; prefix?: string }
-  | { secret: string; as: "form"; field: string };
-
-/** The parts of a request an integration sends through `host.http`. */
-export interface ReplayRequestInit {
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-  /** Never read: integrations pass their own `AbortSignal` type, which the integration preset has no global for. */
-  signal?: unknown;
-  auth?: KeyPlacement | readonly KeyPlacement[];
-}
-
-/** The parts of the Web `Response` a replay gives back. */
-export interface ReplayResponse {
-  readonly ok: boolean;
-  readonly status: number;
-  readonly headers: { get(name: string): string | null };
-  /** The body as a stream that yields it in one piece; `null` when there is none. */
-  readonly body: ReplayByteStream | null;
-  text(): Promise<string>;
-  json(): Promise<unknown>;
-}
-
-/** The parts of a `ReadableStream<Uint8Array>` a replay gives back. */
-export interface ReplayByteStream {
-  getReader(): {
-    read(): Promise<{ done: false; value: Uint8Array } | { done: true; value?: undefined }>;
-    cancel(reason?: unknown): Promise<void>;
-    releaseLock(): void;
-  };
-}
-
-/** `host.http`, as a replay provides it. */
-export interface ReplayHttpClient {
-  fetch(url: string, init?: ReplayRequestInit): Promise<ReplayResponse>;
-}
 
 /** What the integration sent. */
 export interface SentRequest {
   url: string;
-  init: ReplayRequestInit;
+  init: IntegrationRequestInit;
+  /** The request headers as a plain object with lowercase names, whichever form the integration gave them in. */
+  headers: Record<string, string>;
   /** The body parsed back from JSON, or its text when it isn't JSON, such as a multipart upload. */
   body: unknown;
 }
 
 export interface Replay {
-  readonly http: ReplayHttpClient;
+  readonly http: IntegrationHttpClient;
   readonly sent: readonly SentRequest[];
   assertAllUsed(): void;
 }
@@ -86,14 +51,6 @@ export interface Replay {
 type Exchange = RecordingFile["exchanges"][number];
 type RecordedHeaders = Exchange["request"]["headers"];
 type RecordedBody = Exchange["response"]["body"];
-
-/*
- * Integration tests typecheck this file with the integration preset, which
- * has no Web or Node globals. The runtimes the tests run on all have these
- * two, so only the parts used here are declared.
- */
-declare const TextEncoder: new () => { encode(text: string): Uint8Array };
-declare const URLSearchParams: new (pairs: [string, string][]) => { toString(): string };
 
 /** The placeholder the recorder writes where the kit put the integration's key. */
 const scrubbedSecret = "<scrubbed:secret>";
@@ -129,14 +86,21 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
   };
   const responses = new ResponseBodies(context.policy);
   const sent: SentRequest[] = [];
-  const http: ReplayHttpClient = {
+  const http: IntegrationHttpClient = {
     async fetch(url, init = {}) {
       const exchange = exchanges[sent.length];
-      sent.push({ url, init, body: sentBody(init.body) });
+      const body = textBody(init.body);
+      const headers = plainHeaders(init.headers);
+      sent.push({ url, init, headers, body: sentBody(body) });
       if (exchange === undefined) {
         throw new Error(`Unexpected call ${sent.length}: ${init.method ?? "GET"} ${url}`);
       }
-      checkMatches(exchange, url, init, unset, check);
+      checkMatches(
+        exchange,
+        { url, method: init.method, headers, body, auth: init.auth },
+        unset,
+        check,
+      );
       responses.check(exchange.request, exchange.response.body);
       return toResponse(exchange.response);
     },
@@ -150,6 +114,22 @@ export function replay(recording: unknown, options: ReplayOptions = {}): Replay 
       }
     },
   };
+}
+
+/**
+ * The request body as text. Integrations send text bodies; a stream or
+ * bytes would have to be read first, which a replay doesn't do.
+ */
+function textBody(body: IntegrationRequestInit["body"]): string | undefined {
+  if (body === undefined || body === null || typeof body === "string") {
+    return body ?? undefined;
+  }
+  throw new Error("The replay reads text request bodies only.");
+}
+
+/** The request headers as a plain object with lowercase names. */
+function plainHeaders(headers: IntegrationRequestInit["headers"]): Record<string, string> {
+  return Object.fromEntries(new Headers(headers));
 }
 
 /** A JSON body parsed, any other text as it is, so a body that isn't JSON doesn't end the call. */
@@ -170,28 +150,36 @@ interface RequestChecks {
   readonly bodies: RequestBodies;
 }
 
+/** A sent request with its headers and body already read as text. */
+interface SentParts {
+  readonly url: string;
+  readonly method: string | undefined;
+  readonly headers: Record<string, string>;
+  readonly body: string | undefined;
+  readonly auth: IntegrationRequestInit["auth"];
+}
+
 function checkMatches(
   exchange: Exchange,
-  url: string,
-  init: ReplayRequestInit,
+  sent: SentParts,
   unset: ReadonlySet<string>,
   check: RequestChecks,
 ): void {
-  check.urls.check(exchange.request, init.method ?? "GET", url);
-  const placed = [init.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
+  check.urls.check(exchange.request, sent.method ?? "GET", sent.url);
+  const placed = [sent.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
   checkKey(exchange.request.headers, placed);
-  checkHeaders(exchange.request.headers, init.headers ?? {});
+  checkHeaders(exchange.request.headers, sent.headers);
   const formKeyFields = new Set(
     placed.flatMap((placement) => (placement.as === "form" ? [placement.field] : [])),
   );
-  check.bodies.check(exchange.request, init.body, init.headers ?? {}, formKeyFields);
+  check.bodies.check(exchange.request, sent.body, sent.headers, formKeyFields);
 }
 
 /**
  * The key is where the request asks the kit to put it, and nowhere else: a
  * recording with a key the request doesn't ask for fails as well.
  */
-function checkKey(recorded: RecordedHeaders, auth: ReplayRequestInit["auth"]): void {
+function checkKey(recorded: RecordedHeaders, auth: IntegrationRequestInit["auth"]): void {
   const keyHeaders = new Set<string>();
   for (const placement of [auth ?? []].flat()) {
     const expected = recordedKeyHeader(placement);
@@ -213,7 +201,9 @@ function checkKey(recorded: RecordedHeaders, auth: ReplayRequestInit["auth"]): v
 }
 
 /** The header the recorder saves for a key the kit put in a header. A form field isn't checked. */
-function recordedKeyHeader(placement: KeyPlacement): { name: string; value: string } | undefined {
+function recordedKeyHeader(
+  placement: SecretPlacement,
+): { name: string; value: string } | undefined {
   switch (placement.as) {
     case "bearer":
       return { name: "authorization", value: `Bearer ${scrubbedSecret}` };
@@ -250,18 +240,14 @@ function checkHeaders(recorded: RecordedHeaders, sent: Record<string, string>): 
   }
 }
 
-function toResponse(recorded: Exchange["response"]): ReplayResponse {
-  const headers = new Map(Object.entries(recorded.headers));
-  const text = bodyText(recorded.body);
-  return {
-    ok: recorded.status >= 200 && recorded.status < 300,
-    status: recorded.status,
-    headers: { get: (name) => headers.get(name.toLowerCase()) ?? null },
-    body: recorded.body.kind === "empty" ? null : byteStream(text),
-    text: async () => text,
-    // Parsed from the text, like a real `Response`, so an empty or event-stream body fails the same way.
-    json: async () => JSON.parse(text),
-  };
+/**
+ * The recorded response as a Web `Response`. The body is given as bytes, so
+ * the `Response` adds no content type the recording doesn't have.
+ */
+function toResponse(recorded: Exchange["response"]): Response {
+  const body =
+    recorded.body.kind === "empty" ? null : new TextEncoder().encode(bodyText(recorded.body));
+  return new Response(body, { status: recorded.status, headers: recorded.headers });
 }
 
 /** The body as the service sent it. */
@@ -285,42 +271,4 @@ function eventText({ event, data }: { event: string; data: unknown }): string {
   const dataText = typeof data === "string" ? data : JSON.stringify(data);
   const dataLines = dataText.split("\n").map((line) => `data: ${line}\n`);
   return `event: ${event}\n${dataLines.join("")}\n`;
-}
-
-/** A byte stream that yields `text` in one piece. */
-function byteStream(text: string): ReplayByteStream {
-  return {
-    getReader() {
-      let done = false;
-      return {
-        async read() {
-          if (done) {
-            return { done: true };
-          }
-          done = true;
-          return { done: false, value: new TextEncoder().encode(text) };
-        },
-        async cancel() {},
-        releaseLock() {},
-      };
-    },
-  };
-}
-
-/**
- * A response for error paths that recordings can't show, such as a body that
- * isn't JSON. It has no headers or body stream, and `text` gives what `json`
- * gives, as JSON.
- */
-export function fakeResponse(status: number, json: () => Promise<unknown>): ReplayHttpClient {
-  return {
-    fetch: async () => ({
-      ok: status >= 200 && status < 300,
-      status,
-      headers: { get: () => null },
-      body: null,
-      text: async () => JSON.stringify(await json()),
-      json,
-    }),
-  };
 }

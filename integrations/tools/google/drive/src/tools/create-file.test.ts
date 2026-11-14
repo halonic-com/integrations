@@ -34,7 +34,7 @@ describe("drive_create_file", () => {
     await callTool(connection, "drive_create_file", planArguments);
     const [upload] = replay.sent;
     expect(upload?.init.method).toBe("POST");
-    expect(upload?.init.headers?.["content-type"]).toBe(
+    expect(upload?.headers["content-type"]).toBe(
       "multipart/related; boundary=halonic-upload-boundary",
     );
     expect(upload?.body).toContain(

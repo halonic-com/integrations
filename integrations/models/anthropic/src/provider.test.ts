@@ -2,11 +2,12 @@ import type {
   ChatMessage,
   ChatRequest,
   ChatStreamEvent,
+  IntegrationHttpClient,
   LlmProvider,
   ProviderConfig,
   ToolDefinition,
 } from "@halonicjs/adapters/integration-kit";
-import { fakeResponse, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
+import { fakeResponse, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerText from "../recordings/answer-text.json" with { type: "json" };
@@ -20,7 +21,6 @@ import toolLoopThinking from "../recordings/tool-loop-thinking.json" with { type
 import { AnthropicError } from "./errors.ts";
 import { anthropic } from "./index.ts";
 import { createAnthropicProvider } from "./provider.ts";
-import { hostFor, kitHttp } from "./test/host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -58,8 +58,8 @@ const weatherForecast: ToolDefinition = {
   parameters: { type: "object", properties: { city: { type: "string" } }, required: ["city"] },
 };
 
-function provider(http: ReplayHttpClient) {
-  return createAnthropicProvider(kitHttp(http), config);
+function provider(http: IntegrationHttpClient) {
+  return createAnthropicProvider(http, config);
 }
 
 async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
@@ -213,9 +213,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a successful answer that isn't JSON, without quoting it", async () => {
-    const http = fakeResponse(200, async () => {
-      throw new SyntaxError("Unexpected token 'h', \"hello\" is not valid JSON");
-    });
+    const http = fakeResponse(200, "hello");
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -225,7 +223,7 @@ describe("chat errors", () => {
   });
 
   it("refuses a body the schema refuses, without quoting it", async () => {
-    const http = fakeResponse(200, async () => ({ content: "my private text" }));
+    const http = fakeResponse(200, JSON.stringify({ content: "my private text" }));
     const error = await provider(http)
       .chat(question)
       .catch((caught) => caught);
@@ -235,7 +233,7 @@ describe("chat errors", () => {
 
   it("lets the kit's own errors through unchanged", async () => {
     const refused = new Error("secret-not-configured");
-    const http: ReplayHttpClient = {
+    const http: IntegrationHttpClient = {
       fetch: async () => {
         throw refused;
       },
@@ -304,16 +302,19 @@ describe("stream", () => {
   });
 
   it("reports a refused key before any event, like chat", async () => {
-    const http = fakeResponse(401, async () => ({
-      type: "error",
-      error: { type: "authentication_error", message: "invalid x-api-key" },
-    }));
+    const http = fakeResponse(
+      401,
+      JSON.stringify({
+        type: "error",
+        error: { type: "authentication_error", message: "invalid x-api-key" },
+      }),
+    );
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "not-signed-in", name: "AnthropicError" });
   });
 
   it("refuses a successful answer that isn't an event stream", async () => {
-    const http = fakeResponse(200, async () => ({ content: [] }));
+    const http = fakeResponse(200, JSON.stringify({ content: [] }));
     const error = await readStream(provider(http), question).catch((caught) => caught);
     expect(error).toMatchObject({ code: "unexpected-response" });
   });
@@ -321,7 +322,7 @@ describe("stream", () => {
 
 describe("the integration", () => {
   it("reports only the capabilities the mapping handles", () => {
-    const connection = anthropic.connect(hostFor(replay(answerText).http));
+    const connection = anthropic.connect(testHost(replay(answerText).http));
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "claude",
       type: "anthropic",
@@ -330,12 +331,12 @@ describe("the integration", () => {
   });
 
   it("offers stream along with chat", () => {
-    const connection = anthropic.connect(hostFor(replay(answerText).http));
+    const connection = anthropic.connect(testHost(replay(answerText).http));
     expect(connection.createLlmProvider?.(config).stream).toBeTypeOf("function");
   });
 
   it("has no tools", async () => {
-    const connection = anthropic.connect(hostFor(replay(answerText).http));
+    const connection = anthropic.connect(testHost(replay(answerText).http));
     expect(anthropic.tools).toEqual([]);
     await expect(connection.callTool("anything", {})).rejects.toMatchObject({ code: "not-found" });
   });
