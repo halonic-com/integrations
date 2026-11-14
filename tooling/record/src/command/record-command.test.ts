@@ -190,7 +190,10 @@ describe("pnpm record", () => {
     const { code, output } = await run(["example"]);
 
     expect(code).toBe(1);
-    expect(output).toBe('No integration has the sheet id or path "example".');
+    expect(output).toBe(
+      'No integration has the sheet id or path "example". ' +
+        "Use the id from its integration.yaml (such as model-anthropic) or its folder path.",
+    );
   });
 
   it("refuses a scenario name that isn't kebab-case, since it becomes the file name", async () => {

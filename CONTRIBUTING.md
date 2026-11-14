@@ -42,7 +42,8 @@ pnpm verify
 ```
 
 `pnpm verify` runs the checks, type checks, lint and tests for the packages
-your change affects. Run it before every push. `pnpm verify --full` runs
+your change affects. On a fresh clone with no changes it finds none and runs
+only the repo checks; that is expected. Run it before every push. `pnpm verify --full` runs
 everything, as CI does. The checks are listed in
 [docs/guides/checks.md](docs/guides/checks.md).
 
@@ -61,7 +62,7 @@ write or change an integration. In short:
   integration's own service that brings in nothing else. Every library needs
   an entry in `tooling/check/dependencies.json` and approval first. Ask in an
   issue. See [docs/guides/dependencies.md](docs/guides/dependencies.md).
-- **Tests run on recorded responses.** Record with `pnpm record <integration>`
+- **Tests run on recorded responses.** Record with `pnpm record <sheet id or path>`
   using your own account. The recorder scrubs keys and personal content before
   it saves, but read every recording before you commit it.
 
