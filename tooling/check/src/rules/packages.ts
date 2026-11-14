@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { type CheckContext, declaredDependencies } from "../lib/context.ts";
 import { folderNamePattern, groupClaiming, scope } from "../lib/layout.ts";
 import { Report } from "../lib/problems.ts";
-import type { WorkspacePackage } from "../lib/workspace.ts";
+import { readCatalog, type WorkspacePackage } from "../lib/workspace.ts";
 
 const guide = "See docs/guides/checks.md.";
 const places =
@@ -13,13 +13,16 @@ const places =
  * Checks each package's `package.json`: its name follows from its folder,
  * it is private unless listed as published, it declares its layer and
  * owner, it exposes only public entry points, and every internal
- * dependency uses `workspace:*` (plan 3.2, 4.1, 6.2). Also finds packages
- * under `integrations/` that pnpm doesn't see, and names used twice.
+ * dependency uses `workspace:*` (plan 3.2, 4.1, 6.2). A package from the
+ * main repo (`fromMainRepo` in the policy) comes from npm instead, with an
+ * exact version in the catalog. Also finds packages under `integrations/`
+ * that pnpm doesn't see, and names used twice.
  */
 export function checkPackages(context: CheckContext): Report {
   const report = new Report("packages");
   checkUnseenPackages(context, report);
   checkDuplicateNames(context, report);
+  checkMainRepoPins(context, report);
   for (const pkg of context.packages) {
     checkIdentity(context, pkg, report);
     checkInternalVersions(context, pkg, report);
@@ -122,8 +125,54 @@ function checkUnseenPackages(context: CheckContext, report: Report): void {
   }
 }
 
+/** An exact version such as `0.1.0` or `1.2.0-beta.1`: no range, tag or `workspace:`. */
+const exactVersion = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+
+/**
+ * Our packages from the main repo (`@halonicjs/adapters`,
+ * `@halonicjs/testing`) are the one place this repo takes our own scope
+ * from npm. Each takes its version from the catalog, and the catalog pins
+ * it exactly, so a new release only arrives in a pull request that a
+ * person reviews. The dependencies rule checks the `catalog:` part.
+ */
+function checkMainRepoPins(context: CheckContext, report: Report): void {
+  const used = new Set(
+    context.packages.flatMap((pkg) =>
+      declaredDependencies(pkg.manifest).map((dependency) => dependency.name),
+    ),
+  );
+  const fromMainRepo = context.policy.fromMainRepo.filter((name) => used.has(name));
+  if (fromMainRepo.length === 0) {
+    return;
+  }
+  const catalog = readCatalog(context.read("pnpm-workspace.yaml"));
+  for (const name of fromMainRepo) {
+    const version = catalog.get(name);
+    if (version === undefined) {
+      report.error(
+        "pnpm-workspace.yaml",
+        `"${name}" comes from the main repo, so add it to "catalog:" with an exact version, such as "${name}": 0.1.0. ${guide}`,
+      );
+    } else if (!exactVersion.test(version)) {
+      report.error(
+        "pnpm-workspace.yaml",
+        `"${name}" comes from the main repo and needs an exact version in "catalog:", not "${version}". A range would take a new release without a review (plan 3.2).`,
+      );
+    }
+  }
+}
+
 function checkInternalVersions(context: CheckContext, pkg: WorkspacePackage, report: Report): void {
   for (const dependency of declaredDependencies(pkg.manifest)) {
+    if (context.policy.fromMainRepo.includes(dependency.name)) {
+      if (dependency.version.startsWith("workspace:")) {
+        report.error(
+          pkg.manifestPath,
+          `"${dependency.name}" comes from the main repo on npm, not from this workspace. Use "catalog:". ${guide}`,
+        );
+      }
+      continue;
+    }
     const internal =
       dependency.name.startsWith(`${scope}/`) || context.packagesByName.has(dependency.name);
     if (!internal) {

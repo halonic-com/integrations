@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
+import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 
 /** A draft as Gmail returns it, with the headers given. */
@@ -25,7 +26,7 @@ function connectToDraft(headers: Record<string, string>, body: string) {
       text: async () => JSON.stringify(draft),
     }),
   };
-  return gmail.connect({ http, wait: async () => {} });
+  return gmail.connect(hostFor({ http }));
 }
 
 describe("google.get-draft-returns-bcc", () => {

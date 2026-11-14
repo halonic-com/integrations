@@ -12,7 +12,6 @@ export {
   googleApi,
 } from "./google-api.ts";
 export type {
-  AbortSignalLike,
   GoogleHost,
   HttpClient,
   HttpRequestInit,

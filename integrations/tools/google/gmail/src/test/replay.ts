@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
+import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
 import type { GoogleHost, HttpClient } from "@halonicjs/integration-tool-google-shared";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { gmail } from "../index.ts";
-import type { IntegrationConnection } from "../kit.ts";
+import { hostFor } from "./host.ts";
 
 /**
  * Connects Gmail to a recording, through the shared replay in
@@ -69,7 +70,7 @@ export function connectToRecording(scenario: string): {
 } {
   const recorded = replay(loadRecording(scenario), { policy });
   const { wait, waits } = recordingWait();
-  const connection = gmail.connect({ http: requireBearer(recorded), wait });
+  const connection = gmail.connect(hostFor({ http: requireBearer(recorded), wait }));
   return { connection, replay: recorded, waits };
 }
 

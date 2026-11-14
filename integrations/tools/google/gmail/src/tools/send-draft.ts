@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { gmailIdSchema } from "./arguments.ts";
 
 const sendDraftArguments = z.strictObject({

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
+import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 import { maxLabels } from "./list-labels.ts";
 
@@ -33,7 +34,7 @@ describe("gmail_list_labels", () => {
       }),
     };
     const result = JSON.parse(
-      await gmail.connect({ http, wait: async () => {} }).callTool("gmail_list_labels", {}),
+      await gmail.connect(hostFor({ http })).callTool("gmail_list_labels", {}),
     );
     expect(result.labels).toHaveLength(maxLabels);
     expect(result.omittedLabels).toBe(3);
@@ -80,15 +81,16 @@ describe("gmail_modify_labels", () => {
     // Only the request's body matters here, so Gmail's empty 204 is faked
     // instead of recording modify-labels again with other labels.
     const sentBodies: string[] = [];
-    const connection = gmail.connect({
-      http: {
-        async fetch(_url, init) {
-          sentBodies.push(init?.body ?? "");
-          return { status: 204, ok: true, headers: { get: () => null }, text: async () => "" };
+    const connection = gmail.connect(
+      hostFor({
+        http: {
+          async fetch(_url, init) {
+            sentBodies.push(init?.body ?? "");
+            return { status: 204, ok: true, headers: { get: () => null }, text: async () => "" };
+          },
         },
-      },
-      wait: async () => {},
-    });
+      }),
+    );
     await expect(
       connection.callTool("gmail_modify_labels", {
         messageIds: ["19a0c0ffee000001"],

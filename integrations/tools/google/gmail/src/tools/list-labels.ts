@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient, Label } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 
 /** Gmail allows 10,000 labels; a result that long wouldn't help the model. */
 export const maxLabels = 500;

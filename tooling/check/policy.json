@@ -1,6 +1,10 @@
 {
   "//": "Settings for tooling/check. See docs/guides/checks.md.",
   "published": [],
+  "fromMainRepo": [
+    "@halonicjs/adapters",
+    "@halonicjs/testing"
+  ],
   "fileSize": {
     "warnLines": 300,
     "maxLines": 500,

@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient } from "../client.ts";
 import { composeArguments, composeMail } from "../compose.ts";
-import type { ToolImplementation } from "../kit.ts";
 
 export const createDraftTool = {
   declaration: {

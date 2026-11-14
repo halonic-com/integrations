@@ -8,6 +8,21 @@
       ],
       "reason": "Formatter and linter in one fast tool."
     },
+    "@halonicjs/adapters": {
+      "category": "main-repo",
+      "allowedIn": [
+        "@halonicjs/integration-*"
+      ],
+      "reason": "The integration kit from halonic-com/halonic (@halonicjs/adapters/integration-kit): the port types, runTool and the errors the host raises. Our own code, with no dependencies; it replaces the kit copies in each integration. Pinned exactly in the catalog (fromMainRepo in policy.json)."
+    },
+    "@halonicjs/testing": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "@halonicjs/integration-*",
+        "@halonicjs/tooling-record"
+      ],
+      "reason": "The integration conformance suite and replay helpers from halonic-com/halonic (@halonicjs/testing/integration). Tests only. Brings in yaml (dev tooling, approved by Liam), Zod and @halonicjs/adapters. Pinned exactly in the catalog (fromMainRepo in policy.json)."
+    },
     "@types/node": {
       "category": "dev-tooling",
       "allowedIn": [

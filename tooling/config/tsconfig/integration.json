@@ -1,11 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "//": "For integrations: no Node types and no DOM, so the code also runs in the cloud runtime (workerd). All network access goes through the kit's HttpClient, so fetch, fs or process are compile errors here.",
+  "//": "For integrations: no Node types and no DOM, so the code also runs in the cloud runtime (workerd). The Web types the kit names (Response, RequestInit, AbortSignal) come from types/web-types.d.ts, which has types and no values, so fetch, fs or process are still compile errors here. All network access goes through the kit's HttpClient.",
   "extends": "./base.json",
   "compilerOptions": {
     "lib": [
       "es2024"
     ],
-    "types": []
+    "types": [
+      "@halonicjs/tooling-config/types/web-types.d.ts"
+    ]
   }
 }

@@ -17,6 +17,8 @@ packages:
 # in both repos.
 catalog:
   "@biomejs/biome": 2.6.5
+  "@halonicjs/adapters": 0.1.0
+  "@halonicjs/testing": 0.1.0
   "@types/node": ^26.6.6
   "@typescript/typescript6": ^6.0.2
   turbo: ^2.11.10

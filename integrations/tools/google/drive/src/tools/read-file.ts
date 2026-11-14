@@ -1,4 +1,4 @@
-import { type AbortSignalLike, GoogleError } from "@halonicjs/integration-tool-google-shared";
+import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { z } from "zod";
 import type { DriveClient } from "../client.ts";
 import { readPlan, textPart } from "../contents.ts";
@@ -48,7 +48,7 @@ async function exportText(
   client: DriveClient,
   fileId: string,
   formats: readonly string[],
-  signal: AbortSignalLike | undefined,
+  signal: AbortSignal | undefined,
 ): Promise<FileText> {
   let refused: GoogleError | undefined;
   for (const format of formats) {

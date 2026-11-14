@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { type MessageSummary, summarize } from "../message.ts";
 import { pageTokenSchema } from "./arguments.ts";
 

@@ -10,8 +10,10 @@
  * {@link maxIntegrationWaitMs} follow `IntegrationHost` in
  * `packages/core/ports/src/integration.ts`.
  *
- * Not settled yet: these are local types until the kit is published. Then
- * they become imports from `@halonicjs/integration-kit` and `@halonicjs/ports`.
+ * The request and response types are the parts of the Web `RequestInit`
+ * and `Response` this library uses, so the kit's `host.http` fits them as
+ * it is and a test can pass a small fake. `AbortSignal` is the Web one,
+ * from the integration preset's Web types.
  */
 
 /**
@@ -19,15 +21,6 @@
  * it; the retry policy gives up before asking for longer.
  */
 export const maxIntegrationWaitMs = 30_000;
-
-/**
- * The parts of an `AbortSignal` we use: we only pass it on. The integration
- * TypeScript preset has no Web types, so a real `AbortSignal` is checked
- * against this shape. When the kit is published, this becomes `AbortSignal`.
- */
-export interface AbortSignalLike {
-  readonly aborted: boolean;
-}
 
 /** Where the kit puts a secret. Google only needs a bearer token. */
 export interface SecretPlacement {
@@ -41,7 +34,8 @@ export interface HttpRequestInit {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
-  signal?: AbortSignalLike | undefined;
+  /** Left out rather than `undefined`, as the kit's `IntegrationRequestInit` asks. */
+  signal?: AbortSignal;
   auth?: SecretPlacement;
 }
 
@@ -82,5 +76,5 @@ export interface GoogleHost {
    *
    * @throws `signal.reason` when `signal` aborts during the wait or is already aborted
    */
-  wait(ms: number, signal?: AbortSignalLike): Promise<void>;
+  wait(ms: number, signal?: AbortSignal): Promise<void>;
 }

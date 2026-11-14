@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { headerValue } from "../message.ts";
 import { bodyText, readContent } from "../message-content.ts";
 import { bodyOffsetSchema, gmailIdSchema, maxBodyCharsLimit } from "./arguments.ts";
