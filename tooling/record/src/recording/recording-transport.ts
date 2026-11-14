@@ -3,7 +3,8 @@ import type { CapturedExchange, CapturedRequest, HeaderEntry } from "../scrub/ex
 /**
  * The raw transport under the kit, the `HttpClient` port of
  * halonic-com/halonic (`packages/core/ports/src/http-client.ts`). Copied
- * here until the kit is published; then import it from there.
+ * here because `@halonicjs/adapters` publishes only what an integration
+ * imports, and an integration never sees the transport.
  */
 export interface HttpTransport {
   fetch(url: string, init?: RequestInit): Promise<Response>;
