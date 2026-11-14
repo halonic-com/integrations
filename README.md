@@ -7,8 +7,6 @@ connectors. Each one is built to the integration interface in the main repo
 the hosts and secrets it declares, tool declarations with a risk level, and
 the shared conformance suite.
 
-This repository is being set up. More soon.
-
 | Folder                                    | What                                              |
 | ----------------------------------------- | ------------------------------------------------- |
 | `integrations/models/<provider>`          | model providers, such as Anthropic and OpenAI     |

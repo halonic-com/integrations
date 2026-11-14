@@ -61,7 +61,10 @@ async function record(io: RecordCommandIo, print: (line: string) => void): Promi
   }
   const folder = findIntegration(io.root, given);
   if (folder === undefined) {
-    print(`No integration has the sheet id or path "${given}".`);
+    print(
+      `No integration has the sheet id or path "${given}". ` +
+        "Use the id from its integration.yaml (such as model-anthropic) or its folder path.",
+    );
     return 1;
   }
   const sheet = readRecordingSheet(readFileSync(join(folder, "integration.yaml"), "utf8"));
