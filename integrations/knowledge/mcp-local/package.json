@@ -17,6 +17,7 @@
   "devDependencies": {
     "@halonicjs/tooling-config": "workspace:*",
     "@halonicjs/tooling-record": "workspace:*",
+    "@halonicjs/testing": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
