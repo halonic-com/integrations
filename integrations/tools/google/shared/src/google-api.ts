@@ -120,6 +120,9 @@ export class GoogleApi {
       if (delay === undefined) {
         throw errorForResponse(response.status, await response.text(), this.#failed(request.url));
       }
+      // The retried response is never read; cancelling frees its connection now.
+      // A failure to cancel changes nothing for the caller, so it is ignored.
+      await response.body?.cancel().catch(() => undefined);
       await this.#host.wait(delay, request.signal);
     }
   }

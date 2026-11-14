@@ -166,6 +166,19 @@ describe("GoogleApi retries", () => {
     expect(waits).toEqual([1_000]);
   });
 
+  it("cancels the body of a response it retries", async () => {
+    let cancelled = false;
+    const body = new ReadableStream({
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const http = new FakeHttp(new Response(body, { status: 503 }), response(200, "ok"));
+    const { google } = setUp(http);
+    await google.getText(listUrl);
+    expect(cancelled).toBe(true);
+  });
+
   it("sends a GET at most three times", async () => {
     const http = new FakeHttp(response(503), response(503), response(503));
     const { google, waits } = setUp(http);
