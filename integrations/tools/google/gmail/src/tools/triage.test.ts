@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
+import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 import { bodyCharsPerMessage } from "./triage.ts";
 
@@ -19,7 +20,7 @@ describe("gmail_triage", () => {
         return { ok: true, status: 200, headers: { get: () => null }, text: async () => "{}" };
       },
     };
-    const result = await gmail.connect({ http, wait: async () => {} }).callTool("gmail_triage", {});
+    const result = await gmail.connect(hostFor({ http })).callTool("gmail_triage", {});
     expect(JSON.parse(result)).toMatchObject({ query: "is:unread in:inbox", messages: [] });
   });
 

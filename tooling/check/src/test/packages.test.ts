@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   type FixturePackage,
@@ -8,6 +10,9 @@ import {
   runChecks,
   tool,
 } from "./fixture-repo.ts";
+
+const realRoot = join(import.meta.dirname, "..", "..", "..", "..");
+const workspaceYaml = readFileSync(join(realRoot, "pnpm-workspace.yaml"), "utf8");
 
 describe("tooling/check: packages", () => {
   it("passes an empty integration and an empty tool", () => {
@@ -138,5 +143,41 @@ describe("tooling/check: packages", () => {
     const messages = runChecks([integration(folder)]).map((problem) => problem.message);
     expect(messages).toHaveLength(1);
     expect(messages[0]).toContain(`kept for integrations/${group}/`);
+  });
+
+  describe("packages from the main repo", () => {
+    const usesKit = (version: string) =>
+      integration("gmail", { dependencies: { "@halonicjs/adapters": version } });
+
+    it("passes the kit from npm with its exact version in the catalog", () => {
+      expect(runChecks([usesKit("catalog:")])).toEqual([]);
+    });
+
+    it("rejects workspace:* for a package that only the main repo has", () => {
+      const messages = runChecks([usesKit("workspace:*")]).map((problem) => problem.message);
+      expect(messages.some((message) => message.includes("not from this workspace"))).toBe(true);
+    });
+
+    it("rejects a range for it in the catalog", () => {
+      const ranged = workspaceYaml.replace(
+        '"@halonicjs/adapters": 0.1.0',
+        '"@halonicjs/adapters": ^0.1.0',
+      );
+      expect(ranged).not.toBe(workspaceYaml);
+      const messages = runChecks([usesKit("catalog:")], {
+        extraFiles: { "pnpm-workspace.yaml": ranged },
+      }).map((problem) => problem.message);
+      expect(messages).toEqual([
+        expect.stringContaining('needs an exact version in "catalog:", not "^0.1.0"'),
+      ]);
+    });
+
+    it("asks for a catalog entry when there is none", () => {
+      const missing = workspaceYaml.replace('  "@halonicjs/adapters": 0.1.0\n', "");
+      const messages = runChecks([usesKit("catalog:")], {
+        extraFiles: { "pnpm-workspace.yaml": missing },
+      }).map((problem) => problem.message);
+      expect(messages.some((message) => message.includes('add it to "catalog:"'))).toBe(true);
+    });
   });
 });

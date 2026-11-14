@@ -3,7 +3,7 @@ import { Report } from "../lib/problems.ts";
 import type { DependencyField, WorkspacePackage } from "../lib/workspace.ts";
 
 const guide = "See docs/guides/dependencies.md.";
-const categories = new Set(["outside-world", "general", "dev-tooling"]);
+const categories = new Set(["outside-world", "general", "main-repo", "dev-tooling"]);
 
 interface ExternalDependency {
   readonly name: string;

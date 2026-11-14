@@ -95,6 +95,37 @@ export function readWorkspaceGlobs(root: string): string[] {
   return globs;
 }
 
+/**
+ * Reads the `catalog:` of `pnpm-workspace.yaml`: each package name and the
+ * version written for it, without quotes. Like {@link readWorkspaceGlobs},
+ * a line reader: the catalog is one level of `name: version` lines.
+ *
+ * @example
+ * readCatalog('catalog:\n  "@halonicjs/adapters": 0.1.0\n  zod: ^4.6.7\n');
+ * // Map { "@halonicjs/adapters" => "0.1.0", "zod" => "^4.6.7" }
+ */
+export function readCatalog(workspaceYaml: string): Map<string, string> {
+  const catalog = new Map<string, string>();
+  let inCatalog = false;
+  for (const line of workspaceYaml.split("\n")) {
+    if (/^catalog:\s*(?:#.*)?$/.test(line)) {
+      inCatalog = true;
+      continue;
+    }
+    if (!inCatalog || line.trim() === "" || line.trimStart().startsWith("#")) {
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      break;
+    }
+    const entry = /^\s+(["']?)([^"'\s:]+)\1:\s*(["']?)([^"'\s#]+)\3\s*(?:#.*)?$/.exec(line);
+    if (entry?.[2] !== undefined && entry[4] !== undefined) {
+      catalog.set(entry[2], entry[4]);
+    }
+  }
+  return catalog;
+}
+
 /** Lists every workspace package, the root package first. */
 export function listWorkspacePackages(root: string): WorkspacePackage[] {
   const directories = ["."];

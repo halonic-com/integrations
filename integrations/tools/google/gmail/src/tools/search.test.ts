@@ -1,6 +1,7 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
+import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 
 /**
@@ -81,7 +82,7 @@ describe("gmail_search", () => {
         };
       },
     };
-    const result = await gmail.connect({ http, wait: async () => {} }).callTool("gmail_search", {});
+    const result = await gmail.connect(hostFor({ http })).callTool("gmail_search", {});
     expect(JSON.parse(result)).toEqual({ messages: [] });
   });
 

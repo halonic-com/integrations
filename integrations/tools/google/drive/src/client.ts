@@ -1,5 +1,4 @@
 import {
-  type AbortSignalLike,
   type GoogleApi,
   googleApi,
   googleBaseUrls,
@@ -54,7 +53,7 @@ export class DriveClient {
   }
 
   /** One request: a page of the files that match the query. */
-  async listFiles(request: ListFilesRequest, signal?: AbortSignalLike): Promise<FileList> {
+  async listFiles(request: ListFilesRequest, signal?: AbortSignal): Promise<FileList> {
     const url = googleUrl(googleBaseUrls.drive, ["files"], {
       q: request.query,
       pageSize: request.pageSize,
@@ -70,7 +69,7 @@ export class DriveClient {
    * One request: a file's details. `supportsAllDrives` lets Drive find a
    * file in a shared drive; without it, Drive answers 404.
    */
-  async getFile(fileId: string, signal?: AbortSignalLike): Promise<DriveFile> {
+  async getFile(fileId: string, signal?: AbortSignal): Promise<DriveFile> {
     const url = googleUrl(googleBaseUrls.drive, ["files", fileId], {
       fields: fileFields,
       supportsAllDrives: true,
@@ -79,7 +78,7 @@ export class DriveClient {
   }
 
   /** One request: a Google Doc, Sheet, Slides or Drawing exported as `format`. */
-  async exportFile(fileId: string, format: string, signal?: AbortSignalLike): Promise<string> {
+  async exportFile(fileId: string, format: string, signal?: AbortSignal): Promise<string> {
     const url = googleUrl(googleBaseUrls.drive, ["files", fileId, "export"], {
       mimeType: format,
     });
@@ -87,7 +86,7 @@ export class DriveClient {
   }
 
   /** One request: a stored file's contents, read as text. */
-  async downloadFile(fileId: string, signal?: AbortSignalLike): Promise<string> {
+  async downloadFile(fileId: string, signal?: AbortSignal): Promise<string> {
     const url = googleUrl(googleBaseUrls.drive, ["files", fileId], {
       alt: "media",
       supportsAllDrives: true,
@@ -103,7 +102,7 @@ export class DriveClient {
   async createFile(
     metadata: NewFileMetadata,
     content: UploadContent,
-    signal?: AbortSignalLike,
+    signal?: AbortSignal,
   ): Promise<DriveFile> {
     const url = googleUrl(googleBaseUrls.driveUpload, ["files"], uploadQuery);
     return await this.#upload("POST", url, metadata, content, signal);
@@ -116,7 +115,7 @@ export class DriveClient {
   async replaceFileContent(
     fileId: string,
     content: UploadContent,
-    signal?: AbortSignalLike,
+    signal?: AbortSignal,
   ): Promise<DriveFile> {
     const url = googleUrl(googleBaseUrls.driveUpload, ["files", fileId], uploadQuery);
     return await this.#upload("PATCH", url, {}, content, signal);
@@ -129,7 +128,7 @@ export class DriveClient {
   async createFolder(
     name: string,
     parentId: string | undefined,
-    signal?: AbortSignalLike,
+    signal?: AbortSignal,
   ): Promise<DriveFile> {
     const url = googleUrl(googleBaseUrls.drive, ["files"], {
       fields: writtenFileFields,
@@ -146,7 +145,7 @@ export class DriveClient {
    * One read, retried where the Google library allows: the folders a file
    * is in now, which a move has to name to take it out of them.
    */
-  async getParents(fileId: string, signal?: AbortSignalLike): Promise<readonly string[]> {
+  async getParents(fileId: string, signal?: AbortSignal): Promise<readonly string[]> {
     const url = googleUrl(googleBaseUrls.drive, ["files", fileId], {
       fields: "id,parents",
       supportsAllDrives: true,
@@ -161,7 +160,7 @@ export class DriveClient {
    * `addParents` and `removeParents` do the move in one `PATCH`.
    * https://developers.google.com/workspace/drive/api/guides/folder#move-files
    */
-  async moveFile(move: FileMove, signal?: AbortSignalLike): Promise<DriveFile> {
+  async moveFile(move: FileMove, signal?: AbortSignal): Promise<DriveFile> {
     const url = googleUrl(googleBaseUrls.drive, ["files", move.fileId], {
       addParents: move.toFolderId,
       // A file shared with the account may be in none of its folders.
@@ -184,7 +183,7 @@ export class DriveClient {
     url: string,
     metadata: UploadMetadata,
     content: UploadContent,
-    signal: AbortSignalLike | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<DriveFile> {
     const upload = multipartUploadBody(metadata, content);
     const request = {

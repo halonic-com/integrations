@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { GmailClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { gmailIdSchema } from "./arguments.ts";
 
 /** Label ids are short: system ones such as "UNREAD", user ones such as "Label_12". */

@@ -1,6 +1,10 @@
+import {
+  type Integration,
+  runTool,
+  type ToolImplementation,
+} from "@halonicjs/adapters/integration-kit";
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { GmailClient } from "./client.ts";
-import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { createDraftTool } from "./tools/create-draft.ts";
 import { getDraftTool } from "./tools/get-draft.ts";
 import { listLabelsTool } from "./tools/list-labels.ts";
@@ -46,4 +50,8 @@ export const gmail: Integration = {
   },
 };
 
-export type { Integration, IntegrationHost, IntegrationTool } from "./kit.ts";
+export type {
+  Integration,
+  IntegrationHost,
+  IntegrationTool,
+} from "@halonicjs/adapters/integration-kit";

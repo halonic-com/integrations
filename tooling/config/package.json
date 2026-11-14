@@ -6,7 +6,8 @@
   "exports": {
     "./vitest": "./src/vitest-preset.ts",
     "./tsconfig/*.json": "./tsconfig/*.json",
-    "./biome.jsonc": "./biome.jsonc"
+    "./biome.jsonc": "./biome.jsonc",
+    "./types/*.d.ts": "./types/*.d.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",

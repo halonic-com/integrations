@@ -15,8 +15,10 @@ import {
 /**
  * What an entry in `dependencies.json` is for (plan 7.1). `general` is Zod
  * alone: the one library the user allows outside connector code.
+ * `main-repo` is our own code published from halonic-com/halonic, such as
+ * the integration kit; the policy's `fromMainRepo` lists the same names.
  */
-export type DependencyCategory = "outside-world" | "general" | "dev-tooling";
+export type DependencyCategory = "outside-world" | "general" | "main-repo" | "dev-tooling";
 
 /** One approved external dependency. */
 export interface ApprovedDependency {
@@ -33,6 +35,8 @@ export interface DependencyList {
 /** The contents of `tooling/check/policy.json`. */
 export interface Policy {
   readonly published: readonly string[];
+  /** Our packages from the main repo, taken from npm with an exact version instead of `workspace:*`. */
+  readonly fromMainRepo: readonly string[];
   readonly fileSize: {
     readonly warnLines: number;
     readonly maxLines: number;

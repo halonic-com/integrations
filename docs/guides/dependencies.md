@@ -9,7 +9,12 @@ Adding a dependency is a decision, not a side effect (plan 7.1).
    that talks to that service, and only if it brings in nothing else.
    Otherwise we write a small connector on built-in web requests.
 3. **Zod** is the one general exception (category `general`).
-4. **Dev tooling** (compiler, test runner, linter, build cache) goes in
+4. **Our own packages from the main repo** (category `main-repo`): the
+   integration kit, `@halonicjs/adapters`. Listed under `fromMainRepo` in
+   `tooling/check/policy.json` too, and pinned to an exact version in the
+   catalog, so a new release arrives only in a reviewed pull request.
+   `@halonicjs/testing` is used in tests only, so it is `dev-tooling`.
+5. **Dev tooling** (compiler, test runner, linter, build cache) goes in
    `devDependencies` and never ships.
 
 Integrations also run in the cloud runtime, which carries only the
@@ -28,7 +33,8 @@ integration inside that.
    }
    ```
 
-   `category` is `outside-world`, `general` (Zod only) or `dev-tooling`.
+   `category` is `outside-world`, `general` (Zod only), `main-repo` or
+   `dev-tooling`.
    `allowedIn` lists package names; `*` matches any text.
 2. Add the version once to the `catalog:` in `pnpm-workspace.yaml`.
 3. Use `"some-library": "catalog:"` in the package's `package.json`.
@@ -52,7 +58,9 @@ integration inside that.
 - **`registries`**: the `@halonicjs` scope always comes from npm.
 
 Internal dependencies always use `"workspace:*"`. A version range would let
-pnpm look the name up on the registry.
+pnpm look the name up on the registry. The one exception is a package from
+the main repo, which only npm has: it uses `"catalog:"`, with its exact
+version in the catalog.
 
 Never edit `pnpm-lock.yaml` by hand. On a conflict, take either side and
 run `pnpm install`.

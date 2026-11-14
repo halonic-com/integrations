@@ -53,15 +53,15 @@ so both repos check the same things. What differs:
   `175bd68` (#330). The test changes `pnpm-workspace.yaml` through
   `extraFiles`, because this repo's fixture has no `workspaceYaml` option.
 
+- `policy.json` has `fromMainRepo`: our packages from the main repo
+  (`@halonicjs/adapters`, `@halonicjs/testing`), the one place this repo
+  takes our own scope from npm. `packages.ts` lets them skip
+  `workspace:*` and requires an exact version in the catalog instead,
+  read by `readCatalog` in `src/lib/workspace.ts`. `dependencies.json`
+  lists them, `@halonicjs/adapters` under a new `main-repo` category.
+
 Every other file is unchanged. A fix to a shared file goes into the main
 repo first and is then copied here.
 
 Uses `@typescript/typescript6` for the parser API until TypeScript 7.1
 ships its own (D9); then that dependency goes.
-
-## Not yet handled
-
-- `@halonicjs/integration-kit` from the main repo: it comes from npm with
-  an exact pin, and the `packages` rule gets a `fromMainRepo` list in
-  `policy.json` (Liam's decision on #3). That rule change lands with the
-  first pull request that depends on the kit (I3).

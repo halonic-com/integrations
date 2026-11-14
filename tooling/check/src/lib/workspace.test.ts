@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { expandWorkspaceGlob, readWorkspaceGlobs } from "./workspace.ts";
+import { expandWorkspaceGlob, readCatalog, readWorkspaceGlobs } from "./workspace.ts";
 
 function globsOf(yaml: string): string[] {
   const root = mkdtempSync(join(tmpdir(), "halonic-workspace-"));
@@ -39,6 +39,29 @@ describe("readWorkspaceGlobs", () => {
   it("throws when packages is missing or empty", () => {
     expect(() => globsOf("packages:\n\ncatalog: {}\n")).toThrow(/lists no folders/);
     expect(() => globsOf("catalog: {}\n")).toThrow(/is missing/);
+  });
+});
+
+describe("readCatalog", () => {
+  it("reads quoted and plain names up to the next key", () => {
+    const yaml = [
+      "packages:",
+      "  - tooling/*",
+      "catalog:",
+      '  "@halonicjs/adapters": 0.1.0',
+      "  # a comment",
+      "  zod: ^4.6.7 # a trailing comment",
+      "",
+      "minimumReleaseAge: 4320",
+    ].join("\n");
+    expect([...readCatalog(yaml)]).toEqual([
+      ["@halonicjs/adapters", "0.1.0"],
+      ["zod", "^4.6.7"],
+    ]);
+  });
+
+  it("is empty without a catalog", () => {
+    expect(readCatalog("packages:\n  - tooling/*\n").size).toBe(0);
   });
 });
 
