@@ -1,6 +1,7 @@
+import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
 import { GoogleError, type GoogleErrorCode } from "@halonicjs/integration-tool-google-shared";
 import { drive } from "../src/index.ts";
-import type { IntegrationConnection, Scenario } from "../src/kit.ts";
+import type { Scenario } from "../src/scenario.ts";
 
 /**
  * Live `drive_tree` scenarios for `pnpm record`. They answer the three

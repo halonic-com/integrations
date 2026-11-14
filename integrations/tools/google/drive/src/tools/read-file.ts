@@ -1,9 +1,9 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { z } from "zod";
 import type { DriveClient } from "../client.ts";
 import { readPlan, textPart } from "../contents.ts";
 import { type FileDetails, fileDetails } from "../file.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { fileIdSchema } from "./arguments.ts";
 
 /** The most one read returns. The result goes into the model's context. */

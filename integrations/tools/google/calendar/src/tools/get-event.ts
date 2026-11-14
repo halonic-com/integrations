@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { CalendarClient } from "../client.ts";
 import { type EventDetails, eventDetails } from "../event.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { calendarIdSchema, eventIdSchema } from "./arguments.ts";
 
 const getEventArguments = z.strictObject({

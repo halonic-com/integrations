@@ -1,3 +1,4 @@
+import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
 import type {
   GoogleHost,
   HttpClient,
@@ -6,7 +7,7 @@ import type {
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { drive } from "../index.ts";
-import type { IntegrationConnection } from "../kit.ts";
+import { hostFor } from "./host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -63,7 +64,10 @@ export function connectToRecording(recording: unknown): {
 } {
   const recorded = replay(recording, { policy });
   const { wait } = recordingWait();
-  return { connection: drive.connect({ http: requireBearer(recorded), wait }), replay: recorded };
+  return {
+    connection: drive.connect(hostFor({ http: requireBearer(recorded), wait })),
+    replay: recorded,
+  };
 }
 
 /** Calls a tool and parses its JSON result. */
@@ -99,7 +103,7 @@ export function connectToFakeDrive(
     },
   };
   const { wait, waits } = recordingWait();
-  return { connection: drive.connect({ http, wait }), urls, waits };
+  return { connection: drive.connect(hostFor({ http, wait })), urls, waits };
 }
 
 /** One answer of {@link connectToFakeAnswers}. */
@@ -133,5 +137,5 @@ export function connectToFakeAnswers(...answers: FakeAnswer[]): {
       };
     },
   };
-  return { connection: drive.connect({ http, wait: recordingWait().wait }), requests };
+  return { connection: drive.connect(hostFor({ http, wait: recordingWait().wait })), requests };
 }

@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { DriveClient, FileList, ListFilesRequest } from "../client.ts";
 import { type DriveFile, folderType, sizeInBytes } from "../file.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { allOf, hasType, inFolder, notTrashed } from "../query.ts";
 import { driveIdSchema } from "./arguments.ts";
 

@@ -1,5 +1,6 @@
 import {
   type GoogleApi,
+  type GoogleHost,
   googleApi,
   googleBaseUrls,
   googleUrl,
@@ -13,7 +14,6 @@ import {
   folderType,
   listedFileFields,
 } from "./file.ts";
-import type { IntegrationHost } from "./kit.ts";
 import type { NewFileMetadata } from "./new-file-metadata.ts";
 import { multipartUploadBody, type UploadContent, type UploadMetadata } from "./upload-body.ts";
 import { writtenFileFields } from "./written-file.ts";
@@ -48,7 +48,7 @@ const allDrives = { supportsAllDrives: true, includeItemsFromAllDrives: true } a
 export class DriveClient {
   readonly #google: GoogleApi;
 
-  constructor(host: IntegrationHost) {
+  constructor(host: GoogleHost) {
     this.#google = googleApi(host, { secret: "google-account", service: "Google Drive" });
   }
 

@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import { type CalendarDetails, calendarDetails } from "../calendar-entry.ts";
 import type { CalendarClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { pageTokenSchema } from "./arguments.ts";
 
 /** Google's own limit for one page of the calendar list. */

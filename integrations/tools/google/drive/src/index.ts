@@ -1,6 +1,10 @@
+import {
+  type Integration,
+  runTool,
+  type ToolImplementation,
+} from "@halonicjs/adapters/integration-kit";
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { DriveClient } from "./client.ts";
-import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { createFileTool } from "./tools/create-file.ts";
 import { createFolderTool } from "./tools/create-folder.ts";
 import { getFileTool } from "./tools/get-file.ts";
@@ -42,4 +46,8 @@ export const drive: Integration = {
   },
 };
 
-export type { Integration, IntegrationHost, IntegrationTool } from "./kit.ts";
+export type {
+  Integration,
+  IntegrationHost,
+  IntegrationTool,
+} from "@halonicjs/adapters/integration-kit";

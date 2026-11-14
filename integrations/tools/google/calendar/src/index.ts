@@ -1,6 +1,10 @@
+import {
+  type Integration,
+  runTool,
+  type ToolImplementation,
+} from "@halonicjs/adapters/integration-kit";
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { CalendarClient } from "./client.ts";
-import { type Integration, runTool, type ToolImplementation } from "./kit.ts";
 import { createEventTool } from "./tools/create-event.ts";
 import { deleteEventTool } from "./tools/delete-event.ts";
 import { getEventTool } from "./tools/get-event.ts";
@@ -38,4 +42,8 @@ export const calendar: Integration = {
   },
 };
 
-export type { Integration, IntegrationHost, IntegrationTool } from "./kit.ts";
+export type {
+  Integration,
+  IntegrationHost,
+  IntegrationTool,
+} from "@halonicjs/adapters/integration-kit";
