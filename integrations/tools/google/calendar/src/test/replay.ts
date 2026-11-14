@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
 import type {
   GoogleHost,
   HttpClient,
@@ -7,7 +8,7 @@ import type {
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { calendar } from "../index.ts";
-import type { IntegrationConnection } from "../kit.ts";
+import { hostFor } from "./host.ts";
 
 /**
  * Connects Calendar to a recording, through the shared replay in
@@ -72,7 +73,7 @@ export function connectToRecording(scenario: string): {
 } {
   const recorded = replay(loadRecording(scenario), { policy });
   const { wait } = recordingWait();
-  const connection = calendar.connect({ http: requireBearer(recorded), wait });
+  const connection = calendar.connect(hostFor({ http: requireBearer(recorded), wait }));
   return { connection, replay: recorded };
 }
 
@@ -113,7 +114,7 @@ export function connectToFakeCalendar(
     },
   };
   const { wait, waits } = recordingWait();
-  return { connection: calendar.connect({ http, wait }), requests, waits };
+  return { connection: calendar.connect(hostFor({ http, wait })), requests, waits };
 }
 
 /** A Google error body with a reason and a sentence that repeats the request, as Google's can. */

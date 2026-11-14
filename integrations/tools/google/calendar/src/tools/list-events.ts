@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { CalendarClient } from "../client.ts";
 import { type EventSummary, eventSummary } from "../event.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { calendarIdSchema, dateTimeSchema, pageTokenSchema } from "./arguments.ts";
 
 /** Google allows 2,500 events per page; 100 keeps one result small enough for the model. */

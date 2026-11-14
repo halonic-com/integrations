@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { DriveClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { contentTypeSchema } from "../upload-body.ts";
 import { type WrittenFile, writtenFile } from "../written-file.ts";
 import { fileIdSchema, uploadTextSchema } from "./arguments.ts";

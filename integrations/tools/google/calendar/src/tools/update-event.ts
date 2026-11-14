@@ -1,7 +1,7 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { CalendarClient } from "../client.ts";
 import { checkTimes, eventChanges } from "../event-changes.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { type WrittenEvent, writtenEvent } from "../written-event.ts";
 import {
   calendarIdSchema,

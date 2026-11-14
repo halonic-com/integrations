@@ -1,6 +1,6 @@
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import type { DriveClient } from "../client.ts";
-import type { ToolImplementation } from "../kit.ts";
 import { type MovedFile, movedFile } from "../written-file.ts";
 import { driveIdSchema, fileIdSchema, fileNameSchema } from "./arguments.ts";
 

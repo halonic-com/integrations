@@ -1,5 +1,6 @@
 import {
   type GoogleApi,
+  type GoogleHost,
   googleApi,
   googleUrl,
   withNextPageToken,
@@ -13,7 +14,6 @@ import {
   listedEventFields,
 } from "./event.ts";
 import type { EventChanges } from "./event-changes.ts";
-import type { IntegrationHost } from "./kit.ts";
 import { writtenEventFields } from "./written-event.ts";
 
 /**
@@ -67,7 +67,7 @@ export interface ListEventsRequest {
 export class CalendarClient {
   readonly #google: GoogleApi;
 
-  constructor(host: IntegrationHost) {
+  constructor(host: GoogleHost) {
     this.#google = googleApi(host, { secret: "google-account", service: "Google Calendar" });
   }
 

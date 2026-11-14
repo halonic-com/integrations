@@ -389,6 +389,9 @@ importers:
 
   integrations/tools/google/calendar:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-tool-google-shared':
         specifier: workspace:*
         version: link:../shared
@@ -414,6 +417,9 @@ importers:
 
   integrations/tools/google/drive:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-tool-google-shared':
         specifier: workspace:*
         version: link:../shared
