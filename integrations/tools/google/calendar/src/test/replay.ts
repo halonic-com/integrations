@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
-import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type { HttpClient, HttpResponse } from "@halonicjs/integration-tool-google-shared";
+import type {
+  IntegrationConnection,
+  IntegrationHttpClient,
+} from "@halonicjs/adapters/integration-kit";
 import { fakeWait } from "@halonicjs/testing/integration";
-import { type Replay, replay } from "@halonicjs/tooling-record/replay";
+import { type Replay, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { calendar } from "../index.ts";
-import { hostFor } from "./host.ts";
 
 /**
  * Connects Calendar to a recording, through the shared replay in
@@ -33,10 +34,12 @@ function loadRecording(scenario: string): unknown {
  * shared replay checks a token only where a request asks for one, so a
  * request that forgets it fails here.
  */
-function requireBearer(recorded: Replay): HttpClient {
+function requireBearer(recorded: Replay): IntegrationHttpClient {
   return {
     async fetch(url, init) {
-      if (init?.auth?.as !== "bearer") {
+      // `auth` may also be a list of placements; Google sends exactly one.
+      const auth = init?.auth;
+      if (auth === undefined || !("as" in auth) || auth.as !== "bearer") {
         throw new Error(
           `The request to ${url} doesn't ask the kit for the account's bearer token.`,
         );
@@ -53,7 +56,7 @@ export function connectToRecording(scenario: string): {
 } {
   const recorded = replay(loadRecording(scenario), { policy });
   const { wait } = fakeWait();
-  const connection = calendar.connect(hostFor({ http: requireBearer(recorded), wait }));
+  const connection = calendar.connect(testHost(requireBearer(recorded), { wait }));
   return { connection, replay: recorded };
 }
 
@@ -81,20 +84,19 @@ export function connectToFakeCalendar(
   waits: readonly number[];
 } {
   const requests: { url: string; method: string | undefined; body: string | undefined }[] = [];
-  const response: HttpResponse = {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: { get: () => null },
-    text: async () => body,
-  };
-  const http: HttpClient = {
+  const http: IntegrationHttpClient = {
     async fetch(url, init) {
-      requests.push({ url, method: init?.method, body: init?.body });
-      return response;
+      requests.push({
+        url,
+        method: init?.method,
+        body: typeof init?.body === "string" ? init.body : undefined,
+      });
+      // A response can be read once, so each request gets its own.
+      return new Response(body, { status });
     },
   };
   const { wait, waits } = fakeWait();
-  return { connection: calendar.connect(hostFor({ http, wait })), requests, waits };
+  return { connection: calendar.connect(testHost(http, { wait })), requests, waits };
 }
 
 /** A Google error body with a reason and a sentence that repeats the request, as Google's can. */

@@ -1,6 +1,6 @@
+import { testHost } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
-import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 import { bodyCharsPerMessage } from "./triage.ts";
 
@@ -17,10 +17,10 @@ describe("gmail_triage", () => {
         expect(url).toBe(
           "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is%3Aunread+in%3Ainbox&maxResults=10",
         );
-        return { ok: true, status: 200, headers: { get: () => null }, text: async () => "{}" };
+        return new Response("{}");
       },
     };
-    const result = await gmail.connect(hostFor({ http })).callTool("gmail_triage", {});
+    const result = await gmail.connect(testHost(http)).callTool("gmail_triage", {});
     expect(JSON.parse(result)).toMatchObject({ query: "is:unread in:inbox", messages: [] });
   });
 

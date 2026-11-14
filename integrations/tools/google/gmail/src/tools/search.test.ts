@@ -1,7 +1,7 @@
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
+import { testHost } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
-import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 
 /**
@@ -74,15 +74,10 @@ describe("gmail_search", () => {
         expect(url).toBe(
           "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in%3Ainbox&maxResults=15",
         );
-        return {
-          ok: true,
-          status: 200,
-          headers: { get: () => null },
-          text: async () => "{}",
-        };
+        return new Response("{}");
       },
     };
-    const result = await gmail.connect(hostFor({ http })).callTool("gmail_search", {});
+    const result = await gmail.connect(testHost(http)).callTool("gmail_search", {});
     expect(JSON.parse(result)).toEqual({ messages: [] });
   });
 

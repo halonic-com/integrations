@@ -1,9 +1,12 @@
+import type {
+  IntegrationHttpClient,
+  IntegrationRequestInit,
+} from "@halonicjs/adapters/integration-kit";
 import { fakeWait } from "@halonicjs/testing/integration";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import { type GoogleApiOptions, googleApi } from "./google-api.ts";
-import type { HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
 import { serviceDisabledBody } from "./test/service-disabled.ts";
 
 const listUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Atest";
@@ -12,28 +15,20 @@ const uploadUrl = "https://www.googleapis.com/upload/drive/v3/files/f1?uploadTyp
 const messageSchema = z.object({ id: z.string() });
 
 /** A response the fake client hands back. */
-function response(status: number, body = "", headers: Record<string, string> = {}): HttpResponse {
-  const lowerCase = new Map(
-    Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value]),
-  );
-  return {
-    status,
-    ok: status >= 200 && status <= 299,
-    headers: { get: (name) => lowerCase.get(name.toLowerCase()) ?? null },
-    text: async () => body,
-  };
+function response(status: number, body = "", headers: Record<string, string> = {}): Response {
+  return new Response(body, { status, headers });
 }
 
 /** Answers with the given responses in turn and keeps every request it got. */
-class FakeHttp implements HttpClient {
-  readonly requests: { url: string; init: HttpRequestInit | undefined }[] = [];
-  readonly #responses: HttpResponse[];
+class FakeHttp implements IntegrationHttpClient {
+  readonly requests: { url: string; init: IntegrationRequestInit | undefined }[] = [];
+  readonly #responses: Response[];
 
-  constructor(...responses: HttpResponse[]) {
+  constructor(...responses: Response[]) {
     this.#responses = responses;
   }
 
-  async fetch(url: string, init?: HttpRequestInit): Promise<HttpResponse> {
+  async fetch(url: string, init?: IntegrationRequestInit): Promise<Response> {
     this.requests.push({ url, init });
     const next = this.#responses.shift();
     if (next === undefined) {
@@ -154,7 +149,7 @@ describe("GoogleApi requests", () => {
 
   it("lets the kit's own errors through unchanged and doesn't retry them", async () => {
     const refused = new Error("host-not-allowed");
-    const http: HttpClient = { fetch: async () => Promise.reject(refused) };
+    const http: IntegrationHttpClient = { fetch: async () => Promise.reject(refused) };
     const google = googleApi(
       { http, wait: fakeWait().wait },
       { secret: "google-account", service: "Gmail" },

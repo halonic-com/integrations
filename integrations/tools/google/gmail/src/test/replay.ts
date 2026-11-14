@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
-import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type { HttpClient } from "@halonicjs/integration-tool-google-shared";
+import type {
+  IntegrationConnection,
+  IntegrationHttpClient,
+} from "@halonicjs/adapters/integration-kit";
 import { fakeWait } from "@halonicjs/testing/integration";
-import { type Replay, replay } from "@halonicjs/tooling-record/replay";
+import { type Replay, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { gmail } from "../index.ts";
-import { hostFor } from "./host.ts";
 
 /**
  * Connects Gmail to a recording, through the shared replay in
@@ -32,10 +33,12 @@ export function loadRecording(scenario: string): unknown {
  * replay checks a token only where a request asks for one, so a request that
  * forgets it fails here.
  */
-function requireBearer(recorded: Replay): HttpClient {
+function requireBearer(recorded: Replay): IntegrationHttpClient {
   return {
     async fetch(url, init) {
-      if (init?.auth?.as !== "bearer") {
+      // `auth` may also be a list of placements; Google sends exactly one.
+      const auth = init?.auth;
+      if (auth === undefined || !("as" in auth) || auth.as !== "bearer") {
         throw new Error(
           `The request to ${url} doesn't ask the kit for the account's bearer token.`,
         );
@@ -54,7 +57,7 @@ export function connectToRecording(scenario: string): {
 } {
   const recorded = replay(loadRecording(scenario), { policy });
   const { wait, waits } = fakeWait();
-  const connection = gmail.connect(hostFor({ http: requireBearer(recorded), wait }));
+  const connection = gmail.connect(testHost(requireBearer(recorded), { wait }));
   return { connection, replay: recorded, waits };
 }
 

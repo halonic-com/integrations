@@ -5,16 +5,16 @@ Google integration needs, so Gmail and Drive don't repeat it. It is a
 library, not an integration: it has no permission sheet, no tools and no
 `Integration` ([guide, section 2](../../../../docs/guides/integrations.md#2-where-it-goes-and-what-its-called)).
 
-| File                        | What it does                                                       |
-| --------------------------- | ------------------------------------------------------------------ |
-| `src/errors.ts`             | `GoogleError`, the one error type of every Google integration      |
-| `src/error-for-response.ts` | turns a Google error response into a `GoogleError`                 |
-| `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text        |
-| `src/disabled-api.ts`       | reads which API is switched off, and in which project              |
-| `src/http.ts`               | the small part of the kit's host this library uses: `http`, `wait` |
-| `src/google-api.ts`         | `googleApi`: every Google request goes through it                  |
-| `src/retry-policy.ts`       | when a request is sent again, and how long to wait first           |
-| `src/urls.ts`               | Google base URLs, URL building and paging                          |
+| File                        | What it does                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `src/errors.ts`             | `GoogleError`, the one error type of every Google integration                 |
+| `src/error-for-response.ts` | turns a Google error response into a `GoogleError`                            |
+| `src/error-reason.ts`       | reads Google's machine-readable reason, never its free text                   |
+| `src/disabled-api.ts`       | reads which API is switched off, and in which project                         |
+| `src/host.ts`               | `GoogleHost`: the part of the kit's host this library uses, `http` and `wait` |
+| `src/google-api.ts`         | `googleApi`: every Google request goes through it                             |
+| `src/retry-policy.ts`       | when a request is sent again, and how long to wait first                      |
+| `src/urls.ts`               | Google base URLs, URL building and paging                                     |
 
 ## Requests
 

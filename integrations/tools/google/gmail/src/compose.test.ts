@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import type { HttpClient, HttpRequestInit } from "@halonicjs/integration-tool-google-shared";
+import type { IntegrationHttpClient } from "@halonicjs/adapters/integration-kit";
 import { describe, expect, it } from "vitest";
 import { GmailClient } from "./client.ts";
 import { composeArguments, composeMail } from "./compose.ts";
@@ -31,17 +31,12 @@ const sendAs = {
 /** A fake Gmail that answers by path, and the paths it was asked for. */
 function fakeGmail(answers: Record<string, { status: number; body: unknown }>) {
   const asked: string[] = [];
-  const http: HttpClient = {
-    async fetch(url: string, _init?: HttpRequestInit) {
+  const http: IntegrationHttpClient = {
+    async fetch(url: string) {
       const path = url.slice(base.length).split("?")[0] ?? "";
       asked.push(path);
       const answer = answers[path] ?? { status: 404, body: {} };
-      return {
-        ok: answer.status < 300,
-        status: answer.status,
-        headers: { get: () => null },
-        text: async () => JSON.stringify(answer.body),
-      };
+      return new Response(JSON.stringify(answer.body), { status: answer.status });
     },
   };
   return { client: new GmailClient({ http, wait: async () => {} }), asked };

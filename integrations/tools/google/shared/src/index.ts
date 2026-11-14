@@ -11,11 +11,5 @@ export {
   type GoogleRequest,
   googleApi,
 } from "./google-api.ts";
-export type {
-  GoogleHost,
-  HttpClient,
-  HttpRequestInit,
-  HttpResponse,
-  SecretPlacement,
-} from "./http.ts";
+export type { GoogleHost } from "./host.ts";
 export { googleBaseUrls, googleUrl, type QueryValue, withNextPageToken } from "./urls.ts";

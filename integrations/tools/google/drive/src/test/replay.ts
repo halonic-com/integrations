@@ -1,10 +1,11 @@
-import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type { HttpClient, HttpResponse } from "@halonicjs/integration-tool-google-shared";
+import type {
+  IntegrationConnection,
+  IntegrationHttpClient,
+} from "@halonicjs/adapters/integration-kit";
 import { fakeWait } from "@halonicjs/testing/integration";
-import { type Replay, replay } from "@halonicjs/tooling-record/replay";
+import { type Replay, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { drive } from "../index.ts";
-import { hostFor } from "./host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -18,10 +19,12 @@ const policy = readSheetPolicy(new URL("../../integration.yaml", import.meta.url
  * shared replay checks a token only where a request asks for one, so a
  * request that forgets it fails here.
  */
-function requireBearer(recorded: Replay): HttpClient {
+function requireBearer(recorded: Replay): IntegrationHttpClient {
   return {
     async fetch(url, init) {
-      if (init?.auth?.as !== "bearer") {
+      // `auth` may also be a list of placements; Google sends exactly one.
+      const auth = init?.auth;
+      if (auth === undefined || !("as" in auth) || auth.as !== "bearer") {
         throw new Error(
           `The request to ${url} doesn't ask the kit for the account's bearer token.`,
         );
@@ -45,7 +48,7 @@ export function connectToRecording(recording: unknown): {
   const recorded = replay(recording, { policy });
   const { wait } = fakeWait();
   return {
-    connection: drive.connect(hostFor({ http: requireBearer(recorded), wait })),
+    connection: drive.connect(testHost(requireBearer(recorded), { wait })),
     replay: recorded,
   };
 }
@@ -70,20 +73,15 @@ export function connectToFakeDrive(
   body: string,
 ): { connection: IntegrationConnection; urls: string[]; waits: readonly number[] } {
   const urls: string[] = [];
-  const response: HttpResponse = {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: { get: () => null },
-    text: async () => body,
-  };
-  const http: HttpClient = {
+  const http: IntegrationHttpClient = {
     async fetch(url) {
       urls.push(url);
-      return response;
+      // A response can be read once, so each request gets its own.
+      return new Response(body, { status });
     },
   };
   const { wait, waits } = fakeWait();
-  return { connection: drive.connect(hostFor({ http, wait })), urls, waits };
+  return { connection: drive.connect(testHost(http, { wait })), urls, waits };
 }
 
 /** One answer of {@link connectToFakeAnswers}. */
@@ -102,20 +100,15 @@ export function connectToFakeAnswers(...answers: FakeAnswer[]): {
   requests: { url: string; body: string | undefined }[];
 } {
   const requests: { url: string; body: string | undefined }[] = [];
-  const http: HttpClient = {
+  const http: IntegrationHttpClient = {
     async fetch(url, init) {
-      requests.push({ url, body: init?.body });
+      requests.push({ url, body: typeof init?.body === "string" ? init.body : undefined });
       const answer = answers.shift();
       if (answer === undefined) {
         throw new Error(`The tool sent more requests than the test expected: ${url}`);
       }
-      return {
-        ok: answer.status >= 200 && answer.status < 300,
-        status: answer.status,
-        headers: { get: () => null },
-        text: async () => answer.body,
-      };
+      return new Response(answer.body, { status: answer.status });
     },
   };
-  return { connection: drive.connect(hostFor({ http, wait: fakeWait().wait })), requests };
+  return { connection: drive.connect(testHost(http, { wait: fakeWait().wait })), requests };
 }
