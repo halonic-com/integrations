@@ -59,6 +59,13 @@
       ],
       "reason": "Test runner (D9)."
     },
+    "yaml": {
+      "category": "dev-tooling",
+      "allowedIn": [
+        "@halonicjs/tooling-record"
+      ],
+      "reason": "Reads an integration's permission sheet as data for the conformance suite in tests (@halonicjs/tooling-record/sheet-data). The suite already brings it in, at the same version, so this adds no new code. Tests only, never in an integration."
+    },
     "zod": {
       "category": "general",
       "allowedIn": [

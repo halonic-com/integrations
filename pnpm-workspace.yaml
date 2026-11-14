@@ -24,6 +24,7 @@ catalog:
   turbo: ^2.11.10
   typescript: ^7.0.2
   vitest: ^5.1.0
+  yaml: 2.9.1
   zod: ^4.6.7
 
 # Our scope always comes from npm, also on a machine with another default
