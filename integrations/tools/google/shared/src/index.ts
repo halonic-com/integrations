@@ -4,7 +4,12 @@ export {
   type FailedRequest,
   unexpectedResponse,
 } from "./error-for-response.ts";
-export { GoogleApiDisabledError, GoogleError, type GoogleErrorCode } from "./errors.ts";
+export {
+  GoogleApiDisabledError,
+  GoogleError,
+  type GoogleErrorCode,
+  type GoogleErrorKind,
+} from "./errors.ts";
 export {
   GoogleApi,
   type GoogleApiOptions,
