@@ -1,7 +1,7 @@
+import type { IntegrationTool } from "@halonicjs/adapters/integration-kit";
 import type { McpTool } from "@halonicjs/integration-mcp";
 import { cutText } from "@halonicjs/integration-shared";
 import { McpToolsError } from "./errors.ts";
-import type { IntegrationTool } from "./kit.ts";
 import {
   maxDescriptionChars,
   maxParametersChars,

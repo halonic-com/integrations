@@ -219,15 +219,16 @@ describe("cancelling a request", () => {
 
   /** An answer during which the caller aborts, so the server never answers. */
   const abortWhileWaiting =
-    (signal: { aborted: boolean }): ScriptedAnswer =>
+    (controller: AbortController): ScriptedAnswer =>
     () => {
-      signal.aborted = true;
+      controller.abort();
       return [];
     };
 
   it("tells the server when the caller aborts a call", async () => {
-    const signal = { aborted: false };
-    const { transport, session } = await connected([abortWhileWaiting(signal)]);
+    const controller = new AbortController();
+    const { signal } = controller;
+    const { transport, session } = await connected([abortWhileWaiting(controller)]);
     await expect(session.callTool("echo", {}, signal)).rejects.toBeInstanceOf(Error);
     expect(transport.sent.at(-1)).toEqual(cancelled(2));
   });
@@ -239,15 +240,17 @@ describe("cancelling a request", () => {
   });
 
   it("never cancels initialize", async () => {
-    const signal = { aborted: false };
-    const transport = new FakeTransport([abortWhileWaiting(signal)]);
+    const controller = new AbortController();
+    const { signal } = controller;
+    const transport = new FakeTransport([abortWhileWaiting(controller)]);
     await expect(new McpSession(transport, { clientInfo }).initialize(signal)).rejects.toThrow();
     expect(transport.sent).toHaveLength(1);
   });
 
   it("keeps the caller's error when the server can't be told", async () => {
-    const signal = { aborted: false };
-    const { transport, session } = await connected([abortWhileWaiting(signal)]);
+    const controller = new AbortController();
+    const { signal } = controller;
+    const { transport, session } = await connected([abortWhileWaiting(controller)]);
     const send = transport.send.bind(transport);
     vi.spyOn(transport, "send").mockImplementation(async function* (message) {
       if ("method" in message && message.method === "notifications/cancelled") {

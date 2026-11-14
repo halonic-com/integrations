@@ -1,5 +1,4 @@
 import {
-  type AbortSignalLike,
   type ByteStream,
   EventStream,
   EventStreamError,
@@ -91,7 +90,7 @@ export class StreamableHttpTransport implements McpTransport {
     this.#options = options;
   }
 
-  async *send(message: OutgoingMessage, signal?: AbortSignalLike): AsyncGenerator<unknown> {
+  async *send(message: OutgoingMessage, signal?: AbortSignal): AsyncGenerator<unknown> {
     const response = await this.#fetch(
       "POST",
       { "content-type": "application/json" },
@@ -125,7 +124,7 @@ export class StreamableHttpTransport implements McpTransport {
     this.#protocolVersion = version;
   }
 
-  async close(signal?: AbortSignalLike): Promise<void> {
+  async close(signal?: AbortSignal): Promise<void> {
     if (this.#sessionId === undefined) {
       return;
     }
@@ -141,7 +140,7 @@ export class StreamableHttpTransport implements McpTransport {
    * Yields the messages of an answer stream until the answer to `id`,
    * resuming the stream when it ends or drops too early.
    */
-  async *#readAnswerStream(firstBody: ByteStream, id: number, signal: AbortSignalLike | undefined) {
+  async *#readAnswerStream(firstBody: ByteStream, id: number, signal: AbortSignal | undefined) {
     let body = firstBody;
     // The id of the last complete event over all streams of this request.
     let lastEventId = "";
@@ -188,7 +187,7 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   /** Asks the server to send the rest of the stream, after the event with this id. */
-  async #resume(lastEventId: string, signal: AbortSignalLike | undefined): Promise<ByteStream> {
+  async #resume(lastEventId: string, signal: AbortSignal | undefined): Promise<ByteStream> {
     const response = await this.#fetch("GET", { "last-event-id": lastEventId }, undefined, signal);
     await this.#throwUnlessOk(response);
     if (mediaType(response) !== "text/event-stream" || response.body === null) {
@@ -203,7 +202,7 @@ export class StreamableHttpTransport implements McpTransport {
     method: string,
     extraHeaders: Record<string, string>,
     body: string | undefined,
-    signal: AbortSignalLike | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<HttpResponse> {
     const headers: Record<string, string> = {
       accept: "application/json, text/event-stream",

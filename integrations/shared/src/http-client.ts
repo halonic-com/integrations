@@ -4,12 +4,12 @@
  *
  * It has the shape of the `HttpClient` port in the main repo
  * (`packages/core/ports/src/http-client.ts`): the signature of the Web
- * `fetch`. It is narrowed to the members our integrations use, because the
- * integration TypeScript preset has no Web types (`Response`,
- * `ReadableStream`, `AbortSignal`). A real `Response` fits these types.
+ * `fetch`. It is narrowed to the members our integrations use, so a test
+ * can fake it with a few lines. A real `Response` fits these types, and the
+ * signal is the Web `AbortSignal`, as in the kit.
  *
- * **To swap later:** delete this file, import `HttpClient` from the kit, and
- * replace `AbortSignalLike` with `AbortSignal`. Nothing else changes.
+ * **To swap later:** delete this file and import `HttpClient` from the kit.
+ * The tests' fakes then need the whole `Response`.
  */
 
 /** Sends requests, but only to the hosts the permission sheet declares. */
@@ -27,7 +27,7 @@ export interface HttpRequestInit {
   readonly method?: string;
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: string;
-  readonly signal?: AbortSignalLike;
+  readonly signal?: AbortSignal;
   readonly auth?: SecretPlacement;
 }
 
@@ -71,9 +71,4 @@ export interface ByteStreamReader {
   /** Stops the stream; the connection can be closed. */
   cancel(reason?: unknown): Promise<void>;
   releaseLock(): void;
-}
-
-/** The parts of an `AbortSignal` we use: we only pass it on. */
-export interface AbortSignalLike {
-  readonly aborted: boolean;
 }

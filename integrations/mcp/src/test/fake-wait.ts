@@ -1,4 +1,3 @@
-import type { AbortSignalLike } from "@halonicjs/integration-shared";
 import { type McpHost, maxIntegrationWaitMs } from "../host.ts";
 
 /**
@@ -42,7 +41,7 @@ export function fakeWait(during?: () => void): FakeWait {
   };
 }
 
-function throwIfAborted(signal: AbortSignalLike | undefined): void {
+function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted === true) {
     throw "reason" in signal ? signal.reason : new Error("The wait was aborted.");
   }

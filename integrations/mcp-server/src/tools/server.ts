@@ -1,7 +1,7 @@
+import type { IntegrationHost } from "@halonicjs/adapters/integration-kit";
 import { McpClient, StreamableHttpTransport } from "@halonicjs/integration-mcp";
 import type { SecretPlacement } from "@halonicjs/integration-shared";
 import { clientInfoOf, type IntegrationEntry } from "../entry.ts";
-import type { IntegrationHost } from "./kit.ts";
 import { readSettings } from "./settings.ts";
 
 /** The secret the sheet declares; the kit adds its value, which we never see. */

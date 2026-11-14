@@ -1,6 +1,6 @@
+import type { Integration } from "@halonicjs/adapters/integration-kit";
 import type { IntegrationEntry } from "../entry.ts";
 import { KnowledgeMcpError } from "./errors.ts";
-import type { Integration } from "./kit.ts";
 import { McpKnowledgeProvider } from "./provider.ts";
 import { connectToServer } from "./server.ts";
 

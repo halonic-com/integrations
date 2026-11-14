@@ -1,6 +1,6 @@
+import type { KnowledgeDoc } from "@halonicjs/adapters/integration-kit";
 import type { McpToolResult } from "@halonicjs/integration-mcp";
 import { cutText } from "@halonicjs/integration-shared";
-import type { KnowledgeDoc } from "./kit.ts";
 import { maxDocumentChars, maxTitleChars } from "./limits.ts";
 import { asJsonObject, parseJson, stringField, textsOf } from "./structured.ts";
 

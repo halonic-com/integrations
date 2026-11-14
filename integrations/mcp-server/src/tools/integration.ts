@@ -1,6 +1,6 @@
+import type { Integration } from "@halonicjs/adapters/integration-kit";
 import type { IntegrationEntry } from "../entry.ts";
 import { McpToolsConnection } from "./connection.ts";
-import type { Integration } from "./kit.ts";
 import { mcpClientFor } from "./server.ts";
 
 /**
