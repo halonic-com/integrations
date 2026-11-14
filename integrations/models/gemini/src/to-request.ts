@@ -1,6 +1,12 @@
+import type {
+  ChatMessage,
+  ChatParams,
+  ChatRequest,
+  ToolCall,
+  ToolDefinition,
+} from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import { idForGemini } from "./call-ids.ts";
-import type { ChatMessage, ChatParams, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
 
 /**
  * The `generateContent` request body, as far as we send it. The model goes

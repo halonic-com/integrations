@@ -1,5 +1,5 @@
+import type { ChatRequest } from "@halonicjs/adapters/integration-kit";
 import { describe, expect, it } from "vitest";
-import type { ChatRequest } from "./kit.ts";
 import { toAnthropicMessages, toAnthropicRequest } from "./to-request.ts";
 
 const question: ChatRequest = { model: "claude-test", messages: [{ role: "user", content: "hi" }] };

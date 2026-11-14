@@ -1,6 +1,6 @@
+import type { ChatResponse, ToolCall } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import { unexpectedResponse } from "./errors.ts";
-import type { ChatResponse, ToolCall } from "./kit.ts";
 
 const toolCallSchema = z.object({
   id: z.string(),

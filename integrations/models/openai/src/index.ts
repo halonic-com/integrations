@@ -1,5 +1,5 @@
+import type { Integration } from "@halonicjs/adapters/integration-kit";
 import { OpenAiError } from "./errors.ts";
-import type { Integration } from "./kit.ts";
 import { createOpenAiProvider } from "./provider.ts";
 
 /** GPT models through OpenAI's Chat Completions API. A model provider only: it has no tools. */

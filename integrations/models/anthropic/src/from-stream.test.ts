@@ -1,9 +1,9 @@
+import type { ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { describe, expect, it } from "vitest";
 import { AnthropicError } from "./errors.ts";
 import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
 import { fromAnthropicStream } from "./from-stream.ts";
-import type { ChatStreamEvent } from "./kit.ts";
 
 /*
  * Hand-written events in Anthropic's documented shapes

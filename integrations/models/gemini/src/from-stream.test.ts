@@ -1,9 +1,9 @@
+import type { ChatResponse, ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { describe, expect, it } from "vitest";
 import { GeminiError } from "./errors.ts";
 import { fromGeminiResponse, geminiResponseSchema } from "./from-response.ts";
 import { fromGeminiStream } from "./from-stream.ts";
-import type { ChatResponse, ChatStreamEvent } from "./kit.ts";
 
 /*
  * Hand-written chunks in Google's documented shapes

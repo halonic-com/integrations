@@ -1,17 +1,16 @@
-import { EventStream } from "@halonicjs/integration-shared";
-import { errorForResponse, unexpectedResponse } from "./errors.ts";
-import { fromOpenAiResponse, openAiResponseSchema } from "./from-response.ts";
-import { fromOpenAiStream } from "./from-stream.ts";
 import type {
   ChatRequest,
   ChatResponse,
   ChatStreamEvent,
-  HttpResponse,
   IntegrationHttpClient,
   LlmCapabilities,
   LlmProvider,
   ProviderConfig,
-} from "./kit.ts";
+} from "@halonicjs/adapters/integration-kit";
+import { EventStream } from "@halonicjs/integration-shared";
+import { errorForResponse, unexpectedResponse } from "./errors.ts";
+import { fromOpenAiResponse, openAiResponseSchema } from "./from-response.ts";
+import { fromOpenAiStream } from "./from-stream.ts";
 import { type OpenAiRequest, toOpenAiRequest } from "./to-request.ts";
 
 export const chatCompletionsUrl = "https://api.openai.com/v1/chat/completions";
@@ -107,7 +106,7 @@ async function sendChatCompletion(
   http: IntegrationHttpClient,
   body: OpenAiRequest | StreamedOpenAiRequest,
   signal: ChatRequest["signal"],
-): Promise<HttpResponse> {
+): Promise<Response> {
   const response = await http.fetch(chatCompletionsUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -122,6 +121,6 @@ async function sendChatCompletion(
 }
 
 /** The media type of the response, without parameters such as `charset`. */
-function mediaType(response: HttpResponse): string {
+function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }

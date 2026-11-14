@@ -1,17 +1,16 @@
-import { EventStream } from "@halonicjs/integration-shared";
-import { errorForResponse, unexpectedResponse } from "./errors.ts";
-import { fromGeminiResponse, geminiResponseSchema } from "./from-response.ts";
-import { fromGeminiStream } from "./from-stream.ts";
 import type {
   ChatRequest,
   ChatResponse,
   ChatStreamEvent,
-  HttpResponse,
   IntegrationHttpClient,
   LlmCapabilities,
   LlmProvider,
   ProviderConfig,
-} from "./kit.ts";
+} from "@halonicjs/adapters/integration-kit";
+import { EventStream } from "@halonicjs/integration-shared";
+import { errorForResponse, unexpectedResponse } from "./errors.ts";
+import { fromGeminiResponse, geminiResponseSchema } from "./from-response.ts";
+import { fromGeminiStream } from "./from-stream.ts";
 import { type GeminiRequest, toGeminiRequest } from "./to-request.ts";
 
 const modelsUrl = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -120,7 +119,7 @@ async function send(
   url: string,
   body: GeminiRequest,
   signal: ChatRequest["signal"],
-): Promise<HttpResponse> {
+): Promise<Response> {
   const response = await http.fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -135,6 +134,6 @@ async function send(
 }
 
 /** The media type of the response, without parameters such as `charset`. */
-function mediaType(response: HttpResponse): string {
+function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }

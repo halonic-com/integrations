@@ -1,11 +1,11 @@
-import { gemini } from "../src/index.ts";
 import type {
   ChatMessage,
   LlmProvider,
   ProviderConfig,
-  Scenario,
   ToolDefinition,
-} from "../src/kit.ts";
+} from "@halonicjs/adapters/integration-kit";
+import { gemini } from "../src/index.ts";
+import type { Scenario } from "../src/scenario.ts";
 
 /** The sheet decides the key and the host, so the config only names the provider. */
 const config: ProviderConfig = { id: "gemini", type: "gemini", local: false, options: {} };
