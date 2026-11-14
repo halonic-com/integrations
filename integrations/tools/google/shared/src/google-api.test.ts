@@ -1,9 +1,9 @@
+import { fakeWait } from "@halonicjs/testing/integration";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { GoogleApiDisabledError, GoogleError } from "./errors.ts";
 import { type GoogleApiOptions, googleApi } from "./google-api.ts";
 import type { HttpClient, HttpRequestInit, HttpResponse } from "./http.ts";
-import { fakeWait } from "./test/fake-wait.ts";
 import { serviceDisabledBody } from "./test/service-disabled.ts";
 
 const listUrl = "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=subject%3Atest";

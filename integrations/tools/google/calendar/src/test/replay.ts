@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type {
-  GoogleHost,
-  HttpClient,
-  HttpResponse,
-} from "@halonicjs/integration-tool-google-shared";
+import type { HttpClient, HttpResponse } from "@halonicjs/integration-tool-google-shared";
+import { fakeWait } from "@halonicjs/testing/integration";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { calendar } from "../index.ts";
@@ -16,23 +13,6 @@ import { hostFor } from "./host.ts";
  * the next exchange, request body included, and reads the file with the
  * full recording schema. Gmail's and Drive's helpers work the same way.
  */
-
-/**
- * A `wait` that resolves at once and records each pause, so a test can see
- * a retry's wait without waiting. The same shape as the Google library's
- * test `fakeWait`, which isn't exported.
- */
-function recordingWait(): { wait: GoogleHost["wait"]; waits: number[] } {
-  const waits: number[] = [];
-  return {
-    waits,
-    // The host gets the call's real `AbortSignal`, so the fake can check it.
-    wait: async (ms: number, signal?: AbortSignal) => {
-      signal?.throwIfAborted();
-      waits.push(ms);
-    },
-  };
-}
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -72,7 +52,7 @@ export function connectToRecording(scenario: string): {
   replay: Replay;
 } {
   const recorded = replay(loadRecording(scenario), { policy });
-  const { wait } = recordingWait();
+  const { wait } = fakeWait();
   const connection = calendar.connect(hostFor({ http: requireBearer(recorded), wait }));
   return { connection, replay: recorded };
 }
@@ -98,7 +78,7 @@ export function connectToFakeCalendar(
 ): {
   connection: IntegrationConnection;
   requests: { url: string; method: string | undefined; body: string | undefined }[];
-  waits: number[];
+  waits: readonly number[];
 } {
   const requests: { url: string; method: string | undefined; body: string | undefined }[] = [];
   const response: HttpResponse = {
@@ -113,7 +93,7 @@ export function connectToFakeCalendar(
       return response;
     },
   };
-  const { wait, waits } = recordingWait();
+  const { wait, waits } = fakeWait();
   return { connection: calendar.connect(hostFor({ http, wait })), requests, waits };
 }
 
