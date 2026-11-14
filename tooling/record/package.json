@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./replay": "./src/replay.ts",
+    "./sheet-data": "./src/sheet-data.ts",
     "./sheet-policy": "./src/sheet-policy.ts"
   },
   "scripts": {
@@ -22,7 +23,8 @@
     "@halonicjs/tooling-config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "catalog:"
   },
   "halonic": {
     "layer": "tooling",
