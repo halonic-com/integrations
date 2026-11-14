@@ -6,11 +6,11 @@ them) and Anthropic (a model provider). They show the shape of each part,
 not every tool: the real integrations have more tools and more tests.
 
 Code imports the interface types and the tool helper from
-`@halonicjs/integration-kit`, and the Google request helper from the Google
-group's shared library, `@halonicjs/integration-tool-google-shared`.
+`@halonicjs/adapters/integration-kit`, and the Google request helper from
+the Google group's shared library, `@halonicjs/integration-tool-google-shared`.
 
-> **Not settled yet:** the kit is published from the main repo, and the
-> Google sign-in is still to be built in Halonic itself. Until it is,
+> **Not settled yet:** the Google sign-in is still to be built in Halonic
+> itself. Until it is,
 > `googleApi(host, { secret, service })` with `getJson`, `postJson` and
 > `GoogleError(code, message)` is the shape the examples assume for
 > `tools/google/shared`. Names in these examples follow the integration
@@ -21,53 +21,44 @@ group's shared library, `@halonicjs/integration-tool-google-shared`.
 
 Every integration with tools ties each tool's declaration, argument schema
 and `run` function together the same way, so the kit holds that code once.
-It is small enough to read in one go:
+These are its types, shortened from `@halonicjs/adapters/integration-kit`:
 
 ```ts
-// in @halonicjs/integration-kit
-import type { z } from "zod";
+/** The part of a Zod schema `runTool` uses. Every Zod schema has it, so the kit imports no Zod. */
+export interface ArgumentSchema<Output = unknown> {
+  safeParse(input: unknown): ArgumentCheck<Output>;
+}
 
 /** One tool: what the model sees, how its arguments are checked, and what runs. */
-export interface ToolImplementation<Client, Arguments extends z.ZodType = z.ZodType> {
+export interface ToolImplementation<Client, Arguments extends ArgumentSchema = ArgumentSchema> {
   readonly declaration: IntegrationTool;
   readonly arguments: Arguments;
-  // Method syntax on purpose: it lets a list hold tools with different arguments.
-  run(client: Client, args: z.infer<Arguments>, signal?: AbortSignal): Promise<unknown>;
+  run(client: Client, args: ArgumentsOf<Arguments>, signal?: AbortSignal): Promise<ToolResult>;
 }
 
 /** Builds the integration's error for a refused call; see section 7 of the guide. */
-export type MakeError = (code: "bad-arguments" | "not-found", message: string) => Error;
+export type MakeError = (
+  code: "bad-arguments" | "not-found",
+  message: string,
+  kind: ErrorKind,
+) => Error;
 
-/** A tool name the model made up is repeated only this far. */
-const maxEchoedNameLength = 64;
-
-/**
- * Finds the tool, checks its arguments and runs it. The result is the
- * tool's own small object as JSON, never the service's raw response.
- */
-export async function runTool<Client>(
+/** Finds the tool, checks its arguments and runs it. */
+export declare function runTool<Client>(
   tools: readonly ToolImplementation<Client>[],
   client: Client,
   call: { name: string; args: Record<string, unknown>; signal?: AbortSignal | undefined },
   makeError: MakeError,
-): Promise<string> {
-  const tool = tools.find((candidate) => candidate.declaration.name === call.name);
-  if (tool === undefined) {
-    const name = call.name.slice(0, maxEchoedNameLength);
-    throw makeError("not-found", `There is no tool named ${name}.`);
-  }
-  const parsed = tool.arguments.safeParse(call.args);
-  if (!parsed.success) {
-    // Name the bad fields, never their values: they may hold the user's content.
-    const fields = parsed.error.issues.map((issue) => issue.path.join(".") || "(arguments)");
-    throw makeError("bad-arguments", `Check these arguments: ${[...new Set(fields)].join(", ")}.`);
-  }
-  return JSON.stringify(await tool.run(client, parsed.data, call.signal));
-}
+): Promise<string>;
 ```
 
-> **Not settled yet:** `ToolImplementation` and `runTool` are being added
-> to the kit. Until they are published, the code above is what they do.
+`runTool` refuses a tool name it doesn't know with `not-found`, repeating
+at most 64 characters of the name. It refuses arguments the schema refuses
+with `bad-arguments`, naming each bad field and never its value, because the
+value may hold the user's content. Otherwise it gives the tool's own small
+result as JSON, never the service's raw response. `kind` tells a surface how
+to respond: an error that keeps it as its `kind` property is reported that
+way, and any other error as an internal error.
 
 ## 1. Gmail (`tool-google-gmail`)
 
@@ -153,7 +144,7 @@ Google's status codes to `GoogleError`, so Gmail doesn't repeat any of it.
 ```ts
 // src/client.ts
 import { googleApi, type GoogleApi } from "@halonicjs/integration-tool-google-shared";
-import type { IntegrationHost } from "@halonicjs/integration-kit";
+import type { IntegrationHost } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 
 const gmailBase = "https://gmail.googleapis.com/gmail/v1/users/me/";
@@ -220,7 +211,7 @@ export class GmailClient {
 ```ts
 // src/tools/search.ts
 import { z } from "zod";
-import type { ToolImplementation } from "@halonicjs/integration-kit";
+import type { ToolImplementation } from "@halonicjs/adapters/integration-kit";
 import type { GmailClient, MessageMetadata } from "../client.ts";
 
 const searchArguments = z.strictObject({
@@ -330,7 +321,7 @@ own tests, including a subject with a line break in it.
 
 ```ts
 // src/index.ts
-import { type Integration, runTool } from "@halonicjs/integration-kit";
+import { type Integration, runTool } from "@halonicjs/adapters/integration-kit";
 import { GoogleError } from "@halonicjs/integration-tool-google-shared";
 import { GmailClient } from "./client.ts";
 import { searchTool } from "./tools/search.ts";
@@ -645,7 +636,7 @@ import type {
   IntegrationHost,
   LlmProvider,
   ProviderConfig,
-} from "@halonicjs/integration-kit";
+} from "@halonicjs/adapters/integration-kit";
 import { AnthropicError, errorForResponse } from "./errors.ts";
 import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
 import { toAnthropicRequest } from "./to-request.ts";

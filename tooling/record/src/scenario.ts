@@ -5,12 +5,13 @@
  * connection it gets. It is never exported from the integration's package.
  *
  * It imports nothing from tooling, because the guard treats it as runtime
- * code and integrations ship without tooling. Each integration copies this
- * type into its own `src/kit.ts`, with its own connection type, and the
- * command checks the shape when it loads the file.
+ * code and integrations ship without tooling. The kit has no such type, so
+ * each integration copies this one into its own `src/scenario.ts`, with
+ * `IntegrationConnection` from `@halonicjs/adapters/integration-kit`, and
+ * the command checks the shape when it loads the file.
  *
  * @example
- * // integrations/models/example/src/kit.ts
+ * // integrations/models/example/src/scenario.ts
  * export interface Scenario {
  *   readonly name: string;
  *   readonly unusedUserContent?: readonly string[];
@@ -19,7 +20,7 @@
  *
  * // integrations/models/example/recordings/scenarios.ts
  * import { example } from "../src/index.ts";
- * import type { Scenario } from "../src/kit.ts";
+ * import type { Scenario } from "../src/scenario.ts";
  *
  * export const integration = example;
  * export const scenarios: readonly Scenario[] = [

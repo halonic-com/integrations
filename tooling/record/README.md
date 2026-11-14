@@ -166,14 +166,14 @@ provider. The file is integration code, so it gets no Node APIs and no
 the integration's `tsconfig.json` includes it so it is typechecked.
 
 It imports nothing from tooling either: `pnpm check` treats it as runtime
-code, and integrations ship without tooling packages. The `Scenario` type
-goes in the integration's own `src/kit.ts`, next to the kit types copied
-there, with the integration's own connection type. Copy it from
-`integrations/models/anthropic/src/kit.ts` when you write an integration's
-first scenarios. `pnpm record` checks the shape again when it loads the file.
+code, and integrations ship without tooling packages. The kit doesn't have
+a `Scenario` type, so it goes in the integration's own `src/scenario.ts`,
+with `IntegrationConnection` from the kit. Copy it from
+`integrations/models/anthropic/src/scenario.ts` when you write an
+integration's first scenarios. `pnpm record` checks the shape again when it loads the file.
 
 ```ts
-// integrations/models/anthropic/src/kit.ts
+// integrations/models/anthropic/src/scenario.ts
 export interface Scenario {
   readonly name: string;
   readonly unusedUserContent?: readonly string[];
@@ -184,7 +184,7 @@ export interface Scenario {
 ```ts
 // integrations/models/anthropic/recordings/scenarios.ts, shortened
 import { anthropic } from "../src/index.ts";
-import type { Scenario } from "../src/kit.ts";
+import type { Scenario } from "../src/scenario.ts";
 
 export const integration = anthropic;
 export const scenarios: readonly Scenario[] = [
@@ -222,8 +222,9 @@ pnpm record integrations/tools/mcp/http-online   # every scenario
   can be personal. Neither is ever taken from the command line. If one is
   missing, the command names the variable and stops before it sends anything.
   An `optional: true` secret that isn't set is simply not sent.
-- **The host** is a stand-in for the kit's, in `src/host`, until
-  `@halonicjs/integration-kit` is published. It copies the kit's rules: keys
+- **The host** is a stand-in for the kit's, in `src/host`: the published
+  `@halonicjs/adapters/integration-kit` has only what an integration
+  imports, not the host. It copies the kit's rules: keys
   go only where the sheet's `as:` says (`bearer`, or `header` with `header:`
   and `prefix:`), and only to the sheet's hosts. Any other `as:` stops the
   command. A request to a host that isn't in the sheet fails the scenario,
