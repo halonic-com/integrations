@@ -299,6 +299,9 @@ importers:
 
   integrations/models/anthropic:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-shared':
         specifier: workspace:*
         version: link:../../shared
@@ -324,6 +327,9 @@ importers:
 
   integrations/models/gemini:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-shared':
         specifier: workspace:*
         version: link:../../shared
@@ -349,6 +355,9 @@ importers:
 
   integrations/models/openai:
     dependencies:
+      '@halonicjs/adapters':
+        specifier: 'catalog:'
+        version: 0.1.0
       '@halonicjs/integration-shared':
         specifier: workspace:*
         version: link:../../shared

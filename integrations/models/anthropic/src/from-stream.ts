@@ -1,3 +1,4 @@
+import type { ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { z } from "zod";
 import { errorForStreamEvent, unexpectedResponse } from "./errors.ts";
@@ -6,7 +7,6 @@ import {
   cacheCreationSchema,
   fromAnthropicResponse,
 } from "./from-response.ts";
-import type { ChatStreamEvent } from "./kit.ts";
 
 /*
  * Anthropic's streamed answer, as documented in

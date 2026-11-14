@@ -1,4 +1,12 @@
-import { fakeResponse, replay } from "@halonicjs/tooling-record/replay";
+import type {
+  ChatMessage,
+  ChatRequest,
+  ChatResponse,
+  ChatStreamEvent,
+  LlmProvider,
+  ProviderConfig,
+} from "@halonicjs/adapters/integration-kit";
+import { fakeResponse, type ReplayHttpClient, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { describe, expect, it } from "vitest";
 import answerJson from "../recordings/answer-json.json" with { type: "json" };
@@ -10,16 +18,8 @@ import streamUnavailable from "../recordings/stream-unavailable.json" with { typ
 import toolCall from "../recordings/tool-call.json" with { type: "json" };
 import { GeminiError } from "./errors.ts";
 import { gemini } from "./index.ts";
-import type {
-  ChatMessage,
-  ChatRequest,
-  ChatResponse,
-  ChatStreamEvent,
-  IntegrationHttpClient,
-  LlmProvider,
-  ProviderConfig,
-} from "./kit.ts";
 import { createGeminiProvider, generateContentUrl, streamGenerateContentUrl } from "./provider.ts";
+import { hostFor, kitHttp } from "./test/host.ts";
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -60,8 +60,8 @@ const weatherTool = {
   },
 };
 
-function provider(http: IntegrationHttpClient) {
-  return createGeminiProvider(http, config);
+function provider(http: ReplayHttpClient) {
+  return createGeminiProvider(kitHttp(http), config);
 }
 
 async function readStream(llm: LlmProvider, request: ChatRequest): Promise<ChatStreamEvent[]> {
@@ -179,7 +179,7 @@ describe("chat", () => {
 
   it("passes the signal on", async () => {
     const recording = replay(answerText, { policy });
-    const signal = { aborted: false };
+    const { signal } = new AbortController();
     await provider(recording.http).chat({ ...briefQuestion, signal });
     expect(recording.sent[0]?.init.signal).toBe(signal);
   });
@@ -239,7 +239,7 @@ describe("chat errors", () => {
 
   it("lets the kit's own errors through unchanged", async () => {
     const refused = new Error("secret-not-configured");
-    const http: IntegrationHttpClient = {
+    const http: ReplayHttpClient = {
       fetch: async () => {
         throw refused;
       },
@@ -285,7 +285,7 @@ describe("stream", () => {
 
   it("passes the signal on", async () => {
     const recording = replay(streamText, { policy });
-    const signal = { aborted: false };
+    const { signal } = new AbortController();
     await readStream(provider(recording.http), { ...briefQuestion, signal });
     expect(recording.sent[0]?.init.signal).toBe(signal);
   });
@@ -336,12 +336,12 @@ describe("streamGenerateContentUrl", () => {
 
 describe("the integration", () => {
   it("offers stream along with chat", () => {
-    const connection = gemini.connect({ http: replay(answerText).http });
+    const connection = gemini.connect(hostFor(replay(answerText).http));
     expect(connection.createLlmProvider?.(config).stream).toBeTypeOf("function");
   });
 
   it("reports only the capabilities the mapping handles", () => {
-    const connection = gemini.connect({ http: replay(answerText).http });
+    const connection = gemini.connect(hostFor(replay(answerText).http));
     expect(connection.createLlmProvider?.(config)).toMatchObject({
       id: "gemini",
       type: "gemini",

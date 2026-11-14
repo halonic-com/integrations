@@ -1,6 +1,6 @@
+import type { ChatMessage, ChatResponse } from "@halonicjs/adapters/integration-kit";
 import { describe, expect, it } from "vitest";
 import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
-import type { ChatMessage, ChatResponse } from "./kit.ts";
 import { toAnthropicMessages } from "./to-request.ts";
 
 /**

@@ -1,5 +1,11 @@
+import type {
+  ChatMessage,
+  ChatParams,
+  ChatRequest,
+  ToolCall,
+  ToolDefinition,
+} from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
-import type { ChatMessage, ChatParams, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
 
 /**
  * The Messages API request body, as far as we send it.

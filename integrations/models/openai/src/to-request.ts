@@ -1,4 +1,9 @@
-import type { ChatMessage, ChatRequest, ToolCall, ToolDefinition } from "./kit.ts";
+import type {
+  ChatMessage,
+  ChatRequest,
+  ToolCall,
+  ToolDefinition,
+} from "@halonicjs/adapters/integration-kit";
 
 /**
  * The Chat Completions request body, as far as we send it.

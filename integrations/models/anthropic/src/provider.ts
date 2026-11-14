@@ -1,17 +1,16 @@
-import { EventStream } from "@halonicjs/integration-shared";
-import { errorForResponse, unexpectedResponse } from "./errors.ts";
-import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
-import { fromAnthropicStream } from "./from-stream.ts";
 import type {
   ChatRequest,
   ChatResponse,
   ChatStreamEvent,
-  HttpResponse,
   IntegrationHttpClient,
   LlmCapabilities,
   LlmProvider,
   ProviderConfig,
-} from "./kit.ts";
+} from "@halonicjs/adapters/integration-kit";
+import { EventStream } from "@halonicjs/integration-shared";
+import { errorForResponse, unexpectedResponse } from "./errors.ts";
+import { anthropicResponseSchema, fromAnthropicResponse } from "./from-response.ts";
+import { fromAnthropicStream } from "./from-stream.ts";
 import { type AnthropicRequest, toAnthropicRequest } from "./to-request.ts";
 
 export const messagesUrl = "https://api.anthropic.com/v1/messages";
@@ -98,7 +97,7 @@ async function sendMessages(
   http: IntegrationHttpClient,
   body: AnthropicRequest & { stream?: true },
   signal: ChatRequest["signal"],
-): Promise<HttpResponse> {
+): Promise<Response> {
   const response = await http.fetch(messagesUrl, {
     method: "POST",
     headers: { "content-type": "application/json", "anthropic-version": apiVersion },
@@ -113,6 +112,6 @@ async function sendMessages(
 }
 
 /** The media type of the response, without parameters such as `charset`. */
-function mediaType(response: HttpResponse): string {
+function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
 }

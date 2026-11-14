@@ -1,5 +1,5 @@
+import type { Integration } from "@halonicjs/adapters/integration-kit";
 import { AnthropicError } from "./errors.ts";
-import type { Integration } from "./kit.ts";
 import { createAnthropicProvider } from "./provider.ts";
 
 /** Claude models through Anthropic's Messages API. A model provider only: it has no tools. */

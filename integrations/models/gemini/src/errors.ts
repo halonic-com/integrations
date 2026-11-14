@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { HttpResponse } from "./kit.ts";
 
 export type GeminiErrorCode =
   | "bad-arguments"
@@ -60,7 +59,7 @@ const messages: Readonly<Record<GeminiErrorCode, string>> = {
 };
 
 /** The error for a response that isn't `ok`. Never quotes the body's own text. */
-export async function errorForResponse(response: HttpResponse): Promise<GeminiError> {
+export async function errorForResponse(response: Response): Promise<GeminiError> {
   // A body that isn't JSON is no error of ours: the status alone says enough.
   const body = errorBodySchema.safeParse(await response.json().catch(() => undefined));
   const reason = body.success ? firstReason(body.data.error.details) : undefined;

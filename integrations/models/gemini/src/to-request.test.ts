@@ -1,6 +1,6 @@
+import type { ChatMessage, ChatRequest } from "@halonicjs/adapters/integration-kit";
 import { describe, expect, it } from "vitest";
 import { generatedCallId } from "./call-ids.ts";
-import type { ChatMessage, ChatRequest } from "./kit.ts";
 import { toGeminiContents, toGeminiRequest } from "./to-request.ts";
 
 const question: ChatRequest = {

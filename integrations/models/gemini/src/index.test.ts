@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { GeminiError, gemini } from "./index.ts";
-import type { IntegrationHost } from "./kit.ts";
+import { hostFor } from "./test/host.ts";
 
 /** A host whose network fails the test: connecting must send no request. */
-const host: IntegrationHost = {
-  http: {
-    fetch: async () => {
-      throw new Error("connect sent a request");
-    },
+const host = hostFor({
+  fetch: async () => {
+    throw new Error("connect sent a request");
   },
-};
+});
 
 describe("model-gemini", () => {
   it("is named as its permission sheet says, and offers no tools", () => {

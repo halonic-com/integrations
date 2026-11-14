@@ -1,3 +1,4 @@
+import type { ChatResponse, ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { z } from "zod";
 import { errorForStreamChunk, unexpectedResponse } from "./errors.ts";
@@ -11,7 +12,6 @@ import {
   type TextPart,
   toToolCall,
 } from "./from-response.ts";
-import type { ChatResponse, ChatStreamEvent } from "./kit.ts";
 
 /*
  * `streamGenerateContent?alt=sse` sends the answer as events without a

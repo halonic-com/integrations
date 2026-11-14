@@ -1,5 +1,8 @@
+import type { ChatResponse, ToolCall } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
-import type { ChatResponse, ToolCall, Usage } from "./kit.ts";
+
+/** Tokens one model call used. The kit names it only as part of `ChatResponse`. */
+type Usage = ChatResponse["usage"];
 
 /**
  * Every block schema is loose: fields we don't read, such as a thinking

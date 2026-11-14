@@ -1,8 +1,8 @@
+import type { ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { describe, expect, it } from "vitest";
 import { OpenAiError } from "./errors.ts";
 import { fromOpenAiStream } from "./from-stream.ts";
-import type { ChatStreamEvent } from "./kit.ts";
 
 /*
  * Hand-written chunks in OpenAI's documented shapes

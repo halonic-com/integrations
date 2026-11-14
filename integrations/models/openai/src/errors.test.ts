@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { codeForStatus, errorForResponse, errorForStreamChunk } from "./errors.ts";
-import type { HttpResponse } from "./kit.ts";
 
-const noHeaders = { get: () => null };
-
-function response(status: number, body: unknown): HttpResponse {
-  return { ok: false, status, headers: noHeaders, body: null, json: async () => body };
+function response(status: number, body: unknown): Response {
+  return Response.json(body, { status });
 }
 
 describe("codeForStatus", () => {
@@ -71,15 +68,7 @@ describe("errorForResponse", () => {
   });
 
   it("uses the status alone when the body isn't JSON", async () => {
-    const notJson: HttpResponse = {
-      ok: false,
-      headers: noHeaders,
-      body: null,
-      status: 502,
-      json: async () => {
-        throw new SyntaxError("Unexpected token '<', \"<html>\" is not valid JSON");
-      },
-    };
+    const notJson = new Response("<html>", { status: 502 });
     const error = await errorForResponse(notJson);
     expect(error).toMatchObject({ code: "unavailable", name: "OpenAiError" });
     expect(error.message).not.toContain("html");

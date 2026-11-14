@@ -1,8 +1,8 @@
+import type { ChatResponse, ChatStreamEvent } from "@halonicjs/adapters/integration-kit";
 import { EventStreamError, type ServerSentEvent } from "@halonicjs/integration-shared";
 import { z } from "zod";
 import { errorForStreamChunk, unexpectedResponse } from "./errors.ts";
 import { fromOpenAiResponse, openAiResponseSchema } from "./from-response.ts";
-import type { ChatResponse, ChatStreamEvent } from "./kit.ts";
 
 /*
  * A streamed Chat Completions answer is a list of `chat.completion.chunk`

@@ -1,5 +1,5 @@
+import type { Integration } from "@halonicjs/adapters/integration-kit";
 import { GeminiError } from "./errors.ts";
-import type { Integration } from "./kit.ts";
 import { createGeminiProvider } from "./provider.ts";
 
 /** Google's Gemini models through the Gemini API, with an API key. A model provider only: it has no tools. */
