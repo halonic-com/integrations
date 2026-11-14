@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./replay": "./src/replay.ts",
     "./sheet-data": "./src/sheet-data.ts",
+    "./sources": "./src/sources.ts",
     "./sheet-policy": "./src/sheet-policy.ts"
   },
   "scripts": {
