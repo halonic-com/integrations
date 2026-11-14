@@ -1,5 +1,5 @@
+import type { SecretPlacement } from "@halonicjs/adapters/integration-kit";
 import { McpClient, type McpHost, StreamableHttpTransport } from "@halonicjs/integration-mcp";
-import type { SecretPlacement } from "@halonicjs/integration-shared";
 import { clientInfoOf, type IntegrationEntry } from "../entry.ts";
 import { readSettings } from "./config.ts";
 import { KnowledgeMcpError } from "./errors.ts";

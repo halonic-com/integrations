@@ -1,5 +1,4 @@
 import { EventStreamError } from "./event-stream-error.ts";
-import type { ByteStream } from "./http-client.ts";
 import { LineSplitter } from "./line-splitter.ts";
 import { decodeUtf8 } from "./utf8.ts";
 
@@ -46,7 +45,7 @@ const byteOrderMark = "\uFEFF";
  * }
  */
 export class EventStream implements AsyncIterable<ServerSentEvent> {
-  readonly #body: ByteStream;
+  readonly #body: ReadableStream<Uint8Array>;
   readonly #maxEventBytes: number;
   #lastEventId = "";
   #reconnectionTimeMs: number | undefined;
@@ -61,7 +60,7 @@ export class EventStream implements AsyncIterable<ServerSentEvent> {
   #dataLines: string[] = [];
   #eventBytes = 0;
 
-  constructor(body: ByteStream, limits: EventStreamLimits = {}) {
+  constructor(body: ReadableStream<Uint8Array>, limits: EventStreamLimits = {}) {
     this.#body = body;
     this.#maxEventBytes = limits.maxEventBytes ?? defaultMaxEventBytes;
   }
