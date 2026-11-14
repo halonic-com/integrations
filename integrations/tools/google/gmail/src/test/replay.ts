@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type { GoogleHost, HttpClient } from "@halonicjs/integration-tool-google-shared";
+import type { HttpClient } from "@halonicjs/integration-tool-google-shared";
+import { fakeWait } from "@halonicjs/testing/integration";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { gmail } from "../index.ts";
@@ -11,23 +12,6 @@ import { hostFor } from "./host.ts";
  * `@halonicjs/tooling-record/replay`. The replay checks each call against
  * the next exchange and reads the file with the full recording schema.
  */
-
-/**
- * A `wait` that resolves at once and records each pause, so a test can see
- * a retry's wait without waiting. The same shape as the Google library's
- * test `fakeWait`, which isn't exported.
- */
-function recordingWait(): { wait: GoogleHost["wait"]; waits: number[] } {
-  const waits: number[] = [];
-  return {
-    waits,
-    // The host gets the call's real `AbortSignal`, so the fake can check it.
-    wait: async (ms: number, signal?: AbortSignal) => {
-      signal?.throwIfAborted();
-      waits.push(ms);
-    },
-  };
-}
 
 /**
  * The `recording` section of integration.yaml. The replay scrubs what is
@@ -66,10 +50,10 @@ export function connectToRecording(scenario: string): {
   connection: IntegrationConnection;
   replay: Replay;
   /** Each pause before a retry, in milliseconds. */
-  waits: number[];
+  waits: readonly number[];
 } {
   const recorded = replay(loadRecording(scenario), { policy });
-  const { wait, waits } = recordingWait();
+  const { wait, waits } = fakeWait();
   const connection = gmail.connect(hostFor({ http: requireBearer(recorded), wait }));
   return { connection, replay: recorded, waits };
 }

@@ -3,9 +3,10 @@ import { type McpHost, maxIntegrationWaitMs } from "../host.ts";
 /**
  * A `wait` for tests, and the pauses it was asked for.
  *
- * Not settled yet: this follows `fakeWait` in the main repo's
- * `@halonicjs/testing-integration`, as the Google library's does, and
- * becomes that import once this repo can depend on it.
+ * This extends `fakeWait` from `@halonicjs/testing/integration`, which
+ * the other integrations use, with `asked` and `during`. The MCP transport
+ * caps its own pauses and is cancelled in the middle of one, and the
+ * published fake can show neither.
  */
 export interface FakeWait {
   readonly wait: McpHost["wait"];

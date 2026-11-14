@@ -1,9 +1,6 @@
 import type { IntegrationConnection } from "@halonicjs/adapters/integration-kit";
-import type {
-  GoogleHost,
-  HttpClient,
-  HttpResponse,
-} from "@halonicjs/integration-tool-google-shared";
+import type { HttpClient, HttpResponse } from "@halonicjs/integration-tool-google-shared";
+import { fakeWait } from "@halonicjs/testing/integration";
 import { type Replay, replay } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { drive } from "../index.ts";
@@ -15,23 +12,6 @@ import { hostFor } from "./host.ts";
  * recording.
  */
 const policy = readSheetPolicy(new URL("../../integration.yaml", import.meta.url));
-
-/**
- * A `wait` that resolves at once and records each pause, so a test can see
- * a retry's wait without waiting. The same shape as the Google library's
- * test `fakeWait`, which isn't exported.
- */
-function recordingWait(): { wait: GoogleHost["wait"]; waits: number[] } {
-  const waits: number[] = [];
-  return {
-    waits,
-    // The host gets the call's real `AbortSignal`, so the fake can check it.
-    wait: async (ms: number, signal?: AbortSignal) => {
-      signal?.throwIfAborted();
-      waits.push(ms);
-    },
-  };
-}
 
 /**
  * Every Drive request asks the kit for the account's bearer token. The
@@ -63,7 +43,7 @@ export function connectToRecording(recording: unknown): {
   replay: Replay;
 } {
   const recorded = replay(recording, { policy });
-  const { wait } = recordingWait();
+  const { wait } = fakeWait();
   return {
     connection: drive.connect(hostFor({ http: requireBearer(recorded), wait })),
     replay: recorded,
@@ -88,7 +68,7 @@ export async function callTool(
 export function connectToFakeDrive(
   status: number,
   body: string,
-): { connection: IntegrationConnection; urls: string[]; waits: number[] } {
+): { connection: IntegrationConnection; urls: string[]; waits: readonly number[] } {
   const urls: string[] = [];
   const response: HttpResponse = {
     ok: status >= 200 && status < 300,
@@ -102,7 +82,7 @@ export function connectToFakeDrive(
       return response;
     },
   };
-  const { wait, waits } = recordingWait();
+  const { wait, waits } = fakeWait();
   return { connection: drive.connect(hostFor({ http, wait })), urls, waits };
 }
 
@@ -137,5 +117,5 @@ export function connectToFakeAnswers(...answers: FakeAnswer[]): {
       };
     },
   };
-  return { connection: drive.connect(hostFor({ http, wait: recordingWait().wait })), requests };
+  return { connection: drive.connect(hostFor({ http, wait: fakeWait().wait })), requests };
 }

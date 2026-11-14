@@ -15,6 +15,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@halonicjs/testing": "catalog:",
     "@halonicjs/tooling-config": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
