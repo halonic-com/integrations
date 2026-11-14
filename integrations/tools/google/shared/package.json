@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@halonicjs/adapters": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

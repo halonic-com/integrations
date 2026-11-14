@@ -1,6 +1,7 @@
+import type { IntegrationRequestInit } from "@halonicjs/adapters/integration-kit";
 import type { z } from "zod";
 import { errorForResponse, type FailedRequest, unexpectedResponse } from "./error-for-response.ts";
-import type { GoogleHost, HttpRequestInit, HttpResponse } from "./http.ts";
+import type { GoogleHost } from "./host.ts";
 import { isRepeatable, isRetryableStatus, maxRetries, retryDelayMs } from "./retry-policy.ts";
 
 /** How a Google integration sets up its {@link GoogleApi}. */
@@ -108,7 +109,7 @@ export class GoogleApi {
    *
    * @throws {@link GoogleError} for an error status, after any retries
    */
-  async send(request: GoogleRequest): Promise<HttpResponse> {
+  async send(request: GoogleRequest): Promise<Response> {
     const mayRetry = isRepeatable(request.method, request.repeatable ?? false);
     for (let retry = 0; ; retry++) {
       const response = await this.#host.http.fetch(request.url, this.#init(request));
@@ -123,8 +124,8 @@ export class GoogleApi {
     }
   }
 
-  #init(request: GoogleRequest): HttpRequestInit {
-    const init: HttpRequestInit = {
+  #init(request: GoogleRequest): IntegrationRequestInit {
+    const init: IntegrationRequestInit = {
       method: request.method,
       auth: { secret: this.#options.secret, as: "bearer" },
     };
@@ -136,7 +137,7 @@ export class GoogleApi {
 
   /** Parses and checks a JSON body. Neither the parse error nor the `ZodError` gets out. */
   async #readJson<Schema extends z.ZodType>(
-    response: HttpResponse,
+    response: Response,
     url: string,
     schema: Schema,
   ): Promise<z.infer<Schema>> {
@@ -162,7 +163,7 @@ export class GoogleApi {
 const acceptJson = { accept: "application/json" } as const;
 
 /** The wait before the next try, or `undefined` when this response isn't retried. */
-function retryDelay(response: HttpResponse, retry: number): number | undefined {
+function retryDelay(response: Response, retry: number): number | undefined {
   return isRetryableStatus(response.status) ? retryDelayMs(response.headers, retry) : undefined;
 }
 

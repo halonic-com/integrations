@@ -1,6 +1,6 @@
+import { fakeResponse, testHost } from "@halonicjs/tooling-record/replay";
 import { describe, expect, it } from "vitest";
 import { gmail } from "../index.ts";
-import { hostFor } from "../test/host.ts";
 import { callTool, connectToRecording } from "../test/replay.ts";
 import { maxLabels } from "./list-labels.ts";
 
@@ -25,16 +25,9 @@ describe("gmail_list_labels", () => {
       id: `Label_${n}`,
       name: `n${n}`,
     }));
-    const http = {
-      fetch: async () => ({
-        ok: true,
-        status: 200,
-        headers: { get: () => null },
-        text: async () => JSON.stringify({ labels }),
-      }),
-    };
+    const http = fakeResponse(200, JSON.stringify({ labels }));
     const result = JSON.parse(
-      await gmail.connect(hostFor({ http })).callTool("gmail_list_labels", {}),
+      await gmail.connect(testHost(http)).callTool("gmail_list_labels", {}),
     );
     expect(result.labels).toHaveLength(maxLabels);
     expect(result.omittedLabels).toBe(3);
@@ -82,12 +75,10 @@ describe("gmail_modify_labels", () => {
     // instead of recording modify-labels again with other labels.
     const sentBodies: string[] = [];
     const connection = gmail.connect(
-      hostFor({
-        http: {
-          async fetch(_url, init) {
-            sentBodies.push(init?.body ?? "");
-            return { status: 204, ok: true, headers: { get: () => null }, text: async () => "" };
-          },
+      testHost({
+        async fetch(_url, init) {
+          sentBodies.push(typeof init?.body === "string" ? init.body : "");
+          return new Response(null, { status: 204 });
         },
       }),
     );

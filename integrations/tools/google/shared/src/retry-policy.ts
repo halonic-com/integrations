@@ -5,7 +5,7 @@
  * repeat.
  */
 
-import { type HttpResponse, maxIntegrationWaitMs } from "./http.ts";
+import { maxIntegrationWaitMs } from "@halonicjs/adapters/integration-kit";
 
 /** A request is sent at most three times: once, then retried twice. */
 export const maxRetries = 2;
@@ -49,7 +49,7 @@ export function isRetryableStatus(status: number): boolean {
  * Google's clock. Without a `retry-after` that can be read, or a date form
  * without a `date` header, it backs off 1 s, then 2 s.
  */
-export function retryDelayMs(headers: HttpResponse["headers"], retry: number): number | undefined {
+export function retryDelayMs(headers: Headers, retry: number): number | undefined {
   const asked = askedWaitMs(headers);
   if (asked === undefined) {
     return firstBackoffMs * 2 ** retry;
@@ -58,7 +58,7 @@ export function retryDelayMs(headers: HttpResponse["headers"], retry: number): n
 }
 
 /** The wait `retry-after` asks for in milliseconds, at least 0, or `undefined` when it can't be read. */
-function askedWaitMs(headers: HttpResponse["headers"]): number | undefined {
+function askedWaitMs(headers: Headers): number | undefined {
   const retryAfter = headers.get("retry-after")?.trim();
   if (retryAfter === undefined) {
     return undefined;

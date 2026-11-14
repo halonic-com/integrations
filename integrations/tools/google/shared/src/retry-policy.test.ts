@@ -3,12 +3,8 @@ import { isRepeatable, isRetryableStatus, retryDelayMs } from "./retry-policy.ts
 
 const sentAt = "Thu, 15 Jan 2026 12:00:00 GMT";
 
-/** A response's headers, looked up case-insensitively as `Headers` does. */
-function headers(values: Record<string, string> = {}) {
-  const lowerCase = new Map(
-    Object.entries(values).map(([name, value]) => [name.toLowerCase(), value]),
-  );
-  return { get: (name: string) => lowerCase.get(name.toLowerCase()) ?? null };
+function headers(values: Record<string, string> = {}): Headers {
+  return new Headers(values);
 }
 
 /** The headers of a response Google sent at {@link sentAt}, with this `retry-after`. */
