@@ -20,6 +20,12 @@ published permanently.
   sending`; it becomes the squash commit message.
 - Prefer readable code over short code, and add an abstraction where it
   helps the reader.
+- When a Google tool under `integrations/tools/google/` gets a risk other
+  than `read` (a new tool, or a changed risk), also open a pull request in
+  `halonic` that updates `googleAskFirstTools` in `@halonicjs/format`. It
+  is the readable list of tools that ask first. Nothing breaks if you
+  forget, because the run-time risk check still asks first, but the list
+  would be incomplete.
 
 ## Never
 
