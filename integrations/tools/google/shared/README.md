@@ -100,6 +100,13 @@ if (error instanceof GoogleApiDisabledError) {
 }
 ```
 
+The error also has a `failureCause`: the stable code `google.api-disabled`
+and a `detail` with `api` and `project` (each left out when `undefined`).
+Halonic's engine copies it into the `cause` of the failed run, next to the
+error's kind, so Studio's "API off" chip and banner read the cause and
+never the message. Halonic builds the "Enable" link from `api` and
+`project` itself, so the link isn't part of the cause.
+
 ## Recordings
 
 Google's error text can repeat what was sent: a recipient, a file name, a

@@ -82,10 +82,27 @@ export class GoogleApiDisabledError extends GoogleError {
   readonly api: string | undefined;
   /** The Google Cloud project as Google names it in the error: usually its number. */
   readonly project: string | undefined;
+  /**
+   * The typed cause Halonic records on a failed run, so Studio's "API off"
+   * banner never reads the message. The code is stable; `detail` holds `api`
+   * and `project` when Google named them, and nothing else: Halonic builds
+   * the "Enable" link from them.
+   */
+  readonly failureCause: {
+    readonly code: "google.api-disabled";
+    readonly detail: Readonly<Record<string, string>>;
+  };
 
   constructor(message: string, disabled: DisabledApi) {
     super("api-disabled", message);
     this.api = disabled.api;
     this.project = disabled.project;
+    this.failureCause = {
+      code: "google.api-disabled",
+      detail: {
+        ...(disabled.api === undefined ? {} : { api: disabled.api }),
+        ...(disabled.project === undefined ? {} : { project: disabled.project }),
+      },
+    };
   }
 }

@@ -24,4 +24,23 @@ describe("GoogleError kind", () => {
     });
     expect(error.kind).toBe("denied");
   });
+
+  it("names its cause for Halonic's run record, with the API and project Google named", () => {
+    const error = new GoogleApiDisabledError("Switched off.", {
+      api: "drive.googleapis.com",
+      project: "123456789012",
+    });
+    expect(error.failureCause).toEqual({
+      code: "google.api-disabled",
+      detail: { api: "drive.googleapis.com", project: "123456789012" },
+    });
+  });
+
+  it("leaves out what Google didn't name", () => {
+    const error = new GoogleApiDisabledError("Switched off.", {
+      api: undefined,
+      project: undefined,
+    });
+    expect(error.failureCause).toStrictEqual({ code: "google.api-disabled", detail: {} });
+  });
 });
