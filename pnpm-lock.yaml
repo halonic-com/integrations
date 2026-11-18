@@ -327,6 +327,9 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@halonicjs/testing':
+        specifier: 'catalog:'
+        version: 0.1.1(vitest@5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1)))
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../tooling/config
@@ -355,6 +358,9 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@halonicjs/testing':
+        specifier: 'catalog:'
+        version: 0.1.1(vitest@5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1)))
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../tooling/config
@@ -383,6 +389,9 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@halonicjs/testing':
+        specifier: 'catalog:'
+        version: 0.1.1(vitest@5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1)))
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../tooling/config
@@ -538,6 +547,9 @@ importers:
         specifier: workspace:*
         version: link:../../../mcp-server
     devDependencies:
+      '@halonicjs/testing':
+        specifier: 'catalog:'
+        version: 0.1.1(vitest@5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1)))
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../../tooling/config
@@ -560,6 +572,9 @@ importers:
         specifier: workspace:*
         version: link:../../../mcp-server
     devDependencies:
+      '@halonicjs/testing':
+        specifier: 'catalog:'
+        version: 0.1.1(vitest@5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1)))
       '@halonicjs/tooling-config':
         specifier: workspace:*
         version: link:../../../../tooling/config

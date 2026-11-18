@@ -793,7 +793,13 @@ a network, without keys and the same way every time.
   checks that the code matches the sheet (name, version, tools, `risk`,
   `untrusted`), replays the recordings, and runs the attack tests: an
   integration that reaches an undeclared host, reads a file or leaks a key
-  fails.
+  fails. It comes from the main repo as `@halonicjs/testing/integration`.
+  Every integration runs it in `src/conformance.test.ts`; copy one from an
+  integration like yours.
+- **Replay your recordings in your own tests** with
+  `@halonicjs/tooling-record/replay`. That replay is the kit's
+  `IntegrationHttpClient`, so it goes into the integration as it is, and
+  `testHost` builds a whole host around it.
 - **Write your own tests** for every mapping function and for each error
   path: every status in the table in section 7, a body Zod refuses, and a
   body that isn't JSON.
@@ -845,14 +851,6 @@ format and the full list of scrub rules.
 
 > **Not settled yet:**
 >
-> - The conformance suite is published from the main repo as
->   `@halonicjs/testing/integration`, and the integrations here move onto
->   it one at a time. Until yours runs it, test the mapping functions and
->   the error paths with your own tests, and replay your recordings with
->   `@halonicjs/tooling-record/replay`, as the integrations here do. That
->   replay is the kit's `IntegrationHttpClient`, so it goes into the
->   integration as it is, and `testHost` builds a whole host around it.
->   `pnpm record` is available.
 > - Today one missed `userContent` path publishes that field. The recorder
 >   is to turn this around: scrub every string by default and keep only
 >   the fields marked safe, and reach URL paths and response headers.
