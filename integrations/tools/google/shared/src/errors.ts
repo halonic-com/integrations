@@ -85,8 +85,10 @@ export class GoogleApiDisabledError extends GoogleError {
   /**
    * The typed cause Halonic records on a failed run, so Studio's "API off"
    * banner never reads the message. The code is stable; `detail` holds `api`
-   * and `project` when Google named them, and nothing else: Halonic builds
-   * the "Enable" link from them.
+   * and `project` when Google named them, and `enableUrl`, the API's page in
+   * the Google Cloud console, when the API is known. Google's own
+   * `activationUrl` is never passed on: the link is built here from the
+   * `api` and `project` that passed their pattern.
    */
   readonly failureCause: {
     readonly code: "google.api-disabled";
@@ -102,7 +104,21 @@ export class GoogleApiDisabledError extends GoogleError {
       detail: {
         ...(disabled.api === undefined ? {} : { api: disabled.api }),
         ...(disabled.project === undefined ? {} : { project: disabled.project }),
+        ...(disabled.api === undefined
+          ? {}
+          : { enableUrl: enableUrlFor(disabled.api, disabled.project) }),
       },
     };
   }
+}
+
+/**
+ * The API's page in the Google Cloud console, with its "Enable" button. The
+ * project is added when known, so the page opens in the right one. Both
+ * parts passed a strict pattern (lower-case letters, digits, hyphens and
+ * dots), so neither needs escaping.
+ */
+function enableUrlFor(api: string, project: string | undefined): string {
+  const page = `https://console.cloud.google.com/apis/library/${api}`;
+  return project === undefined ? page : `${page}?project=${project}`;
 }
