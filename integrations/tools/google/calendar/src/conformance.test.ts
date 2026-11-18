@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
 import {
   type ConformanceSubject,
   describeIntegrationConformance,
   type ToolCase,
 } from "@halonicjs/testing/integration";
+import { readRecording } from "@halonicjs/tooling-record/recordings";
 import { readSheetData } from "@halonicjs/tooling-record/sheet-data";
 import { readSources } from "@halonicjs/tooling-record/sources";
 import { calendar } from "./index.ts";
@@ -81,14 +81,15 @@ const cases: ToolCase[] = [
   { tool: "calendar_delete_event", scenario: "delete-event", args: { eventId: "lunch01" } },
 ];
 
-/** One recording, as read. The suite checks its format itself. */
-function loadRecording(scenario: string): ConformanceSubject["recordings"][number] {
-  const file = new URL(`../recordings/${scenario}.json`, import.meta.url);
-  return JSON.parse(readFileSync(file, "utf8"));
-}
-
-/** The recordings the cases above replay, once each. */
-const recordings = [...new Set(cases.map((toolCase) => toolCase.scenario))].map(loadRecording);
+/**
+ * The recordings the cases above replay, once each. The suite checks their
+ * format itself, so they go in as read.
+ */
+const recordingsFolder = new URL("../recordings/", import.meta.url);
+const recordings = [...new Set(cases.map((toolCase) => toolCase.scenario))].map(
+  (scenario) =>
+    readRecording(recordingsFolder, scenario) as ConformanceSubject["recordings"][number],
+);
 
 describeIntegrationConformance({
   integration: calendar,
