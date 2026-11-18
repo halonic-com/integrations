@@ -149,6 +149,13 @@ describe("tooling/check: packages", () => {
     const usesKit = (version: string) =>
       integration("gmail", { dependencies: { "@halonicjs/adapters": version } });
 
+    /** The kit's catalog line, with whatever version the repo pins today. */
+    const kitLine = /^ {2}"@halonicjs\/adapters": (\S+)\n/m.exec(workspaceYaml);
+    if (kitLine === null) {
+      throw new Error("pnpm-workspace.yaml has no catalog entry for @halonicjs/adapters.");
+    }
+    const [kitEntry, kitVersion] = kitLine;
+
     it("passes the kit from npm with its exact version in the catalog", () => {
       expect(runChecks([usesKit("catalog:")])).toEqual([]);
     });
@@ -159,21 +166,18 @@ describe("tooling/check: packages", () => {
     });
 
     it("rejects a range for it in the catalog", () => {
-      const ranged = workspaceYaml.replace(
-        '"@halonicjs/adapters": 0.1.0',
-        '"@halonicjs/adapters": ^0.1.0',
-      );
+      const ranged = workspaceYaml.replace(kitEntry, `  "@halonicjs/adapters": ^${kitVersion}\n`);
       expect(ranged).not.toBe(workspaceYaml);
       const messages = runChecks([usesKit("catalog:")], {
         extraFiles: { "pnpm-workspace.yaml": ranged },
       }).map((problem) => problem.message);
       expect(messages).toEqual([
-        expect.stringContaining('needs an exact version in "catalog:", not "^0.1.0"'),
+        expect.stringContaining(`needs an exact version in "catalog:", not "^${kitVersion}"`),
       ]);
     });
 
     it("asks for a catalog entry when there is none", () => {
-      const missing = workspaceYaml.replace('  "@halonicjs/adapters": 0.1.0\n', "");
+      const missing = workspaceYaml.replace(kitEntry, "");
       const messages = runChecks([usesKit("catalog:")], {
         extraFiles: { "pnpm-workspace.yaml": missing },
       }).map((problem) => problem.message);
