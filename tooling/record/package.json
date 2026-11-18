@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./replay": "./src/replay.ts",
+    "./recordings": "./src/recordings.ts",
     "./sheet-data": "./src/sheet-data.ts",
     "./sources": "./src/sources.ts",
     "./sheet-policy": "./src/sheet-policy.ts"

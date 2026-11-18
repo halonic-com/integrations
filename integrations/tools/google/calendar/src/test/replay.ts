@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
 import type {
   IntegrationConnection,
   IntegrationHttpClient,
 } from "@halonicjs/adapters/integration-kit";
 import { fakeWait } from "@halonicjs/testing/integration";
+import { readRecording } from "@halonicjs/tooling-record/recordings";
 import { type Replay, replay, testHost } from "@halonicjs/tooling-record/replay";
 import { readSheetPolicy } from "@halonicjs/tooling-record/sheet-policy";
 import { calendar } from "../index.ts";
@@ -23,11 +23,8 @@ import { calendar } from "../index.ts";
  */
 const policy = readSheetPolicy(new URL("../../integration.yaml", import.meta.url));
 
-/** Reads `recordings/<scenario>.json`. */
-function loadRecording(scenario: string): unknown {
-  const file = new URL(`../../recordings/${scenario}.json`, import.meta.url);
-  return JSON.parse(readFileSync(file, "utf8"));
-}
+/** Calendar's `recordings` folder. */
+const recordings = new URL("../../recordings/", import.meta.url);
 
 /**
  * Every Calendar request asks the kit for the account's bearer token. The
@@ -54,7 +51,7 @@ export function connectToRecording(scenario: string): {
   connection: IntegrationConnection;
   replay: Replay;
 } {
-  const recorded = replay(loadRecording(scenario), { policy });
+  const recorded = replay(readRecording(recordings, scenario), { policy });
   const { wait } = fakeWait();
   const connection = calendar.connect(testHost(requireBearer(recorded), { wait }));
   return { connection, replay: recorded };

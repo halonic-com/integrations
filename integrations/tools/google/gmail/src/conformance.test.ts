@@ -3,10 +3,10 @@ import {
   describeIntegrationConformance,
   type ToolCase,
 } from "@halonicjs/testing/integration";
+import { readRecording } from "@halonicjs/tooling-record/recordings";
 import { readSheetData } from "@halonicjs/tooling-record/sheet-data";
 import { readSources } from "@halonicjs/tooling-record/sources";
 import { gmail } from "./index.ts";
-import { loadRecording } from "./test/replay.ts";
 
 /**
  * The shared conformance suite (guide, section 9), on Gmail's recordings.
@@ -75,8 +75,10 @@ const cases: ToolCase[] = [
  * The recordings the cases above replay, once each. The suite checks their
  * format itself, so they go in as read.
  */
+const recordingsFolder = new URL("../recordings/", import.meta.url);
 const recordings = [...new Set(cases.map((toolCase) => toolCase.scenario))].map(
-  (scenario) => loadRecording(scenario) as ConformanceSubject["recordings"][number],
+  (scenario) =>
+    readRecording(recordingsFolder, scenario) as ConformanceSubject["recordings"][number],
 );
 
 describeIntegrationConformance({
