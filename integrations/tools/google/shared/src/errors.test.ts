@@ -32,8 +32,32 @@ describe("GoogleError kind", () => {
     });
     expect(error.failureCause).toEqual({
       code: "google.api-disabled",
-      detail: { api: "drive.googleapis.com", project: "123456789012" },
+      detail: {
+        api: "drive.googleapis.com",
+        project: "123456789012",
+        enableUrl:
+          "https://console.cloud.google.com/apis/library/drive.googleapis.com?project=123456789012",
+      },
     });
+  });
+
+  it("links to the API's page without a project when Google named none", () => {
+    const error = new GoogleApiDisabledError("Switched off.", {
+      api: "gmail.googleapis.com",
+      project: undefined,
+    });
+    expect(error.failureCause.detail).toStrictEqual({
+      api: "gmail.googleapis.com",
+      enableUrl: "https://console.cloud.google.com/apis/library/gmail.googleapis.com",
+    });
+  });
+
+  it("gives no link for a project alone, as there is no API page to open", () => {
+    const error = new GoogleApiDisabledError("Switched off.", {
+      api: undefined,
+      project: "123456789012",
+    });
+    expect(error.failureCause.detail).toStrictEqual({ project: "123456789012" });
   });
 
   it("leaves out what Google didn't name", () => {
