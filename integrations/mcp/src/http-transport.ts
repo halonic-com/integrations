@@ -86,7 +86,7 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   async *send(message: OutgoingMessage, signal?: AbortSignal): AsyncGenerator<unknown> {
-    const response = await this.#fetch(
+    const response = await this.#send(
       "POST",
       { "content-type": "application/json" },
       JSON.stringify(message),
@@ -123,7 +123,7 @@ export class StreamableHttpTransport implements McpTransport {
     if (this.#sessionId === undefined) {
       return;
     }
-    const response = await this.#fetch("DELETE", {}, undefined, signal);
+    const response = await this.#send("DELETE", {}, undefined, signal);
     this.#sessionId = undefined;
     await discardBody(response);
     if (!response.ok && !sessionAlreadyEndedStatuses.has(response.status)) {
@@ -144,7 +144,7 @@ export class StreamableHttpTransport implements McpTransport {
     // The id of the last complete event over all streams of this request.
     let lastEventId = "";
     // The server's last valid `retry:` over all streams of this request, as
-    // a browser's EventSource keeps it across reconnections.
+    // a browser's event source keeps it across reconnections.
     let reconnectionTimeMs: number | undefined;
     let resumesWithoutProgress = 0;
     let resumes = 0;
@@ -190,7 +190,7 @@ export class StreamableHttpTransport implements McpTransport {
     lastEventId: string,
     signal: AbortSignal | undefined,
   ): Promise<ReadableStream<Uint8Array>> {
-    const response = await this.#fetch("GET", { "last-event-id": lastEventId }, undefined, signal);
+    const response = await this.#send("GET", { "last-event-id": lastEventId }, undefined, signal);
     await this.#throwUnlessOk(response);
     if (mediaType(response) !== "text/event-stream" || response.body === null) {
       await discardBody(response);
@@ -200,7 +200,7 @@ export class StreamableHttpTransport implements McpTransport {
   }
 
   /** Sends one HTTP request with the headers every MCP message needs. */
-  async #fetch(
+  async #send(
     method: string,
     extraHeaders: Record<string, string>,
     body: string | undefined,
