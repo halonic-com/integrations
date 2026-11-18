@@ -1,7 +1,6 @@
 import type {
   IntegrationHttpClient,
   IntegrationRequestInit,
-  SecretPlacement,
 } from "@halonicjs/adapters/integration-kit";
 import { type RecordingFile, recordingFileSchema } from "./format.ts";
 import { replayContext } from "./replay/replay-context.ts";
@@ -166,13 +165,25 @@ function checkMatches(
   check: RequestChecks,
 ): void {
   check.urls.check(exchange.request, sent.method ?? "GET", sent.url);
-  const placed = [sent.auth ?? []].flat().filter((placement) => !unset.has(placement.secret));
+  const placed = [sent.auth ?? []].flat().filter((placement) => isPlaced(placement, unset));
   checkKey(exchange.request.headers, placed);
   checkHeaders(exchange.request.headers, sent.headers);
   const formKeyFields = new Set(
     placed.flatMap((placement) => (placement.as === "form" ? [placement.field] : [])),
   );
   check.bodies.check(exchange.request, sent.body, sent.headers, formKeyFields);
+}
+
+/** One secret or sign-in token the request asks the kit to place; the kit doesn't export the name. */
+type AuthPlacement = Exclude<NonNullable<IntegrationRequestInit["auth"]>, readonly unknown[]>;
+
+/**
+ * Whether the kit puts this key into the request. It leaves out a secret the
+ * workspace hasn't set up; a sign-in's token is always placed, because without
+ * a sign-in the kit refuses the call before it is sent.
+ */
+function isPlaced(placement: AuthPlacement, unset: ReadonlySet<string>): boolean {
+  return !("secret" in placement) || !unset.has(placement.secret);
 }
 
 /**
@@ -200,10 +211,11 @@ function checkKey(recorded: RecordedHeaders, auth: IntegrationRequestInit["auth"
   }
 }
 
-/** The header the recorder saves for a key the kit put in a header. A form field isn't checked. */
-function recordedKeyHeader(
-  placement: SecretPlacement,
-): { name: string; value: string } | undefined {
+/**
+ * The header the recorder saves for a key or sign-in token the kit put in a
+ * header. A form field isn't checked.
+ */
+function recordedKeyHeader(placement: AuthPlacement): { name: string; value: string } | undefined {
   switch (placement.as) {
     case "bearer":
       return { name: "authorization", value: `Bearer ${scrubbedSecret}` };

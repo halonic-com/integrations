@@ -49,7 +49,9 @@ integration inside that.
 
 - **`minimumReleaseAge: 4320`**: a release must be 3 days old. For an
   urgent security fix, add the package to `minimumReleaseAgeExclude` in its
-  own pull request and remove it again afterwards.
+  own pull request and remove it again afterwards. Our own packages from
+  the main repo are listed there by exact version: we publish them
+  ourselves with trusted publishing, so a new pin needn't wait.
 - **`allowBuilds`**: install scripts run only for listed packages; an
   unlisted one fails the install.
 - **`blockExoticSubdeps`**: no git or tarball URLs anywhere in the tree.

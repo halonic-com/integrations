@@ -17,8 +17,8 @@ packages:
 # in both repos.
 catalog:
   "@biomejs/biome": 2.6.5
-  "@halonicjs/adapters": 0.1.0
-  "@halonicjs/testing": 0.1.0
+  "@halonicjs/adapters": 0.1.1
+  "@halonicjs/testing": 0.1.1
   "@types/node": ^26.6.6
   "@typescript/typescript6": ^6.0.2
   turbo: ^2.11.10
@@ -46,9 +46,14 @@ allowBuilds:
   turbo: false
 
 # New releases must be 3 days old (minutes). For an urgent security fix, add
-# the package to minimumReleaseAgeExclude in its own pull request.
+# the package to minimumReleaseAgeExclude in its own pull request. Our own
+# packages from the main repo skip the wait by exact version (ADR
+# 2026-11-08-integration-interface, section 4): we publish them ourselves,
+# with trusted publishing, after a reviewed release.
 minimumReleaseAge: 4320
-minimumReleaseAgeExclude: []
+minimumReleaseAgeExclude:
+  - "@halonicjs/adapters@0.1.1"
+  - "@halonicjs/testing@0.1.1"
 
 # No git or tarball URLs anywhere in the dependency tree.
 blockExoticSubdeps: true

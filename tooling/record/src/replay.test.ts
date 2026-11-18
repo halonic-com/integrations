@@ -114,6 +114,19 @@ describe("replay", () => {
     ).rejects.toThrow("a key in the authorization header; the request doesn't ask for one");
   });
 
+  it("expects a sign-in's token where the request asks for it, like a key", async () => {
+    const signIn = { signIn: "google", as: "bearer" } as const;
+    const recorded = replay(recording, { policy, unsetSecrets: ["google"] });
+    await recorded.http.fetch(url, { ...matching, auth: signIn });
+    recorded.assertAllUsed();
+    await expect(
+      replay(recording, { policy }).http.fetch(url, {
+        ...matching,
+        auth: { signIn: "google", as: "header", header: "x-api-key" },
+      }),
+    ).rejects.toThrow(/no key in the x-api-key header/);
+  });
+
   it("refuses a file that isn't a recording", () => {
     expect(() => replay({ format: "halonic.recording/0", exchanges: [] })).toThrow();
   });
