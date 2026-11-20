@@ -5,10 +5,18 @@ import type {
 } from "@halonicjs/adapters/integration-kit";
 import { z } from "zod";
 import { type ListedComment, listedCommentSchema } from "./comment.ts";
+import { type Document, documentSchema } from "./document.ts";
 import { errorForStatus, unexpectedResponse } from "./error-for-status.ts";
 import { paperclipUrl, type QueryValue } from "./paperclip-url.ts";
 import { readSettings } from "./settings.ts";
-import { type ListedTask, listedTaskSchema } from "./task.ts";
+import {
+  type InboxTask,
+  inboxTaskSchema,
+  type ListedTask,
+  listedTaskSchema,
+  type Task,
+  taskSchema,
+} from "./task.ts";
 
 /** The secret the sheet declares; the kit adds its value, which we never see. */
 const paperclipKey: SecretPlacement = { secret: "paperclip-key", as: "bearer" };
@@ -21,6 +29,7 @@ const readOnly = "GET";
 
 const taskListSchema = z.array(listedTaskSchema);
 const commentListSchema = z.array(listedCommentSchema);
+const inboxSchema = z.array(inboxTaskSchema);
 
 /** One page of the company's tasks, most recently changed first. */
 export interface ListTasksRequest {
@@ -91,6 +100,40 @@ export class PaperclipClient {
     };
     const href = paperclipUrl(url, ["api", "issues", request.issue, "comments"], query);
     return await this.#getJson(href, commentListSchema, signal);
+  }
+
+  /**
+   * One request: one task, with its blockers and its documents' keys.
+   * `GET /api/issues/{issue}`
+   *
+   * @param issue - the task's identifier, such as `HAL-12`, or its id
+   */
+  async getTask(issue: string, signal?: AbortSignal): Promise<Task> {
+    const { url } = readSettings(this.#host.settings);
+    const href = paperclipUrl(url, ["api", "issues", issue]);
+    return await this.#getJson(href, taskSchema, signal);
+  }
+
+  /**
+   * One request: one document of a task, with its text.
+   * `GET /api/issues/{issue}/documents/{key}`
+   */
+  async getDocument(issue: string, key: string, signal?: AbortSignal): Promise<Document> {
+    const { url } = readSettings(this.#host.settings);
+    const href = paperclipUrl(url, ["api", "issues", issue, "documents", key]);
+    return await this.#getJson(href, documentSchema, signal);
+  }
+
+  /**
+   * One request: the tasks assigned to the agent the key belongs to. The
+   * company comes from the key, so `company-id` isn't sent, but it is
+   * still checked, as for every call.
+   * `GET /api/agents/me/inbox-lite`
+   */
+  async listInbox(signal?: AbortSignal): Promise<InboxTask[]> {
+    const { url } = readSettings(this.#host.settings);
+    const href = paperclipUrl(url, ["api", "agents", "me", "inbox-lite"]);
+    return await this.#getJson(href, inboxSchema, signal);
   }
 
   /** Sends one `GET`, then parses and checks the JSON answer. */

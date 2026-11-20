@@ -17,6 +17,7 @@
           "kind": "json",
           "value": [
             {
+              "activeRecoveryAction": null,
               "activeRun": {
                 "field-1": "<scrubbed:content>",
                 "field-2": "<scrubbed:content>",
@@ -24,13 +25,19 @@
                   "field-1": "<scrubbed:content>"
                 }
               },
+              "assigneeAdapterOverrides": null,
               "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
               "assigneeUserId": null,
               "blockerAttention": null,
               "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "conversationState": null,
               "createdAt": "2026-11-02T09:00:00.000Z",
               "description": "<scrubbed:content>",
               "descriptionTruncated": false,
+              "executionPolicy": null,
+              "executionState": null,
+              "executionWorkspaceSettings": null,
+              "externalConversationState": null,
               "id": "7a5c0000-0000-4000-8000-000000000014",
               "identifier": "HAL-14",
               "issueNumber": 14,
@@ -44,13 +51,20 @@
               "monitorNotes": null,
               "priority": "high",
               "reviewAttention": null,
+              "reviewPolicy": null,
               "status": "in_progress",
+              "successfulRunHandoff": null,
               "title": "<scrubbed:content>",
               "unblockDescriptor": null,
-              "updatedAt": "2026-11-18T10:00:00.000Z"
+              "updatedAt": "2026-11-18T10:00:00.000Z",
+              "watchdog": null,
+              "workspacePendingSelection": null,
+              "workspaceSelection": null
             },
             {
+              "activeRecoveryAction": null,
               "activeRun": null,
+              "assigneeAdapterOverrides": null,
               "assigneeAgentId": null,
               "assigneeUserId": "user_fake_01",
               "blockerAttention": {
@@ -62,9 +76,14 @@
                 }
               },
               "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "conversationState": null,
               "createdAt": "2026-11-02T09:00:00.000Z",
               "description": "<scrubbed:content>",
               "descriptionTruncated": false,
+              "executionPolicy": null,
+              "executionState": null,
+              "executionWorkspaceSettings": null,
+              "externalConversationState": null,
               "id": "7a5c0000-0000-4000-8000-000000000013",
               "identifier": "HAL-13",
               "issueNumber": 13,
@@ -80,22 +99,34 @@
                   }
                 ]
               },
+              "reviewPolicy": null,
               "status": "blocked",
+              "successfulRunHandoff": null,
               "title": "<scrubbed:content>",
               "unblockDescriptor": {
                 "field-1": "<scrubbed:content>"
               },
-              "updatedAt": "2026-11-18T10:00:00.000Z"
+              "updatedAt": "2026-11-18T10:00:00.000Z",
+              "watchdog": null,
+              "workspacePendingSelection": null,
+              "workspaceSelection": null
             },
             {
+              "activeRecoveryAction": null,
               "activeRun": null,
+              "assigneeAdapterOverrides": null,
               "assigneeAgentId": null,
               "assigneeUserId": null,
               "blockerAttention": null,
               "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "conversationState": null,
               "createdAt": "2026-11-02T09:00:00.000Z",
               "description": "<scrubbed:content>",
               "descriptionTruncated": false,
+              "executionPolicy": null,
+              "executionState": null,
+              "executionWorkspaceSettings": null,
+              "externalConversationState": null,
               "id": "7a5c0000-0000-4000-8000-000000000012",
               "identifier": "HAL-12",
               "issueNumber": 12,
@@ -103,10 +134,15 @@
               "monitorNotes": null,
               "priority": "medium",
               "reviewAttention": null,
+              "reviewPolicy": null,
               "status": "todo",
+              "successfulRunHandoff": null,
               "title": "<scrubbed:content>",
               "unblockDescriptor": null,
-              "updatedAt": "2026-11-17T10:00:00.000Z"
+              "updatedAt": "2026-11-17T10:00:00.000Z",
+              "watchdog": null,
+              "workspacePendingSelection": null,
+              "workspaceSelection": null
             }
           ]
         },
@@ -129,7 +165,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[0].title",
+      "path": "exchanges[0].response.body[0].activeRun",
       "rule": "user-content"
     },
     {
@@ -149,22 +185,87 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[0].unblockDescriptor",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
       "path": "exchanges[0].response.body[0].reviewAttention",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[0].activeRun",
+      "path": "exchanges[0].response.body[0].title",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[1].title",
+      "path": "exchanges[0].response.body[0].unblockDescriptor",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].executionState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].executionPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].successfulRunHandoff",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].executionWorkspaceSettings",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].watchdog",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].workspaceSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].workspacePendingSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].conversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].externalConversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].assigneeAdapterOverrides",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].reviewPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].activeRun",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].blockerAttention.terminalBlocker.title",
       "rule": "user-content"
     },
     {
@@ -184,7 +285,12 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[1].blockerAttention.terminalBlocker.title",
+      "path": "exchanges[0].response.body[1].reviewAttention",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].title",
       "rule": "user-content"
     },
     {
@@ -194,17 +300,67 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[1].reviewAttention",
+      "path": "exchanges[0].response.body[1].executionState",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[1].activeRun",
+      "path": "exchanges[0].response.body[1].executionPolicy",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[2].title",
+      "path": "exchanges[0].response.body[1].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].successfulRunHandoff",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].executionWorkspaceSettings",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].watchdog",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].workspaceSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].workspacePendingSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].conversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].externalConversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].assigneeAdapterOverrides",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].reviewPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].activeRun",
       "rule": "user-content"
     },
     {
@@ -224,17 +380,77 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[2].unblockDescriptor",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
       "path": "exchanges[0].response.body[2].reviewAttention",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[2].activeRun",
+      "path": "exchanges[0].response.body[2].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].unblockDescriptor",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].executionState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].executionPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].successfulRunHandoff",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].executionWorkspaceSettings",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].watchdog",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].workspaceSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].workspacePendingSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].conversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].externalConversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].assigneeAdapterOverrides",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[2].reviewPolicy",
       "rule": "user-content"
     }
   ]

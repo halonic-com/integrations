@@ -1,0 +1,504 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/issues/HAL-12"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "activeRecoveryAction": null,
+            "ancestors": [
+              {
+                "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
+                "description": "<scrubbed:content>",
+                "goal": {
+                  "field-1": "<scrubbed:content>"
+                },
+                "goalId": null,
+                "id": "7a5c0000-0000-4000-8000-000000000010",
+                "identifier": "HAL-10",
+                "priority": "high",
+                "project": {
+                  "field-1": "<scrubbed:content>"
+                },
+                "projectId": null,
+                "status": "in_progress",
+                "title": "<scrubbed:content>"
+              }
+            ],
+            "assigneeAdapterOverrides": null,
+            "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
+            "assigneeUserId": null,
+            "blockedBy": [
+              {
+                "activeRecoveryAction": null,
+                "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
+                "assigneeUserId": null,
+                "displayStatus": "in_review",
+                "id": "7a5c0000-0000-4000-8000-000000000011",
+                "identifier": "HAL-11",
+                "priority": "medium",
+                "scheduledRetry": null,
+                "status": "in_review",
+                "terminalBlockers": [
+                  {
+                    "field-1": "<scrubbed:content>",
+                    "field-2": "<scrubbed:content>",
+                    "field-3": "<scrubbed:content>",
+                    "field-4": "<scrubbed:content>",
+                    "field-5": "<scrubbed:content>"
+                  }
+                ],
+                "title": "<scrubbed:content>"
+              }
+            ],
+            "blockerAttention": {
+              "field-1": "<scrubbed:content>",
+              "field-2": 0,
+              "field-3": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>"
+              }
+            },
+            "blocks": [
+              {
+                "activeRecoveryAction": null,
+                "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
+                "assigneeUserId": null,
+                "displayStatus": "todo",
+                "id": "7a5c0000-0000-4000-8000-000000000013",
+                "identifier": "HAL-13",
+                "priority": "medium",
+                "scheduledRetry": null,
+                "status": "todo",
+                "title": "<scrubbed:content>"
+              }
+            ],
+            "companyId": "c0ffee00-0000-4000-8000-000000000001",
+            "conversationState": null,
+            "createdAt": "2026-11-10T08:00:00.000Z",
+            "createdFrom": {
+              "field-1": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>"
+              }
+            },
+            "currentExecutionWorkspace": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>"
+            },
+            "description": "<scrubbed:content>",
+            "documentSummaries": [
+              {
+                "createdAt": "2026-11-10T08:00:00.000Z",
+                "format": "markdown",
+                "id": "d0c00000-0000-4000-8000-000000000001",
+                "issueId": "7a5c0000-0000-4000-8000-000000000012",
+                "key": "scrubbed-secret-1",
+                "lockedAt": null,
+                "title": "<scrubbed:content>",
+                "updatedAt": "2026-11-12T08:00:00.000Z"
+              },
+              {
+                "createdAt": "2026-11-10T08:00:00.000Z",
+                "format": "markdown",
+                "id": "d0c00000-0000-4000-8000-000000000002",
+                "issueId": "7a5c0000-0000-4000-8000-000000000012",
+                "key": "scrubbed-secret-2",
+                "lockedAt": null,
+                "title": "<scrubbed:content>",
+                "updatedAt": "2026-11-12T08:00:00.000Z"
+              }
+            ],
+            "executionBlocker": {
+              "field-1": "<scrubbed:content>"
+            },
+            "executionPolicy": {
+              "field-1": "<scrubbed:content>",
+              "field-2": false,
+              "field-3": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>",
+                "field-4": "<scrubbed:content>",
+                "field-5": "<scrubbed:content>"
+              },
+              "field-4": []
+            },
+            "executionState": {
+              "field-1": "<scrubbed:content>",
+              "field-2": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>",
+                "field-4": "<scrubbed:content>",
+                "field-5": "<scrubbed:content>"
+              },
+              "field-3": null,
+              "field-4": []
+            },
+            "executionWorkspaceSettings": {
+              "field-1": "<scrubbed:content>"
+            },
+            "externalChannelBinding": null,
+            "externalConversationState": null,
+            "goal": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>"
+            },
+            "id": "7a5c0000-0000-4000-8000-000000000012",
+            "identifier": "HAL-12",
+            "interruption": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>"
+            },
+            "issueNumber": 12,
+            "labels": [
+              {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>"
+              }
+            ],
+            "legacyPlanDocument": {
+              "field-1": "<scrubbed:content>"
+            },
+            "mentionedProjects": [
+              {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>"
+              }
+            ],
+            "monitorNotes": "<scrubbed:content>",
+            "parentId": "7a5c0000-0000-4000-8000-000000000010",
+            "planDocument": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>",
+              "field-3": "<scrubbed:content>",
+              "field-4": "<scrubbed:content>",
+              "field-5": "<scrubbed:content>",
+              "field-6": "<scrubbed:content>",
+              "field-7": null,
+              "field-8": "<scrubbed:content>",
+              "field-9": "<scrubbed:content>"
+            },
+            "priority": "high",
+            "project": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>",
+              "field-3": "<scrubbed:content>"
+            },
+            "relatedWork": {
+              "field-1": [
+                {
+                  "field-1": {
+                    "field-1": "<scrubbed:content>",
+                    "field-2": "<scrubbed:content>",
+                    "field-3": "<scrubbed:content>"
+                  },
+                  "field-2": 0,
+                  "field-3": [
+                    {
+                      "field-1": "<scrubbed:content>",
+                      "field-2": "<scrubbed:content>",
+                      "field-3": "<scrubbed:content>"
+                    }
+                  ]
+                }
+              ],
+              "field-2": []
+            },
+            "reviewAttention": {
+              "field-1": "<scrubbed:content>",
+              "field-2": [],
+              "field-3": "<scrubbed:content>"
+            },
+            "reviewPolicy": null,
+            "scheduledRetry": null,
+            "status": "blocked",
+            "successfulRunHandoff": {
+              "field-1": "<scrubbed:content>"
+            },
+            "title": "<scrubbed:content>",
+            "unblockDescriptor": {
+              "field-1": "<scrubbed:content>",
+              "field-2": "<scrubbed:content>"
+            },
+            "updatedAt": "2026-11-18T10:00:00.000Z",
+            "watchdog": null,
+            "workProducts": [
+              {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>"
+              }
+            ],
+            "workspacePendingSelection": null,
+            "workspaceSelection": null
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "get-issue",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].goal",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].project",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].scheduledRetry",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].terminalBlockers",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockerAttention",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blocks[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blocks[0].scheduledRetry",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blocks[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.createdFrom",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.currentExecutionWorkspace",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.description",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.documentSummaries[0].key",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.documentSummaries[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.documentSummaries[1].key",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.documentSummaries[1].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionBlocker",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.goal",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.interruption",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.legacyPlanDocument",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.mentionedProjects",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.monitorNotes",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.planDocument",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.project",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.relatedWork",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.reviewAttention",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.successfulRunHandoff",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.unblockDescriptor",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.workProducts",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.scheduledRetry",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionWorkspaceSettings",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.watchdog",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.workspaceSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.workspacePendingSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.conversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.externalConversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.externalChannelBinding",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.assigneeAdapterOverrides",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.reviewPolicy",
+      "rule": "user-content"
+    }
+  ]
+}

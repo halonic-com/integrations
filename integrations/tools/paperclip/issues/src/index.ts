@@ -5,15 +5,20 @@ import {
 } from "@halonicjs/adapters/integration-kit";
 import { PaperclipClient } from "./client.ts";
 import { PaperclipError } from "./errors.ts";
+import { getDocumentTool } from "./tools/get-document.ts";
+import { getIssueTool } from "./tools/get-issue.ts";
 import { listCommentsTool } from "./tools/list-comments.ts";
+import { listInboxTool } from "./tools/list-inbox.ts";
 import { listIssuesTool } from "./tools/list-issues.ts";
 
-/**
- * The tools, in the same order as in integration.yaml. `issues_get`,
- * `issues_get_document` and `issues_list_inbox` follow in the next pull
- * request.
- */
-const tools: readonly ToolImplementation<PaperclipClient>[] = [listIssuesTool, listCommentsTool];
+/** The tools, in the same order as in integration.yaml. */
+const tools: readonly ToolImplementation<PaperclipClient>[] = [
+  listIssuesTool,
+  getIssueTool,
+  listCommentsTool,
+  getDocumentTool,
+  listInboxTool,
+];
 
 export const paperclipIssues: Integration = {
   name: "tool-paperclip-issues",

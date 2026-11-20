@@ -1,0 +1,45 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/issues/HAL-12/documents/report"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": "<scrubbed:content>"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 404
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "get-document-not-found",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.error",
+      "rule": "user-content"
+    }
+  ]
+}

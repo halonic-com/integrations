@@ -1,0 +1,107 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/agents/me/inbox-lite"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": [
+            {
+              "activeRecoveryAction": null,
+              "activeRun": null,
+              "dependencyReady": false,
+              "goalId": null,
+              "id": "7a5c0000-0000-4000-8000-000000000012",
+              "identifier": "HAL-12",
+              "parentId": "7a5c0000-0000-4000-8000-000000000010",
+              "priority": "medium",
+              "projectId": null,
+              "status": "blocked",
+              "title": "<scrubbed:content>",
+              "unresolvedBlockerCount": 1,
+              "unresolvedBlockerIssueIds": [
+                "7a5c0000-0000-4000-8000-000000000011"
+              ],
+              "updatedAt": "2026-11-12T08:00:00.000Z"
+            },
+            {
+              "activeRecoveryAction": null,
+              "activeRun": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>"
+              },
+              "dependencyReady": true,
+              "goalId": null,
+              "id": "7a5c0000-0000-4000-8000-000000000015",
+              "identifier": "HAL-15",
+              "parentId": "7a5c0000-0000-4000-8000-000000000010",
+              "priority": "medium",
+              "projectId": null,
+              "status": "in_progress",
+              "title": "<scrubbed:content>",
+              "unresolvedBlockerCount": 0,
+              "unresolvedBlockerIssueIds": [],
+              "updatedAt": "2026-11-15T08:00:00.000Z"
+            }
+          ]
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "list-inbox",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].activeRun",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].activeRun",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].title",
+      "rule": "user-content"
+    }
+  ]
+}

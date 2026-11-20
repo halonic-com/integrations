@@ -54,7 +54,10 @@ describe("integration.yaml", () => {
 /** The smallest valid arguments for each tool the code has. */
 const callsOfEveryTool: Record<string, Record<string, unknown>> = {
   issues_list: {},
+  issues_get: { issue: "HAL-12" },
   issues_list_comments: { issue: "HAL-12" },
+  issues_get_document: { issue: "HAL-12", key: "plan" },
+  issues_list_inbox: {},
 };
 
 describe("the integration's code", () => {
@@ -85,7 +88,8 @@ describe("the integration's code", () => {
     expect(Object.keys(callsOfEveryTool)).toEqual(paperclipIssues.tools.map((tool) => tool.name));
     const { connection, requests } = connectToFakePaperclip(200, "[]");
     for (const [name, args] of Object.entries(callsOfEveryTool)) {
-      await connection.callTool(name, args);
+      // The fake's `[]` only fits the lists; the request is what counts here.
+      await connection.callTool(name, args).catch(() => undefined);
     }
     expect(requests).toHaveLength(paperclipIssues.tools.length);
     for (const request of requests) {
