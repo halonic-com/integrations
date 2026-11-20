@@ -41,9 +41,9 @@ tools:
     untrusted: true # titles are written by people and agents
   - name: issues_get
     description: >-
-      Returns one task: identifier, title, description, status, priority,
-      assignee, parent, the tasks that block it and that it blocks, and the
-      keys of its documents. A description is cut after 20,000 characters.
+      Returns one task: id, identifier, title, description, status,
+      priority, assignee, last change, parent, the tasks that block it and
+      that it blocks, and the keys of its documents. A description is cut after 20,000 characters.
       Read its comments with issues_list_comments and a document with
       issues_get_document.
     arguments:
@@ -77,7 +77,8 @@ tools:
     description: >-
       Lists the tasks assigned to the agent whose key this is: id,
       identifier, title, status, priority, whether its blockers are done and
-      last change per task.
+      last change per task. Returns at most 50 tasks, and how many more
+      there are.
     arguments: {}
     risk: read
     noun: { one: task, many: tasks }
@@ -110,11 +111,34 @@ recording:
     - response.body.blockedBy[*].title
     - response.body.blocks[*].title
     - response.body.documentSummaries[*].title
+    # What else Paperclip sends with one task: the plan's text, the project,
+    # the workspace's folders and commands, the tasks it mentions with the
+    # words that mention them, and the notes on its runs.
+    - response.body.labels
+    - response.body.monitorNotes
+    - response.body.unblockDescriptor
+    - response.body.reviewAttention
+    - response.body.blockerAttention
+    - response.body.executionBlocker
+    - response.body.successfulRunHandoff
+    - response.body.interruption
+    - response.body.planDocument
+    - response.body.legacyPlanDocument
+    - response.body.project
+    - response.body.goal
+    - response.body.mentionedProjects
+    - response.body.ancestors[*].project
+    - response.body.ancestors[*].goal
+    - response.body.relatedWork
+    - response.body.createdFrom
+    - response.body.currentExecutionWorkspace
+    - response.body.workProducts
     # Comments, and the notes Paperclip adds to one.
     - response.body[*].body
     - response.body[*].metadata
     - response.body[*].presentation
     # Paperclip's error text, which can echo what was sent.
     - response.body.error
-    # One document.
+    # One document, and the notes on it.
     - response.body.body
+    - response.body.annotations

@@ -1,0 +1,74 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/issues/HAL-12/documents/notes"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "annotations": [
+              {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>"
+              }
+            ],
+            "body": "<scrubbed:content>",
+            "createdAt": "2026-11-10T08:00:00.000Z",
+            "format": "markdown",
+            "id": "d0c00000-0000-4000-8000-000000000002",
+            "issueId": "7a5c0000-0000-4000-8000-000000000012",
+            "key": "scrubbed-secret-1",
+            "lockedAt": null,
+            "title": "<scrubbed:content>",
+            "updatedAt": "2026-11-12T08:00:00.000Z"
+          }
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "get-document",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.key",
+      "rule": "secret-field"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.body",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.annotations",
+      "rule": "user-content"
+    }
+  ]
+}
