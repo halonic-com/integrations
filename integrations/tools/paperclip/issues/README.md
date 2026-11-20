@@ -52,7 +52,14 @@ defence, on Paperclip's side.
 - **Results** are cut: at most 50 tasks and 100 comments per call, with
   `nextOffset` or `nextAfter` when there may be more. A description is cut
   after 20,000 characters, a comment after 10,000 and a document after
-  50,000. Characters are UTF-16 code units, so an emoji counts as two.
+  50,000. A title in a list is cut after 500. Characters are UTF-16 code
+  units, so an emoji counts as two.
+- **Paging** asks Paperclip for one item more than it returns, to know
+  whether there are more. Paperclip's `after` sends the comment it names
+  back as the first one; `issues_list_comments` leaves it out, so
+  `nextAfter` never repeats a comment.
+- **Deleted comments** aren't returned: Paperclip still lists them, with
+  their text.
 - **`issues_list_inbox`** only works with an agent's key: the inbox belongs
   to the agent the key was issued to.
 - **No retries:** a call that gets a `429` or a `5xx` fails with
@@ -63,9 +70,24 @@ defence, on Paperclip's side.
 - **Errors** are `PaperclipError`. Paperclip's own error text is never
   passed on.
 
+## Recordings
+
+There is no test Paperclip server yet, so the files in `recordings/` are
+invented traffic, shaped like the answers of a live Paperclip server:
+invented tasks, comments and ids on `tasks.example.com`. They were fed
+through the recorder's `prepareRecording` with this sheet's `userContent`
+paths, so they are scrubbed exactly as a real recording would be, and
+every path was checked to match. Besides titles, descriptions and comment
+text, the paths cover the other free text Paperclip sends with a task or a
+comment (notes, labels, review and blocker summaries, comment metadata)
+and its error text. Replace them with real recordings once there is a
+test server.
+
 ## Not yet
 
-- The client and the tools come in the next pull request; this one adds
-  the sheet, which comes first ([guide, section
-  3](../../../../docs/guides/integrations.md#3-the-permission-sheet-comes-first)).
+- `issues_get`, `issues_get_document` and `issues_list_inbox`, and with
+  them the shared conformance suite: it checks the code's tools against
+  the sheet's five, so it runs once all five are in, in the next pull
+  request. Until then, `read-only.test.ts` checks that the code's tools
+  are the sheet's, read only, and send nothing but `GET` with the key.
 - Attachments, activity and runs aren't read.
