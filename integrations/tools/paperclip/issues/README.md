@@ -55,9 +55,11 @@ defence, on Paperclip's side.
   50,000. Characters are UTF-16 code units, so an emoji counts as two.
 - **`issues_list_inbox`** only works with an agent's key: the inbox belongs
   to the agent the key was issued to.
-- **Retries:** a call is retried at most twice, after a `429` or a `5xx`,
-  waiting with the host's `wait`. Every call only reads, so a retry changes
-  nothing.
+- **No retries:** a call that gets a `429` or a `5xx` fails with
+  `rate-limited` or `unavailable`, and the agent can try again later. The
+  retry code Google's integrations share lives in `tools/google/shared`,
+  and the guide doesn't allow copying it; a retry helper belongs in the
+  kit.
 - **Errors** are `PaperclipError`. Paperclip's own error text is never
   passed on.
 
