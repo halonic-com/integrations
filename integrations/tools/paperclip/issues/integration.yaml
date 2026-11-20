@@ -1,0 +1,108 @@
+id: tool-paperclip-issues
+version: 0.1.0
+kit: 1 # the version of the Integration port it was built against
+provides: [connector]
+
+# The one Paperclip server the workspace chooses: the host of the `url`
+# setting, and nothing else. Paperclip is self-hosted, so it has no host of
+# its own; it must be a public host name over https.
+hosts:
+  - fromSetting: url
+    class: public
+
+secrets:
+  paperclip-key:
+    purpose: >-
+      A Paperclip API key that can only read. Sent only to the Paperclip
+      server you choose, never anywhere else.
+    hosts:
+      - fromSetting: url
+    as: bearer
+
+tokens: []
+
+# Every text the model reads, word for word as in the code. Every tool only
+# reads: the integration has no tool that changes anything in Paperclip, and
+# its client sends nothing but GET requests.
+tools:
+  - name: issues_list
+    description: >-
+      Lists the company's tasks, most recently changed first. Returns id,
+      identifier, title, status, priority, assignee and last change per
+      task, without descriptions. Read a whole task with issues_get.
+    arguments:
+      status: 'Only tasks with these statuses, separated by commas, such as "todo,in_progress,blocked".'
+      assigneeAgentId: Only tasks assigned to this agent id.
+      text: Words to find in titles, identifiers and descriptions.
+      maxResults: Tasks to return (default 25).
+      offset: nextOffset from the previous call, for more tasks.
+    risk: read
+    noun: { one: task, many: tasks }
+    untrusted: true # titles are written by people and agents
+  - name: issues_get
+    description: >-
+      Returns one task: identifier, title, description, status, priority,
+      assignee, parent, the tasks that block it and that it blocks, and the
+      keys of its documents. A description is cut after 20,000 characters.
+      Read its comments with issues_list_comments and a document with
+      issues_get_document.
+    arguments:
+      issue: 'Identifier of the task, such as "HAL-12", or its id.'
+    risk: read
+    noun: { one: task, many: tasks }
+    untrusted: true # descriptions are written by people and agents
+  - name: issues_list_comments
+    description: >-
+      Lists one task's comments, oldest first. Returns id, author, time and
+      text per comment. A comment's text is cut after 10,000 characters.
+    arguments:
+      issue: 'Identifier of the task, such as "HAL-12", or its id.'
+      after: nextAfter from the previous call, or a comment id, for the comments after it.
+      maxResults: Comments to return (default 50).
+    risk: read
+    noun: { one: comment, many: comments }
+    untrusted: true # comments are written by people and agents
+  - name: issues_get_document
+    description: >-
+      Returns one document of a task: key, title, text and last change. The
+      text is cut after 50,000 characters. issues_get lists a task's
+      document keys.
+    arguments:
+      issue: 'Identifier of the task, such as "HAL-12", or its id.'
+      key: 'Key of the document, such as "plan".'
+    risk: read
+    noun: { one: document, many: documents }
+    untrusted: true # documents are written by people and agents
+  - name: issues_list_inbox
+    description: >-
+      Lists the tasks assigned to the agent whose key this is: id,
+      identifier, title, status, priority, whether its blockers are done and
+      last change per task.
+    arguments: {}
+    risk: read
+    noun: { one: task, many: tasks }
+    untrusted: true # titles are written by people and agents
+
+needs: []
+
+# Fields that hold the user's own content, for the recorder: every title,
+# description, comment and document text, and the text searched for.
+# Identifiers, ids, statuses and times stay, so a replay still shows them.
+recording:
+  userContent:
+    # The task list and the inbox.
+    - response.body[*].title
+    - response.body[*].description
+    - request.query.q
+    # One task, its parent tasks, its blockers and its documents' titles.
+    - response.body.title
+    - response.body.description
+    - response.body.ancestors[*].title
+    - response.body.ancestors[*].description
+    - response.body.blockedBy[*].title
+    - response.body.blocks[*].title
+    - response.body.documentSummaries[*].title
+    # Comments.
+    - response.body[*].body
+    # One document.
+    - response.body.body

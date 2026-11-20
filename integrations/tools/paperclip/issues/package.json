@@ -1,0 +1,30 @@
+{
+  "name": "@halonicjs/integration-tool-paperclip-issues",
+  "private": true,
+  "type": "module",
+  "description": "Paperclip tasks, read only: list tasks and the inbox, and read a task, its comments and its documents on a Paperclip server.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.test.json",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/adapters": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@halonicjs/testing": "catalog:",
+    "@halonicjs/tooling-config": "workspace:*",
+    "@halonicjs/tooling-record": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "integrations",
+    "owner": "tomas"
+  }
+}
