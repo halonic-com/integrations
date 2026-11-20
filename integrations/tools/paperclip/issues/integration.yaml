@@ -86,13 +86,21 @@ tools:
 needs: []
 
 # Fields that hold the user's own content, for the recorder: every title,
-# description, comment and document text, and the text searched for.
-# Identifiers, ids, statuses and times stay, so a replay still shows them.
+# description, comment and document text, the text searched for, and the
+# other free text Paperclip sends with a task or a comment, which the tools
+# don't read but a recording would keep. Identifiers, ids, statuses and
+# times stay, so a replay still shows them.
 recording:
   userContent:
     # The task list and the inbox.
     - response.body[*].title
     - response.body[*].description
+    - response.body[*].labels
+    - response.body[*].monitorNotes
+    - response.body[*].blockerAttention.terminalBlocker.title
+    - response.body[*].unblockDescriptor
+    - response.body[*].reviewAttention
+    - response.body[*].activeRun
     - request.query.q
     # One task, its parent tasks, its blockers and its documents' titles.
     - response.body.title
@@ -102,7 +110,11 @@ recording:
     - response.body.blockedBy[*].title
     - response.body.blocks[*].title
     - response.body.documentSummaries[*].title
-    # Comments.
+    # Comments, and the notes Paperclip adds to one.
     - response.body[*].body
+    - response.body[*].metadata
+    - response.body[*].presentation
+    # Paperclip's error text, which can echo what was sent.
+    - response.body.error
     # One document.
     - response.body.body

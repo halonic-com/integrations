@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@halonicjs/adapters": "catalog:",
+    "@halonicjs/integration-shared": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

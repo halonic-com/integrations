@@ -1,0 +1,189 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/issues/HAL-12/comments?order=asc&limit=2"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": [
+            {
+              "authorAgentId": "a9e00000-0000-4000-8000-00000000000a",
+              "authorType": "agent",
+              "authorUserId": null,
+              "body": "<scrubbed:content>",
+              "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "createdAt": "2026-11-11T08:00:00.000Z",
+              "deletedAt": null,
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "issueId": "7a5c0000-0000-4000-8000-000000000012",
+              "metadata": null,
+              "origin": "comment",
+              "presentation": null,
+              "updatedAt": "2026-11-11T08:00:00.000Z"
+            },
+            {
+              "authorAgentId": "a9e00000-0000-4000-8000-00000000000a",
+              "authorType": "agent",
+              "authorUserId": null,
+              "body": "<scrubbed:content>",
+              "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "createdAt": "2026-11-12T08:00:00.000Z",
+              "deletedAt": null,
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "issueId": "7a5c0000-0000-4000-8000-000000000012",
+              "metadata": null,
+              "origin": "comment",
+              "presentation": null,
+              "updatedAt": "2026-11-12T08:00:00.000Z"
+            }
+          ]
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/issues/HAL-12/comments?order=asc&after=c0000000-0000-4000-8000-000000000001&limit=3"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": [
+            {
+              "authorAgentId": "a9e00000-0000-4000-8000-00000000000a",
+              "authorType": "agent",
+              "authorUserId": null,
+              "body": "<scrubbed:content>",
+              "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "createdAt": "2026-11-11T08:00:00.000Z",
+              "deletedAt": null,
+              "id": "c0000000-0000-4000-8000-000000000001",
+              "issueId": "7a5c0000-0000-4000-8000-000000000012",
+              "metadata": null,
+              "origin": "comment",
+              "presentation": null,
+              "updatedAt": "2026-11-11T08:00:00.000Z"
+            },
+            {
+              "authorAgentId": "a9e00000-0000-4000-8000-00000000000a",
+              "authorType": "agent",
+              "authorUserId": null,
+              "body": "<scrubbed:content>",
+              "companyId": "c0ffee00-0000-4000-8000-000000000001",
+              "createdAt": "2026-11-12T08:00:00.000Z",
+              "deletedAt": null,
+              "id": "c0000000-0000-4000-8000-000000000002",
+              "issueId": "7a5c0000-0000-4000-8000-000000000012",
+              "metadata": null,
+              "origin": "comment",
+              "presentation": null,
+              "updatedAt": "2026-11-12T08:00:00.000Z"
+            }
+          ]
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "list-comments-two-pages",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].body",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].metadata",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[0].presentation",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].body",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].metadata",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].presentation",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[0].body",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[0].metadata",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[0].presentation",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[1].body",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[1].metadata",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body[1].presentation",
+      "rule": "user-content"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://tasks.example.com/api/companies/c0ffee00-0000-4000-8000-000000000001/issues?assigneeAgentId=a9e00000-0000-4000-8000-00000000000b&q=%3Cscrubbed%3Acontent%3E&limit=26&offset=0"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": []
+        },
+        "headers": {
+          "content-type": "application/json; charset=utf-8"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-paperclip-issues",
+  "scenario": "list-issues-search-no-match",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.url.query.q",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    }
+  ]
+}
