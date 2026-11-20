@@ -159,6 +159,9 @@ class JsonWalk {
   }
 }
 
+/** A field name `asUserContent` gave, such as `field-12`. */
+const NUMBERED_FIELD = /^field-[1-9]\d*$/;
+
 /**
  * The same shape with every leaf replaced by a fixed value of its type. A
  * string that holds JSON gets the same treatment inside, so it still parses
@@ -187,9 +190,17 @@ function asUserContent(value: JsonValue): JsonValue {
   }
   if (value !== null) {
     // Field names inside user content can be content too (a map keyed by
-    // subject line), so they are numbered instead of kept.
+    // subject line), so they are numbered instead of kept. Names that are
+    // already numbered stay: a recording file sorts them (`field-1`,
+    // `field-10`, `field-2`), and numbering them again in that order would
+    // no longer match when the replay scrubs the recorded response again.
+    const fields = Object.entries(value);
+    const numbered = fields.every(([name]) => NUMBERED_FIELD.test(name));
     return Object.fromEntries(
-      Object.values(value).map((child, index) => [`field-${index + 1}`, asUserContent(child)]),
+      fields.map(([name, child], index) => [
+        numbered ? name : `field-${index + 1}`,
+        asUserContent(child),
+      ]),
     );
   }
   return null;
