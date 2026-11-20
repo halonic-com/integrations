@@ -47,6 +47,15 @@ describe("replay of a recorded response", () => {
     expect(await response.json()).toMatchObject({ id: "e1", summary: "<scrubbed:content>" });
   });
 
+  it("gives back a declared object of 10 fields or more, whose numbered names the file sorted", async () => {
+    const extended = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => [`field-${index + 1}`, index === 10 ? null : 0]),
+    );
+    const sorted = Object.fromEntries(Object.entries(extended).sort());
+    const recording = recordingWith({ kind: "json", value: { id: "e1", extended: sorted } });
+    await expect(fetchOnce(recording, ["response.body.extended"])).resolves.toBeUndefined();
+  });
+
   it("fails when the sheet doesn't declare a response path the recording scrubbed", async () => {
     await expect(fetchOnce(event, ["response.body.extended"])).rejects.toThrow(
       "The recorded response has user content at response.body.summary, which the recording policy doesn't declare.",

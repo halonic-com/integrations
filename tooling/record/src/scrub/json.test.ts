@@ -128,6 +128,19 @@ describe("scrubJson", () => {
     expect(context.matchedUserContent).toEqual(new Set(declared));
   });
 
+  it("keeps the field names it numbered, so scrubbing a saved recording again changes nothing", () => {
+    const paths = new FieldPaths(["response.body.plan"], "response");
+    // The last field differs from the others, so a field numbered again shows.
+    const plan = Object.fromEntries(
+      Array.from({ length: 11 }, (_, index) => [`name${index}`, index === 10 ? "text" : index]),
+    );
+    const once = scrubJson({ plan }, "body", paths, testContext()) as { plan: object };
+    // A recording file sorts keys: field-1, field-10, field-11, field-2, ...
+    const saved = { plan: Object.fromEntries(Object.entries(once.plan).sort()) };
+    expect(Object.keys(saved.plan).slice(0, 3)).toEqual(["field-1", "field-10", "field-11"]);
+    expect(scrubJson(saved, "body", paths, testContext())).toEqual(saved);
+  });
+
   it("keeps an empty string empty, as it holds no content, and leaves it out of the report", () => {
     const declared = ["response.body.snippet", "response.body.arguments.*"];
     const context = testContext();
