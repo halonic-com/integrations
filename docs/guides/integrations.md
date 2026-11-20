@@ -336,6 +336,10 @@ Rules for each field:
     `scope`, `code_challenge`, `response_type`, `request` or `request_uri`:
     Halonic sets those, and the sheet check refuses them. Put no query on
     the `tokenUrl`, `revokeUrl` or `issuer`.
+    The `revokeUrl` must be on the host of the `tokenUrl` or of the
+    `authorizeUrl`; the sheet check refuses any other host. Sign-out sends
+    the refresh token there, and the trust check names only those two
+    hosts. If the service revokes on a third host, leave `revokeUrl` out.
   - `clientId` is the app's public ID. If every user registers their own
     app, make it a setting: `clientId: { fromSetting: client-id }`. Never
     invent an ID, and never guess one for a service.
