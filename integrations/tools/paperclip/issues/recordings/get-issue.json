@@ -16,6 +16,7 @@
         "body": {
           "kind": "json",
           "value": {
+            "activeRecoveryAction": null,
             "ancestors": [
               {
                 "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
@@ -35,6 +36,7 @@
                 "title": "<scrubbed:content>"
               }
             ],
+            "assigneeAdapterOverrides": null,
             "assigneeAgentId": "a9e00000-0000-4000-8000-00000000000a",
             "assigneeUserId": null,
             "blockedBy": [
@@ -48,6 +50,15 @@
                 "priority": "medium",
                 "scheduledRetry": null,
                 "status": "in_review",
+                "terminalBlockers": [
+                  {
+                    "field-1": "<scrubbed:content>",
+                    "field-2": "<scrubbed:content>",
+                    "field-3": "<scrubbed:content>",
+                    "field-4": "<scrubbed:content>",
+                    "field-5": "<scrubbed:content>"
+                  }
+                ],
                 "title": "<scrubbed:content>"
               }
             ],
@@ -75,6 +86,7 @@
               }
             ],
             "companyId": "c0ffee00-0000-4000-8000-000000000001",
+            "conversationState": null,
             "createdAt": "2026-11-10T08:00:00.000Z",
             "createdFrom": {
               "field-1": {
@@ -113,6 +125,35 @@
             "executionBlocker": {
               "field-1": "<scrubbed:content>"
             },
+            "executionPolicy": {
+              "field-1": "<scrubbed:content>",
+              "field-2": false,
+              "field-3": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>",
+                "field-4": "<scrubbed:content>",
+                "field-5": "<scrubbed:content>"
+              },
+              "field-4": []
+            },
+            "executionState": {
+              "field-1": "<scrubbed:content>",
+              "field-2": {
+                "field-1": "<scrubbed:content>",
+                "field-2": "<scrubbed:content>",
+                "field-3": "<scrubbed:content>",
+                "field-4": "<scrubbed:content>",
+                "field-5": "<scrubbed:content>"
+              },
+              "field-3": null,
+              "field-4": []
+            },
+            "executionWorkspaceSettings": {
+              "field-1": "<scrubbed:content>"
+            },
+            "externalChannelBinding": null,
+            "externalConversationState": null,
             "goal": {
               "field-1": "<scrubbed:content>",
               "field-2": "<scrubbed:content>"
@@ -184,6 +225,8 @@
               "field-2": [],
               "field-3": "<scrubbed:content>"
             },
+            "reviewPolicy": null,
+            "scheduledRetry": null,
             "status": "blocked",
             "successfulRunHandoff": {
               "field-1": "<scrubbed:content>"
@@ -194,12 +237,15 @@
               "field-2": "<scrubbed:content>"
             },
             "updatedAt": "2026-11-18T10:00:00.000Z",
+            "watchdog": null,
             "workProducts": [
               {
                 "field-1": "<scrubbed:content>",
                 "field-2": "<scrubbed:content>"
               }
-            ]
+            ],
+            "workspacePendingSelection": null,
+            "workspaceSelection": null
           }
         },
         "headers": {
@@ -221,67 +267,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.title",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.description",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.labels",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.monitorNotes",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.unblockDescriptor",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.reviewAttention",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.blockerAttention",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.executionBlocker",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.successfulRunHandoff",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.interruption",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.ancestors[0].title",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
       "path": "exchanges[0].response.body.ancestors[0].description",
-      "rule": "user-content"
-    },
-    {
-      "count": 1,
-      "path": "exchanges[0].response.body.ancestors[0].project",
       "rule": "user-content"
     },
     {
@@ -291,7 +277,47 @@
     },
     {
       "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].project",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.ancestors[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].scheduledRetry",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].response.body.blockedBy[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockedBy[0].terminalBlockers",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blockerAttention",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blocks[0].activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.blocks[0].scheduledRetry",
       "rule": "user-content"
     },
     {
@@ -301,17 +327,17 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.relatedWork",
+      "path": "exchanges[0].response.body.createdFrom",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.planDocument",
+      "path": "exchanges[0].response.body.currentExecutionWorkspace",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.legacyPlanDocument",
+      "path": "exchanges[0].response.body.description",
       "rule": "user-content"
     },
     {
@@ -336,7 +362,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.project",
+      "path": "exchanges[0].response.body.executionBlocker",
       "rule": "user-content"
     },
     {
@@ -346,12 +372,62 @@
     },
     {
       "count": 1,
+      "path": "exchanges[0].response.body.interruption",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.labels",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.legacyPlanDocument",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
       "path": "exchanges[0].response.body.mentionedProjects",
       "rule": "user-content"
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.currentExecutionWorkspace",
+      "path": "exchanges[0].response.body.monitorNotes",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.planDocument",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.project",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.relatedWork",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.reviewAttention",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.successfulRunHandoff",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.unblockDescriptor",
       "rule": "user-content"
     },
     {
@@ -361,7 +437,67 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body.createdFrom",
+      "path": "exchanges[0].response.body.executionState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionPolicy",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.activeRecoveryAction",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.scheduledRetry",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.executionWorkspaceSettings",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.watchdog",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.workspaceSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.workspacePendingSelection",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.conversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.externalConversationState",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.externalChannelBinding",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.assigneeAdapterOverrides",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.reviewPolicy",
       "rule": "user-content"
     }
   ]

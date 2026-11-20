@@ -75,7 +75,7 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[0].title",
+      "path": "exchanges[0].response.body[0].activeRecoveryAction",
       "rule": "user-content"
     },
     {
@@ -85,12 +85,22 @@
     },
     {
       "count": 1,
-      "path": "exchanges[0].response.body[1].title",
+      "path": "exchanges[0].response.body[0].title",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].activeRecoveryAction",
       "rule": "user-content"
     },
     {
       "count": 1,
       "path": "exchanges[0].response.body[1].activeRun",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body[1].title",
       "rule": "user-content"
     }
   ]

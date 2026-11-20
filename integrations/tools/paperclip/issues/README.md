@@ -90,8 +90,16 @@ text, the paths cover the other free text Paperclip sends with a task or a
 comment (notes, labels, review and blocker summaries, comment metadata)
 and its error text. With one task, Paperclip also sends the plan's text,
 the project, the workspace's folders and commands, and the words that
-mention other tasks; the paths cover these too. Replace the recordings with
-real ones once there is a test server.
+mention other tasks; the paths cover these too. So do a task's run and
+recovery state, which holds monitor notes, recovery notes and run errors,
+and the titles of the tasks that block its blockers. Some fields were
+`null` on every one of about 800 live tasks we looked at (`watchdog`,
+`workspaceSelection`, `workspacePendingSelection`, `conversationState`,
+`externalConversationState`, `externalChannelBinding`,
+`assigneeAdapterOverrides`, `reviewPolicy`): we can't see what they hold,
+so they are declared as content too. The recordings carry them as `null`,
+as Paperclip sends them. Replace the recordings with real ones once there
+is a test server.
 
 Two things the recorder does that the tests show:
 

@@ -103,6 +103,21 @@ recording:
     - response.body[*].reviewAttention
     - response.body[*].activeRun
     - request.query.q
+    # Run and recovery state on a task in a list: monitor notes, recovery
+    # notes and run errors. The fields Paperclip sent as null on every task
+    # we looked at are declared too, as their content can't be checked.
+    - response.body[*].executionState
+    - response.body[*].executionPolicy
+    - response.body[*].activeRecoveryAction
+    - response.body[*].successfulRunHandoff
+    - response.body[*].executionWorkspaceSettings
+    - response.body[*].watchdog
+    - response.body[*].workspaceSelection
+    - response.body[*].workspacePendingSelection
+    - response.body[*].conversationState
+    - response.body[*].externalConversationState
+    - response.body[*].assigneeAdapterOverrides
+    - response.body[*].reviewPolicy
     # One task, its parent tasks, its blockers and its documents' titles.
     - response.body.title
     - response.body.description
@@ -133,6 +148,26 @@ recording:
     - response.body.createdFrom
     - response.body.currentExecutionWorkspace
     - response.body.workProducts
+    # Run and recovery state on one task and on its blockers, as in a list,
+    # and the titles of the tasks that block its blockers.
+    - response.body.executionState
+    - response.body.executionPolicy
+    - response.body.activeRecoveryAction
+    - response.body.scheduledRetry
+    - response.body.executionWorkspaceSettings
+    - response.body.watchdog
+    - response.body.workspaceSelection
+    - response.body.workspacePendingSelection
+    - response.body.conversationState
+    - response.body.externalConversationState
+    - response.body.externalChannelBinding
+    - response.body.assigneeAdapterOverrides
+    - response.body.reviewPolicy
+    - response.body.blockedBy[*].activeRecoveryAction
+    - response.body.blockedBy[*].scheduledRetry
+    - response.body.blockedBy[*].terminalBlockers
+    - response.body.blocks[*].activeRecoveryAction
+    - response.body.blocks[*].scheduledRetry
     # Comments, and the notes Paperclip adds to one.
     - response.body[*].body
     - response.body[*].metadata
