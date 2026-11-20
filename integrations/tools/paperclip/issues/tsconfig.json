@@ -1,0 +1,10 @@
+{
+  "extends": "@halonicjs/tooling-config/tsconfig/integration.json",
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/test"
+  ]
+}
