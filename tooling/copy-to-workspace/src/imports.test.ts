@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FolderError } from "./folder-error.ts";
 import { ImportNotAllowed, rewriteImports } from "./imports.ts";
 
 const resolve = (specifier: string) =>
@@ -24,11 +25,28 @@ describe("rewriteImports", () => {
     );
   });
 
+  it("also rewrites single-quoted imports and dynamic imports, keeping the quote", () => {
+    const code = [
+      "import { runTool } from '@halonicjs/adapters/integration-kit';",
+      'const kit = await import("@halonicjs/adapters/integration-kit");',
+      "const again = await import( '@halonicjs/adapters/integration-kit' );",
+    ].join("\n");
+    expect(rewriteImports(code, "index.js", resolve)).toBe(
+      [
+        "import { runTool } from '../vendor/kit/index.js';",
+        'const kit = await import("../vendor/kit/index.js");',
+        "const again = await import( '../vendor/kit/index.js' );",
+      ].join("\n"),
+    );
+  });
+
   it("keeps relative imports and zod as they are", () => {
     const code = [
       'import { a } from "./a.js";',
       'import { b } from "../b.js";',
       'import { z } from "zod";',
+      "import { c } from './c.js';",
+      'const d = await import("./d.js");',
     ].join("\n");
     expect(rewriteImports(code, "index.js", resolve)).toBe(code);
   });
@@ -39,5 +57,11 @@ describe("rewriteImports", () => {
     expect(() => rewriteImports(code, "client.js", resolve)).toThrow(
       'client.js imports "node:fs/promises"',
     );
+  });
+
+  it("refuses a dynamic or single-quoted import it has no copy of, as a FolderError", () => {
+    for (const code of ['await import("node:fs");', "import { a } from 'node:fs';"]) {
+      expect(() => rewriteImports(code, "client.js", resolve)).toThrow(FolderError);
+    }
   });
 });

@@ -5,8 +5,14 @@
  * every such name is turned into a path to the copy inside the folder.
  */
 
-/** An import that names a package: `from "x"`, `export … from "x"` or `import "x"`. */
-const importPattern = /(\bfrom\s*|\bimport\s*)"([^"]+)"/g;
+import { FolderError } from "./folder-error.ts";
+
+/**
+ * An import that names a module, in single or double quotes: `from "x"`
+ * (also `export … from "x"`), `import "x"` and `import("x")`. Group 1 is
+ * what comes before the quote, group 2 the quote, group 3 the name.
+ */
+const importPattern = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)(["'])([^"'\n]+)\2/g;
 
 /** The one package the runner resolves itself, from the folder's own `node_modules`. */
 const runnerResolves = "zod";
@@ -15,7 +21,7 @@ const runnerResolves = "zod";
 export type ResolveImport = (specifier: string) => string | undefined;
 
 /** Thrown for an import the runner would refuse and that has no copy in the folder. */
-export class ImportNotAllowed extends Error {
+export class ImportNotAllowed extends FolderError {
   override readonly name = "ImportNotAllowed";
 
   constructor(file: string, specifier: string) {
@@ -37,12 +43,12 @@ export class ImportNotAllowed extends Error {
  * // 'import { runTool } from "../vendor/adapters/dist/…/index.js";'
  */
 export function rewriteImports(code: string, file: string, resolve: ResolveImport): string {
-  return code.replace(importPattern, (whole, keyword: string, specifier: string) => {
+  return code.replace(importPattern, (whole, keyword: string, quote: string, specifier: string) => {
     if (specifier.startsWith("./") || specifier.startsWith("../") || specifier === runnerResolves) {
       return whole;
     }
     const path = resolve(specifier);
     if (path === undefined) throw new ImportNotAllowed(file, specifier);
-    return `${keyword}"${path}"`;
+    return `${keyword}${quote}${path}${quote}`;
   });
 }
