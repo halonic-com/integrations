@@ -9,7 +9,8 @@
     "./recordings": "./src/recordings.ts",
     "./sheet-data": "./src/sheet-data.ts",
     "./sources": "./src/sources.ts",
-    "./sheet-policy": "./src/sheet-policy.ts"
+    "./sheet-policy": "./src/sheet-policy.ts",
+    "./find-integration": "./src/command/find-integration.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
