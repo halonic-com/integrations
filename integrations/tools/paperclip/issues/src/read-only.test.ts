@@ -32,8 +32,8 @@ describe("integration.yaml", () => {
     }
   });
 
-  it("reaches only the Paperclip server in the url setting, over https", () => {
-    expect(sheet.hosts).toEqual([{ fromSetting: "url", class: "public" }]);
+  it("reaches only the Paperclip server in the url setting, on a private network", () => {
+    expect(sheet.hosts).toEqual([{ fromSetting: "url", class: "private" }]);
   });
 
   it("sends its one key only to that server, as a bearer token", () => {

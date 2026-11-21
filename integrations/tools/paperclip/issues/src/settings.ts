@@ -15,8 +15,8 @@ export interface PaperclipSettings {
 }
 
 const settingsSchema = z.object({
-  // The kit still refuses plain http, an IP address and any other host;
-  // this only catches a setting that is no address at all.
+  // The kit still refuses a public address, plain http to a host name and
+  // any other host; this only catches a setting that is no address at all.
   url: z
     .string()
     .max(2_048)
