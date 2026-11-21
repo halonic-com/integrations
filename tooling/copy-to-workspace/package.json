@@ -1,0 +1,28 @@
+{
+  "name": "@halonicjs/tooling-copy-to-workspace",
+  "private": true,
+  "type": "module",
+  "description": "pnpm copy-to-workspace: builds an integration into a folder a Halonic workspace runs as a local integration.",
+  "exports": {
+    ".": "./src/copy-to-workspace.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@halonicjs/tooling-check": "workspace:*",
+    "@halonicjs/tooling-record": "workspace:*"
+  },
+  "devDependencies": {
+    "@halonicjs/tooling-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "halonic": {
+    "layer": "tooling",
+    "owner": "tomas"
+  }
+}

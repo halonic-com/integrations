@@ -652,6 +652,28 @@ importers:
         specifier: 'catalog:'
         version: 5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1))
 
+  tooling/copy-to-workspace:
+    dependencies:
+      '@halonicjs/tooling-check':
+        specifier: workspace:*
+        version: link:../check
+      '@halonicjs/tooling-record':
+        specifier: workspace:*
+        version: link:../record
+    devDependencies:
+      '@halonicjs/tooling-config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@26.6.6)(vite@8.3.6(@types/node@26.6.6)(yaml@2.9.1))
+
   tooling/record:
     dependencies:
       '@halonicjs/adapters':
