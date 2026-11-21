@@ -2,13 +2,9 @@ import { execFileSync } from "node:child_process";
 import { cpSync, globSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { FolderError } from "./folder-error.ts";
 import { rewriteImports } from "./imports.ts";
 import { type RuntimePackage, runtimePackages, zodFolder } from "./package-files.ts";
-
-/** Something about the integration that stops the copy. Shown as its message alone. */
-export class FolderError extends Error {
-  override readonly name = "FolderError";
-}
 
 /**
  * Builds the folder Halonic runs as a local integration, from an

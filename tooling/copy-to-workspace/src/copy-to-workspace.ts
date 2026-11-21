@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { readSheetFields } from "@halonicjs/tooling-check/sheet-yaml";
 import { findIntegration } from "@halonicjs/tooling-record/find-integration";
-import { buildIntegrationFolder, FolderError } from "./integration-folder.ts";
+import { FolderError } from "./folder-error.ts";
+import { buildIntegrationFolder } from "./integration-folder.ts";
 
 /** Everything the command touches outside itself, so a test can choose it. */
 export interface CopyCommandIo {

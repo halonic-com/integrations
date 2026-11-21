@@ -1,5 +1,6 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { FolderError } from "./folder-error.ts";
 
 /** The parts of a `package.json` the copy reads. */
 interface PackageJson {
@@ -47,7 +48,7 @@ export function runtimePackages(folder: string): RuntimePackage[] {
     });
     for (const [name, version] of Object.entries(json.dependencies ?? {})) {
       if (name === zodName) continue;
-      const dependency = realpathSync(join(packageFolder, "node_modules", name));
+      const dependency = dependencyFolder(packageFolder, json.name, name);
       visit(dependency, version.startsWith("workspace:") ? "workspace" : "npm");
     }
   };
@@ -57,7 +58,25 @@ export function runtimePackages(folder: string): RuntimePackage[] {
 
 /** The folder of `zod` as the package in `folder` gets it, with links resolved. */
 export function zodFolder(folder: string): string {
-  return realpathSync(join(folder, "node_modules", zodName));
+  return dependencyFolder(folder, readPackageJson(folder).name, zodName);
+}
+
+/**
+ * Finds `name` the way Node does: in `node_modules` of the package's folder,
+ * then of each folder above it. pnpm puts a package's own dependencies next
+ * to it (`.pnpm/<pkg>@<version>/node_modules/<dep>`), not inside it.
+ *
+ * @throws {FolderError} when no folder above has it
+ */
+function dependencyFolder(packageFolder: string, packageName: string, name: string): string {
+  for (let folder = packageFolder; ; folder = dirname(folder)) {
+    const candidate = join(folder, "node_modules", name);
+    if (existsSync(join(candidate, "package.json"))) return realpathSync(candidate);
+    if (dirname(folder) === folder) break;
+  }
+  throw new FolderError(
+    `${packageName} needs ${name}, which isn't installed. Run pnpm install and try again.`,
+  );
 }
 
 function readPackageJson(folder: string): PackageJson {
