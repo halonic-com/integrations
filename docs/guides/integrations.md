@@ -370,7 +370,8 @@ Rules for each field:
   code's text, word for word: they are what the user approves, and they
   are what the model reads. `risk` and `untrusted` match the code, and
   every tool states `untrusted` as `true` or `false`; leaving it out is not
-  allowed. Every `send` tool also has a `noun`, what one call sends in the
+  allowed. The conformance suite compares all of this with the code, so an
+  integration needs no test of its own for it. Every `send` tool also has a `noun`, what one call sends in the
   singular and the plural (`{ one: email, many: emails }`), so a run can
   say "Sent 1 email". A `read` or `write` tool may have one too, so a run
   can say what it read ("Read 3 emails"); without one, the receipt stays
@@ -399,8 +400,6 @@ Rules for each field:
 > - The kit doesn't yet read `as` from the sheet, so it can't yet refuse a
 >   secret placed anywhere else. Until it does, a reviewer compares each
 >   `auth` in the code with the sheet.
-> - The conformance suite doesn't yet compare descriptions or require
->   `untrusted`. Until it does, a reviewer compares them.
 > - The Google sign-in lives in the host and doesn't read `googleScopes`,
 >   `googleApis` or `googleCheck` yet. Until it does, a reviewer checks
 >   that the scopes are the fewest that work. `pnpm check` already checks
