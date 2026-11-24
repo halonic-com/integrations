@@ -17,8 +17,8 @@ packages:
 # in both repos.
 catalog:
   "@biomejs/biome": 2.6.5
-  "@halonicjs/adapters": 0.1.1
-  "@halonicjs/testing": 0.1.1
+  "@halonicjs/adapters": 0.1.2
+  "@halonicjs/testing": 0.1.2
   "@types/node": ^26.6.6
   "@typescript/typescript6": ^6.0.2
   turbo: ^2.11.10
@@ -52,8 +52,8 @@ allowBuilds:
 # with trusted publishing, after a reviewed release.
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
-  - "@halonicjs/adapters@0.1.1"
-  - "@halonicjs/testing@0.1.1"
+  - "@halonicjs/adapters@0.1.2"
+  - "@halonicjs/testing@0.1.2"
 
 # No git or tarball URLs anywhere in the dependency tree.
 blockExoticSubdeps: true
