@@ -26,6 +26,12 @@ published permanently.
   is the readable list of tools that ask first. Nothing breaks if you
   forget, because the run-time risk check still asks first, but the list
   would be incomplete.
+- When you change `docs/guides/integrations.md`, also open a pull request
+  in `halonic` that refreshes the Assistant's pinned copy of the guide
+  with `pnpm --filter @halonicjs/assistant run update-integration-guide
+  <commit>`, where `<commit>` is the `integrations` commit that has your
+  change. Nothing breaks if that comes late, because the Assistant just
+  keeps using the older rules until then.
 
 ## Never
 
