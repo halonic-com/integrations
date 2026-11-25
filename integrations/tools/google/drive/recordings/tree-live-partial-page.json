@@ -1,0 +1,299 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=trashed+%3D+false+and+%28name+%3D+%27halonic-record-many%27+and+mimeType+%3D+%27application%2Fvnd.google-apps.folder%27%29&pageSize=2&orderBy=modifiedTime+desc&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "scrubbed-secret-2",
+                "mimeType": "application/vnd.google-apps.folder",
+                "modifiedTime": "2026-11-25T13:22:51.413Z",
+                "name": "<scrubbed:content>",
+                "owners": [
+                  {
+                    "emailAddress": "<scrubbed:content>"
+                  }
+                ],
+                "parents": [
+                  "0AIV1JI064qy9Uk9PVA"
+                ],
+                "webViewLink": "https://drive.google.scrubbed-secret-1"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "application/json; charset=UTF-8",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "SAMEORIGIN",
+          "x-xss-protection": "0"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=%27scrubbed-secret-2%27+in+parents+and+trashed+%3D+false&pageSize=10&orderBy=folder%2Cname&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "scrubbed-secret-3",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:22:53.282Z",
+                "name": "<scrubbed:content>",
+                "size": "14"
+              },
+              {
+                "id": "scrubbed-secret-4",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:08.641Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-5",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:10.204Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-6",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:11.905Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-7",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:13.596Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-8",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:15.239Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-9",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:16.722Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-10",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:18.246Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-11",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:19.955Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              },
+              {
+                "id": "scrubbed-secret-12",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:23:21.725Z",
+                "name": "<scrubbed:content>",
+                "size": "15"
+              }
+            ],
+            "nextPageToken": "scrubbed-secret-13"
+          }
+        },
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "application/json; charset=UTF-8",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "SAMEORIGIN",
+          "x-xss-protection": "0"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "tree-live-partial-page",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].webViewLink",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.url.query.q",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[0].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[1].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[1].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[2].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[2].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[3].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[3].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[4].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[4].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[5].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[5].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[6].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[6].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[7].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[7].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[8].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[8].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[9].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[9].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.nextPageToken",
+      "rule": "secret-field"
+    }
+  ]
+}
