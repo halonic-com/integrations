@@ -1,0 +1,215 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=trashed+%3D+false+and+%28name+%3D+%27halonic-record-tree%27+and+mimeType+%3D+%27application%2Fvnd.google-apps.folder%27%29&pageSize=2&orderBy=modifiedTime+desc&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%2Cowners%28emailAddress%29%2Cparents%2CwebViewLink%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "scrubbed-secret-2",
+                "mimeType": "application/vnd.google-apps.folder",
+                "modifiedTime": "2026-11-25T13:22:45.567Z",
+                "name": "<scrubbed:content>",
+                "owners": [
+                  {
+                    "emailAddress": "<scrubbed:content>"
+                  }
+                ],
+                "parents": [
+                  "0AIV1JI064qy9Uk9PVA"
+                ],
+                "webViewLink": "https://drive.google.scrubbed-secret-1"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "application/json; charset=UTF-8",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "SAMEORIGIN",
+          "x-xss-protection": "0"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=%27scrubbed-secret-2%27+in+parents+and+trashed+%3D+false&pageSize=300&orderBy=folder%2Cname&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "scrubbed-secret-3",
+                "mimeType": "application/vnd.google-apps.folder",
+                "modifiedTime": "2026-11-25T13:22:46.579Z",
+                "name": "<scrubbed:content>"
+              },
+              {
+                "id": "scrubbed-secret-4",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:22:48.199Z",
+                "name": "<scrubbed:content>",
+                "size": "12"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "application/json; charset=UTF-8",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "SAMEORIGIN",
+          "x-xss-protection": "0"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    },
+    {
+      "request": {
+        "body": {
+          "kind": "empty"
+        },
+        "headers": {
+          "accept": "application/json",
+          "authorization": "Bearer <scrubbed:secret>"
+        },
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=%27scrubbed-secret-3%27+in+parents+and+trashed+%3D+false&pageSize=298&orderBy=folder%2Cname&fields=nextPageToken%2Cfiles%28id%2Cname%2CmimeType%2Csize%2CmodifiedTime%29&supportsAllDrives=true&includeItemsFromAllDrives=true"
+      },
+      "response": {
+        "body": {
+          "kind": "json",
+          "value": {
+            "files": [
+              {
+                "id": "scrubbed-secret-5",
+                "mimeType": "text/plain",
+                "modifiedTime": "2026-11-25T13:22:50.125Z",
+                "name": "<scrubbed:content>",
+                "size": "12"
+              }
+            ]
+          }
+        },
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+          "content-type": "application/json; charset=UTF-8",
+          "pragma": "no-cache",
+          "x-content-type-options": "nosniff",
+          "x-frame-options": "SAMEORIGIN",
+          "x-xss-protection": "0"
+        },
+        "status": 200
+      },
+      "transport": "http"
+    }
+  ],
+  "format": "halonic.recording/1",
+  "integration": "tool-google-drive",
+  "scenario": "tree-live-two-levels",
+  "scrubReport": [
+    {
+      "count": 1,
+      "path": "exchanges[0].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].owners[0].emailAddress",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].webViewLink",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[0].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.url.query.q",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[0].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[0].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[1].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[1].response.body.files[1].name",
+      "rule": "user-content"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.url.query.q",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].request.headers.authorization",
+      "rule": "secret-header"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.files[0].id",
+      "rule": "random-token"
+    },
+    {
+      "count": 1,
+      "path": "exchanges[2].response.body.files[0].name",
+      "rule": "user-content"
+    }
+  ]
+}
