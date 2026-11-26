@@ -18,8 +18,15 @@ The workspace gives the connection two settings:
 | `company-id` | the id of the company whose tasks the tools read          |
 
 Paperclip is self-hosted, so it has no host of its own: the sheet's one
-host is the host of `url`, of class `public`. The kit refuses any other
-host, an IP address and plain `http` (`setting-outside-class`).
+host is the host of `url`, of class `private`, because a Paperclip server
+usually sits on the user's own network. `url` may be a host name over
+`https`, such as a Tailscale name (`https://tasks.tail1234.ts.net`), or a
+private IP address (`10/8`, `172.16/12`, `192.168/16`, Tailscale's
+`100.64/10`, `fc00::/7`). The kit refuses any other host and
+`localhost` (`setting-outside-class`), and plain `http` to a host name
+(`plain-http-not-local`). A host name is looked up on every request, and
+Halonic connects only to the private addresses it resolves to, so a
+Paperclip server on a public address is refused at connect.
 
 The key (`paperclip-key`) goes only to that host, as
 `Authorization: Bearer`. Use a key that can only read. Halonic keeps it;
