@@ -27,15 +27,18 @@ const page = await google.getJson(url, withNextPageToken(messageListSchema), sig
 `getJson`, `getText`, `postJson` and `delete` cover most calls. `sendJson`
 takes any request and reads its JSON answer, such as a `PATCH` or Drive's
 multipart upload; `send` takes any request and returns the response. Each
-call sends at most three requests.
+call sends a request at most three times. The kit may repeat each read
+that gets a `429` up to twice more, so a read is sent at most nine times.
 
 ## Retries
 
 As the guide's rule 10 says
 ([section 4](../../../../docs/guides/integrations.md#4-talking-to-the-service)):
 
-- at most two retries, only after a `429` or a `5xx`. A `403` with a
-  rate-limit reason becomes `rate-limited` but isn't retried;
+- at most two retries, only after a `5xx`. A `429` is retried by the kit
+  itself, on a `GET` or `HEAD` only, so one that reaches this library ends
+  the call with `rate-limited`. A `403` with a rate-limit reason becomes
+  `rate-limited` too and isn't retried;
 - after the wait `retry-after` asks for, up to 30 seconds (the host's
   `maxIntegrationWaitMs`). A longer one ends the call with `rate-limited`.
   A date is measured against the response's own `date` header, so no clock

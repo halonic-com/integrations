@@ -78,8 +78,8 @@ something else:
 - **`gmail_modify_labels` refuses to add `TRASH` or `SPAM`.** Gmail deletes
   trashed mail for good after 30 days, and spam is reported to Google;
   neither is a label change the user expects from this tool.
-- **Reads are retried** after a `429` or a `5xx`, as the guide's rule 10
-  and the Google library ask. The old connector never retried. Nothing that
+- **Reads are retried** after a `429` (by the kit) or a `5xx` (by the
+  Google library), as the guide's rule 10 asks. The old connector never retried. Nothing that
   changes the mailbox is retried.
 - **The model reads what a person sees.** Gmail shows a mail's HTML part,
   and the sender writes the plain-text part too, so they can make the two

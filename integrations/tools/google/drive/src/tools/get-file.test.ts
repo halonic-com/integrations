@@ -62,15 +62,23 @@ describe("drive_get_file", () => {
     },
   );
 
-  it.each([
-    [429, "rateLimitExceeded", "rate-limited"],
-    [500, "backendError", "unavailable"],
-  ])("reads again twice after status %i, then maps %s to %s", async (status, reason, code) => {
-    const { connection, urls, waits } = connectToFakeDrive(status, googleError(status, reason));
+  it("reads again twice after status 500, then maps backendError to unavailable", async () => {
+    const { connection, urls, waits } = connectToFakeDrive(500, googleError(500, "backendError"));
     const call = connection.callTool("drive_get_file", { fileId: "file-notes-02" });
-    await expect(call).rejects.toMatchObject({ code });
+    await expect(call).rejects.toMatchObject({ code: "unavailable" });
     expect(urls).toHaveLength(3);
     expect(waits).toEqual([1_000, 2_000]);
+  });
+
+  it("leaves a 429 to the kit's own retries, and maps rateLimitExceeded to rate-limited", async () => {
+    const { connection, urls, waits } = connectToFakeDrive(
+      429,
+      googleError(429, "rateLimitExceeded"),
+    );
+    const call = connection.callTool("drive_get_file", { fileId: "file-notes-02" });
+    await expect(call).rejects.toMatchObject({ code: "rate-limited" });
+    expect(urls).toHaveLength(1);
+    expect(waits).toEqual([]);
   });
 
   it("calls a body that isn't JSON an unexpected response", async () => {

@@ -159,7 +159,7 @@ describe("GoogleApi requests", () => {
 });
 
 describe("GoogleApi retries", () => {
-  it.each([429, 500, 503])("retries a GET after %i and succeeds", async (status) => {
+  it.each([500, 503])("retries a GET after %i and succeeds", async (status) => {
     const http = new FakeHttp(response(status), response(200, '{"id":"m1"}'));
     const { google, waits } = setUp(http);
     expect(await google.getJson(listUrl, messageSchema)).toEqual({ id: "m1" });
@@ -188,10 +188,18 @@ describe("GoogleApi retries", () => {
   });
 
   it("waits as long as retry-after asks", async () => {
-    const http = new FakeHttp(response(429, "", { "Retry-After": "12" }), response(200, "ok"));
+    const http = new FakeHttp(response(503, "", { "Retry-After": "12" }), response(200, "ok"));
     const { google, waits } = setUp(http);
     await google.getText(listUrl);
     expect(waits).toEqual([12_000]);
+  });
+
+  it("doesn't retry a 429 itself: the kit already retried it where that was safe", async () => {
+    const http = new FakeHttp(response(429, "", { "retry-after": "1" }), response(200, "ok"));
+    const { google, waits } = setUp(http);
+    expect(await codeOf(google.getText(listUrl))).toBe("rate-limited");
+    expect(http.requests).toHaveLength(1);
+    expect(waits).toEqual([]);
   });
 
   it("measures a retry-after date against the response's date header", async () => {
@@ -208,9 +216,9 @@ describe("GoogleApi retries", () => {
   });
 
   it("gives up at once when retry-after is longer than 30 s", async () => {
-    const http = new FakeHttp(response(429, "", { "retry-after": "120" }));
+    const http = new FakeHttp(response(503, "", { "retry-after": "120" }));
     const { google, waits } = setUp(http);
-    expect(await codeOf(google.getText(listUrl))).toBe("rate-limited");
+    expect(await codeOf(google.getText(listUrl))).toBe("unavailable");
     expect(waits).toEqual([]);
   });
 
@@ -221,7 +229,7 @@ describe("GoogleApi retries", () => {
     expect(http.requests).toHaveLength(1);
   });
 
-  it("doesn't retry a 403 rate limit: rule 10 allows only 429 and 5xx", async () => {
+  it("doesn't retry a 403 rate limit: rule 10 allows only 5xx", async () => {
     const body = JSON.stringify({ error: { errors: [{ reason: "userRateLimitExceeded" }] } });
     const http = new FakeHttp(response(403, body));
     const { google } = setUp(http);

@@ -31,12 +31,16 @@ describe("isRepeatable", () => {
 });
 
 describe("isRetryableStatus", () => {
-  it.each([429, 500, 502, 503, 504, 599])("retries %i", (status) => {
+  it.each([500, 502, 503, 504, 599])("retries %i", (status) => {
     expect(isRetryableStatus(status)).toBe(true);
   });
 
   it.each([400, 401, 403, 404, 408, 409, 600])("doesn't retry %i", (status) => {
     expect(isRetryableStatus(status)).toBe(false);
+  });
+
+  it("leaves a 429 to the kit, which already retried it where that was safe", () => {
+    expect(isRetryableStatus(429)).toBe(false);
   });
 });
 
