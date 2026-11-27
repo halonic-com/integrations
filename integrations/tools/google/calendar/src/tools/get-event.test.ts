@@ -61,18 +61,26 @@ describe("calendar_get_event", () => {
     },
   );
 
-  it.each([
-    [429, "rateLimitExceeded", "rate-limited"],
-    [503, "backendError", "unavailable"],
-  ])("reads again twice after status %i, then maps %s to %s", async (status, reason, code) => {
+  it("reads again twice after status 503, then maps backendError to unavailable", async () => {
     const { connection, requests, waits } = connectToFakeCalendar(
-      status,
-      googleError(status, reason),
+      503,
+      googleError(503, "backendError"),
     );
     const call = connection.callTool("calendar_get_event", { eventId: "standup_1110" });
-    await expect(call).rejects.toMatchObject({ code });
+    await expect(call).rejects.toMatchObject({ code: "unavailable" });
     expect(requests).toHaveLength(3);
     expect(waits).toEqual([1_000, 2_000]);
+  });
+
+  it("leaves a 429 to the kit's own retries, and maps rateLimitExceeded to rate-limited", async () => {
+    const { connection, requests, waits } = connectToFakeCalendar(
+      429,
+      googleError(429, "rateLimitExceeded"),
+    );
+    const call = connection.callTool("calendar_get_event", { eventId: "standup_1110" });
+    await expect(call).rejects.toMatchObject({ code: "rate-limited" });
+    expect(requests).toHaveLength(1);
+    expect(waits).toEqual([]);
   });
 
   it("calls a body that isn't JSON an unexpected response", async () => {

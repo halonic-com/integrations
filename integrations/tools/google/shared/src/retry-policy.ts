@@ -1,8 +1,9 @@
 /**
  * When a Google request is sent again, and how long to wait first (guide,
- * section 4, rule 10): at most twice, only on `429` and `5xx`, honouring
+ * section 4, rule 10): at most twice, only on `5xx`, honouring
  * `retry-after` up to 30 seconds, and only for requests that are safe to
- * repeat.
+ * repeat. A `429` is the kit's to retry: it repeats a `GET` or `HEAD`
+ * itself, so this policy doesn't add tries of its own on top.
  */
 
 import { maxIntegrationWaitMs } from "@halonicjs/adapters/integration-kit";
@@ -34,9 +35,13 @@ export function isRepeatable(method: string, repeatable: boolean): boolean {
   }
 }
 
-/** Only these statuses are worth another try: too many requests, or trouble at Google. */
+/**
+ * Only trouble at Google (`5xx`) is worth another try here. A `429` that
+ * reaches this policy has already been retried by the kit where that was
+ * safe, so it ends the call as `rate-limited`.
+ */
 export function isRetryableStatus(status: number): boolean {
-  return status === 429 || (status >= 500 && status <= 599);
+  return status >= 500 && status <= 599;
 }
 
 /**

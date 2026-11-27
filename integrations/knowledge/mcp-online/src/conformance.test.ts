@@ -17,8 +17,16 @@ describeIntegrationConformance({
   settings: { url: "https://mcp.example.com/mcp" },
   recordings: [],
   cases: [],
+  // In-repo packages the build bundles into this integration.
+  bundled: [
+    "@halonicjs/integration-mcp-server",
+    "@halonicjs/integration-mcp",
+    "@halonicjs/integration-shared",
+  ],
   sources: {
     ...readSources(new URL("./", import.meta.url), "knowledge/mcp-online/src"),
     ...readSources(new URL("../../../mcp-server/src/", import.meta.url), "mcp-server/src"),
+    ...readSources(new URL("../../../mcp/src/", import.meta.url), "mcp/src"),
+    ...readSources(new URL("../../../shared/src/", import.meta.url), "shared/src"),
   },
 });

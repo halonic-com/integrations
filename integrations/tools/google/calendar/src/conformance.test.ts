@@ -96,6 +96,8 @@ describeIntegrationConformance({
   sheet: readSheetData(new URL("../integration.yaml", import.meta.url)),
   recordings,
   cases,
+  // In-repo packages the build bundles into this integration.
+  bundled: ["@halonicjs/integration-tool-google-shared"],
   sources: {
     ...readSources(new URL("./", import.meta.url), "tools/google/calendar/src"),
     ...readSources(new URL("../../shared/src/", import.meta.url), "tools/google/shared/src"),

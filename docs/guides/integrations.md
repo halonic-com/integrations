@@ -471,15 +471,18 @@ Rules for each field:
 9. **Keep the number of requests per call small and fixed,** and say in a
    comment how many a tool makes at most ("one list request and at most 25
    message requests"). Never loop until the service stops answering.
-10. **Retry only where it's safe:** at most twice, only on `429` and `5xx`,
-    honouring `retry-after` up to 30 seconds, and only for requests that
-    change nothing (`GET`) or that the service makes safe to repeat (an
-    idempotency key). **Never retry a request that sends or deletes
-    something:** a timeout doesn't prove it didn't happen. One provider's
-    retry rules live once, in its group (`tools/google/shared`).
+10. **Retry only where it's safe:** the kit itself retries a `429` on a
+    `GET` or `HEAD`, at most twice and within 30 seconds in total, waiting
+    as `retry-after` asks. Don't retry a `429` yourself. Your own retries
+    are for `5xx` only: at most twice, honouring `retry-after` up to 30
+    seconds, and only for requests that change nothing (`GET`) or that the
+    service makes safe to repeat (an idempotency key). **Never retry a
+    request that sends or deletes something:** a timeout doesn't prove it
+    didn't happen. One provider's retry rules live once, in its group
+    (`tools/google/shared`).
 11. **Wait only with `host.wait(ms, signal)`,** for a pause the service asks
     for: SSE `retry:` before a resume, or `retry-after` before a retry
-    (section 7 has the error classes).
+    after a `5xx` (section 7 has the error classes).
     Always pass the call's `signal`, so cancelling the call also cancels the
     pause. The host waits at most `maxIntegrationWaitMs` (30 seconds). When
     the service asks for longer, don't wait: return the error. There is no
@@ -501,7 +504,7 @@ Rules for each field:
 
     const ms = retryAfterMs(response) ?? 1000;
     if (ms > maxIntegrationWaitMs) {
-      throw new AnthropicError("rate-limited", "Anthropic asks to wait longer than 30 s; try again later.");
+      throw new AnthropicError("unavailable", "Anthropic asks to wait longer than 30 s; try again later.");
     }
     await host.wait(ms, signal);
     ```
