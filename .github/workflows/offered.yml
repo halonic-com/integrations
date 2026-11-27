@@ -1,0 +1,57 @@
+# Scans the integrations offered from Halonic Studio (integrations/offered/,
+# CONTRIBUTING.md "Offered from Halonic Studio"). Offers mostly come from
+# forks, so this reads code nobody here wrote. It only reads files as text:
+# it never installs, imports, builds or runs anything.
+#
+# - `pull_request`, never `pull_request_target`: a fork's run never gets
+#   this repository's secrets or a token that can write.
+# - `permissions: {}` and no secrets: the job holds no repository
+#   credentials at all.
+# - The scanner comes from the base commit, so the change under test can't
+#   weaken its own check. It imports nothing outside tooling/record/src, so
+#   it runs on plain Node without `pnpm install`.
+#
+# tooling/record/src/offered/workflow.test.ts pins the trigger and the
+# credentials. CI's `pnpm check:offered` step runs the same scan for ci-ok.
+
+name: Offered integrations
+
+on:
+  pull_request:
+    paths:
+      - "integrations/offered/**"
+
+permissions: {}
+
+jobs:
+  scan:
+    name: Scan offered integrations
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the base commit's scanner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          # checkout only writes inside the workspace; the scan only reads
+          # integrations/offered/, so this folder is never scanned.
+          path: base-scanner
+          sparse-checkout: tooling/record
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26"
+          package-manager-cache: false
+      - name: Scan the offers as text
+        run: |
+          scanner=base-scanner/tooling/record/src/cli/check-offered.ts
+          # Only the pull request that adds the scanner has none in its base.
+          if [ ! -f "$scanner" ]; then
+            scanner=tooling/record/src/cli/check-offered.ts
+          fi
+          node "$scanner"

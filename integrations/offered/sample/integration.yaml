@@ -1,0 +1,21 @@
+# A made-up offer, to show what lands here and to test the checks on it.
+id: sample-notes
+version: 0.1.0
+kit: 1
+provides: [connector]
+
+hosts:
+  - api.example.com
+
+secrets:
+  notes-key:
+    purpose: Your key for the example notes service.
+    hosts: [api.example.com]
+    as: header
+    header: x-api-key
+
+tokens: []
+tools:
+  - name: notes_list
+    risk: read
+needs: []

@@ -42,6 +42,9 @@ jobs:
         run: pnpm check:pr-title
       - name: Repo checks (layers, dependencies, names, file size, lockfile, paths)
         run: pnpm check
+      # Reads integrations/offered/ as text only (offered.yml has the details).
+      - name: Offered integrations
+        run: pnpm check:offered
       - name: Licences
         run: pnpm check:licences
       - name: Formatting

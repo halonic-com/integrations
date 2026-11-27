@@ -11,6 +11,7 @@ repo's two layers. When a check changes there, change it here too.
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm verify`                | everything below, for the affected packages (`--full` for every package, as CI does)                                                                  |
 | `pnpm check [rule …]`        | our own repo checks (table below); with rule names, only those                                                                                        |
+| `pnpm check:offered`         | scans `integrations/offered/` as text: only the files an offer may hold, and no key, token, e-mail address or phone number. Never runs an offer       |
 | `pnpm check:terms`           | the personal-terms guard; skipped locally unless you have the list                                                                                    |
 | `pnpm check:licences`        | every installed package's licence against `tooling/check/licences.json`                                                                               |
 | `pnpm check:audit [options]` | `pnpm audit` with the ignored advisories from `tooling/check/advisories-ignored.json` (see [Ignoring an advisory](#ignoring-an-advisory)); CI runs it |

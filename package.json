@@ -20,6 +20,7 @@
     "check": "node tooling/check/src/cli/check.ts",
     "record": "node tooling/record/src/cli/record.ts",
     "copy-to-workspace": "node tooling/copy-to-workspace/src/cli/copy-to-workspace.ts",
+    "check:offered": "node tooling/record/src/cli/check-offered.ts",
     "check:terms": "node tooling/check/src/cli/terms.ts",
     "check:licences": "node tooling/check/src/cli/licences.ts",
     "check:audit": "node tooling/check/src/cli/audit.ts",
