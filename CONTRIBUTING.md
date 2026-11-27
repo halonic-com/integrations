@@ -72,7 +72,7 @@ write or change an integration. In short:
 integration the Studio's AI built for you. It lands in
 `integrations/offered/<id>/` and holds:
 
-- `integration.yaml`, the permission sheet, and `plugin.yaml`, the
+- `integration.yaml`, the permission sheet, and `connector.yaml`, the
   connector file;
 - `backend/index.js`, the backend as plain JavaScript;
 - `recordings/*.json`, when there are any;

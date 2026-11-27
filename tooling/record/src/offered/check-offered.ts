@@ -30,10 +30,10 @@ const offerIdPattern = /^[a-z0-9][a-z0-9-]{0,63}$/;
  * there are any.
  */
 const allowedFilePattern =
-  /^(?:integration\.yaml|plugin\.yaml|OFFER\.md|backend\/index\.js|recordings\/[a-z0-9][a-z0-9-]*\.json)$/;
+  /^(?:integration\.yaml|connector\.yaml|OFFER\.md|backend\/index\.js|recordings\/[a-z0-9][a-z0-9-]*\.json)$/;
 
 /** The files every offer has. */
-const requiredFiles = ["integration.yaml", "plugin.yaml", "OFFER.md", "backend/index.js"];
+const requiredFiles = ["integration.yaml", "connector.yaml", "OFFER.md", "backend/index.js"];
 
 /** Something wrong with an offer. It names the file and the kind, never a value. */
 export interface OfferProblem {

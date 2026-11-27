@@ -104,7 +104,7 @@ describe("checkOffers", () => {
     expect(problems.map((problem) => problem.file)).toEqual([
       "integrations/offered/Bad_Name/",
       "integrations/offered/Bad_Name/integration.yaml",
-      "integrations/offered/Bad_Name/plugin.yaml",
+      "integrations/offered/Bad_Name/connector.yaml",
       "integrations/offered/Bad_Name/OFFER.md",
       "integrations/offered/Bad_Name/backend/index.js",
       "integrations/offered/Bad_Name/notes.txt",
