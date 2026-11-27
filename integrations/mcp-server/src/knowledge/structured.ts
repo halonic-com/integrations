@@ -40,7 +40,7 @@ export function asJsonObject(value: unknown): JsonObject | undefined {
 /**
  * The first of `names` that `object` holds as a non-empty string. A number
  * counts too when `numbers` is set, for ids such as `42`. Only the object's
- * own fields are read, so a name such as `constructor` never finds a
+ * own fields are read, so a name such as `toString` never finds a
  * function (guide, section 5).
  */
 export function stringField(

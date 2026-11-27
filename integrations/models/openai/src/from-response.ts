@@ -32,7 +32,7 @@ export type OpenAiResponse = z.infer<typeof openAiResponseSchema>;
 /**
  * Every other reason (`content_filter`, ones added later) is "other". A Map,
  * not a plain object: the reason comes from the service, and a value such as
- * "constructor" would find a function in a plain object.
+ * "toString" would find a function in a plain object.
  */
 const finishReasons: ReadonlyMap<string, ChatResponse["finishReason"]> = new Map([
   ["stop", "stop"],

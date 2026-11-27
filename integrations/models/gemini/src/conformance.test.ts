@@ -15,6 +15,8 @@ describeIntegrationConformance({
   sheet: readSheetData(new URL("../integration.yaml", import.meta.url)),
   recordings: [],
   cases: [],
+  // In-repo packages the build bundles into this integration.
+  bundled: ["@halonicjs/integration-shared"],
   sources: {
     ...readSources(new URL("./", import.meta.url), "models/gemini/src"),
     ...readSources(new URL("../../../shared/src/", import.meta.url), "shared/src"),

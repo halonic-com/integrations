@@ -75,7 +75,7 @@ export type GeminiResponse = z.infer<typeof geminiResponseSchema>;
 /**
  * Every other reason (`SAFETY`, `RECITATION`, `MALFORMED_FUNCTION_CALL`,
  * ones added later) is "other". A Map, not a plain object: the reason comes
- * from the service, and a value such as "constructor" would find a
+ * from the service, and a value such as "toString" would find a
  * function in a plain object. Gemini says `STOP` for an answer with
  * function calls too, so `toFinishReason` turns that into `tool_calls`.
  */

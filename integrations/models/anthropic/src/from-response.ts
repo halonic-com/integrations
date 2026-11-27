@@ -58,7 +58,7 @@ type AnthropicContentBlock = AnthropicResponse["content"][number];
 /**
  * Every other reason (`refusal`, `pause_turn`, ones added later) is "other".
  * A Map, not a plain object: the reason comes from the service, and a value
- * such as "constructor" would find a function in a plain object.
+ * such as "toString" would find a function in a plain object.
  */
 const finishReasons: ReadonlyMap<string, ChatResponse["finishReason"]> = new Map([
   ["end_turn", "stop"],

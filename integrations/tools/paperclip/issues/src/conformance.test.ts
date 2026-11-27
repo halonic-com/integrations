@@ -53,5 +53,10 @@ describeIntegrationConformance({
   recordings,
   cases,
   settings,
-  sources: readSources(new URL("./", import.meta.url), "tools/paperclip/issues/src"),
+  // In-repo packages the build bundles into this integration.
+  bundled: ["@halonicjs/integration-shared"],
+  sources: {
+    ...readSources(new URL("./", import.meta.url), "tools/paperclip/issues/src"),
+    ...readSources(new URL("../../../../shared/src/", import.meta.url), "shared/src"),
+  },
 });
