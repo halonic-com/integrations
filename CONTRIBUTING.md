@@ -66,6 +66,31 @@ write or change an integration. In short:
   using your own account. The recorder scrubs keys and personal content before
   it saves, but read every recording before you commit it.
 
+## Offered from Halonic Studio
+
+"Offer to Halonic" in Halonic Studio opens a pull request with an
+integration the Studio's AI built for you. It lands in
+`integrations/offered/<id>/` and holds:
+
+- `integration.yaml`, the permission sheet, and `plugin.yaml`, the
+  connector file;
+- `backend/index.js`, the backend as plain JavaScript;
+- `recordings/*.json`, when there are any;
+- `OFFER.md`: the id, the code hash, the builder version, and whether the
+  recordings are made-up sample replies.
+
+Studio shows you every file before it sends anything, and removes keys and
+personal data. The checks never import, build or run an offer: they read
+its sheet and scan every file for keys, tokens, e-mail addresses and phone
+numbers (`pnpm check:offered`), next to the secret scan and the
+personal-terms guard. Nothing else may go in the folder, not even a
+`package.json`.
+
+An offer is never merged as it is. When we adopt one, we move it into its
+group, rewrite it to the guide, and open a normal pull request that credits
+you with a `Co-authored-by:` line with your GitHub no-reply address. Then
+we close the offer's pull request with a link to it.
+
 ## Only made-up data
 
 This repo is public. Never put keys, tokens, passwords or personal data in

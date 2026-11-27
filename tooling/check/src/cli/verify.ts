@@ -20,6 +20,11 @@ function main(argv: readonly string[]): number {
   const turboScope = full ? [] : ["--affected"];
   const steps: Step[] = [
     { label: "repo checks", command: "pnpm", args: ["run", "--silent", "check"] },
+    {
+      label: "offered integrations",
+      command: "pnpm",
+      args: ["run", "--silent", "check:offered"],
+    },
     { label: "personal-terms guard", command: "pnpm", args: ["run", "--silent", "check:terms"] },
     { label: "licences", command: "pnpm", args: ["run", "--silent", "check:licences"] },
     {
